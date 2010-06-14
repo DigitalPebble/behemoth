@@ -1,0 +1,7 @@
+<ivy-module version="2.0">
+    <info organisation="digitalpebble" module="behemoth-solr"/>
+    <dependencies>
+	<dependency org="org.apache.solr" name="solr-solrj" rev="1.4.0" conf="*->*,!sources,!javadoc" /> 
+	<dependency org="org.slf4j" name="slf4j-simple" rev="1.5.6" conf="*->*,!sources,!javadoc" /> 
+    </dependencies>
+</ivy-module>

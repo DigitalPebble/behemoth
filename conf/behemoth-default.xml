@@ -1,0 +1,87 @@
+<?xml version="1.0"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+
+<configuration>
+
+<!-- Custom properties for Hadoop -->
+
+<property>
+  <name>hadoop.job.history.user.location</name>
+  <value>${hadoop.log.dir}/history/user</value>
+  <description>Hadoop 0.17.x comes with a default setting to create
+     user logs inside the output path of the job. This breaks some
+     Hadoop classes, which expect the output to contain only
+     part-XXXXX files. This setting changes the output to a
+     subdirectory of the regular log directory.
+  </description>
+</property>
+
+<!-- Properties for GATE -->
+
+<property>
+  <name>gate.annotationset.input</name>
+  <value></value>
+  <description>Map the information at the behemoth format onto the select annotationset 
+  </description>
+</property>
+
+<property>
+  <name>gate.annotationset.output</name>
+  <value></value>
+  <description>AnnotationSet to consider when serializing to the behemoth format
+  </description>
+</property>
+
+<property>
+  <name>gate.annotations.filter</name>
+  <value>Location,Organization,Person,Tagger</value>
+  <description>Annotations types to consider when serializing to the behemoth format, separated by commas 
+  </description>
+</property>
+
+<property>
+  <name>gate.features.filter</name>
+  <value>Location.locType,Organization.orgType,Tagger.type</value>
+  <description>if specified, only the feature listed for a type will be kept
+  </description>
+</property>
+
+<property>
+  <name>gate.emptyannotationset</name>
+  <value>false</value>
+  <description>if specified all the annotations in the Behemoth document will be deleted before processing with GATE 
+  </description>
+</property>
+
+<!-- Properties for UIMA -->
+
+<property>
+  <name>uima.store.short.names</name>
+  <value>false</value>
+  <description>The annotations filters must use the full names. This option determines whether we want to keep only the sort version of the types in the Behemoth document. Note that 
+  the feature names are always the short ones
+  </description>
+</property>
+
+<property>
+  <name>uima.annotations.filter</name>
+  <value>org.apache.uima.TokenAnnotation</value>
+  <description>Annotations types to consider when serializing to the behemoth format, separated by commas
+  </description>
+</property>
+
+<property>
+  <name>uima.features.filter</name>
+  <value>org.apache.uima.TokenAnnotation:tokenType</value>
+  <description>if specified, only the feature listed for a type will be kept
+  </description>
+</property>
+
+<property>
+  <name>uima.language</name>
+  <value>en</value>
+  <description>set the language of the cas if not obtained from upstream
+  </description>
+</property>
+
+</configuration>

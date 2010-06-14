@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<GATE>  
+  <GATECONFIG Known_plugin_path=";"  
+              Load_plugin_path=";" />  
+</GATE>
