@@ -1,0 +1,11 @@
+*~
+.classpath
+.externalToolBuilders
+.project
+.settings
+.git
+.svn
+build
+**/build
+lib
+
