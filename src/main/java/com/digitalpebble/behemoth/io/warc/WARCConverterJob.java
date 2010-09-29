@@ -19,8 +19,8 @@ package com.digitalpebble.behemoth.io.warc;
 
 import java.io.IOException;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.Path;
@@ -48,7 +48,7 @@ import com.digitalpebble.behemoth.BehemothDocument;
 public class WARCConverterJob extends Configured implements Tool,
 	Mapper<LongWritable, WritableWarcRecord, Text, BehemothDocument> {
 
-    public static final Log LOG = LogFactory.getLog(WARCConverterJob.class);
+    public static final Logger LOG = LoggerFactory.getLogger(WARCConverterJob.class);
 
     public WARCConverterJob() {
 	this(null);

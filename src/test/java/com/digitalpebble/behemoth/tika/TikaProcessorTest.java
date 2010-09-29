@@ -29,7 +29,6 @@ public class TikaProcessorTest extends TestCase {
   TikaProcessor tika = null;
 
   public void setUp() throws Exception {
-
     Configuration conf = BehemothConfiguration.create();
     tika = new TikaProcessor();
     tika.setConf(conf);

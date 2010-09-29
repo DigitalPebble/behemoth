@@ -21,8 +21,8 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.filecache.DistributedCache;
 import org.apache.hadoop.fs.Path;
@@ -43,7 +43,7 @@ import com.digitalpebble.behemoth.BehemothDocument;
 public class GATEMapper extends MapReduceBase implements
         Mapper<Text, BehemothDocument, Text, BehemothDocument> {
 
-    private static final Log LOG = LogFactory.getLog(GATEMapper.class);
+    private static final Logger LOG = LoggerFactory.getLogger(GATEMapper.class);
 
     private Configuration config;
 

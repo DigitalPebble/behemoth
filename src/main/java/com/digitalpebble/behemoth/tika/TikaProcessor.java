@@ -20,8 +20,8 @@ package com.digitalpebble.behemoth.tika;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.tika.config.TikaConfig;
@@ -40,7 +40,7 @@ import com.digitalpebble.behemoth.gate.GATEProcessor;
 
 public class TikaProcessor implements DocumentProcessor {
 
-  private static final Log LOG = LogFactory.getLog(GATEProcessor.class);
+  private static final Logger LOG = LoggerFactory.getLogger(GATEProcessor.class);
 
   private Configuration config;
 

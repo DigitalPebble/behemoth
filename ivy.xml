@@ -8,8 +8,8 @@
 	<dependency org="bouncycastle" name="bcprov-jdk14" rev="136"/>
 	<dependency org="bouncycastle" name="bcmail-jdk14" rev="136"/>
 
-	<!-- Nutch dependencies --> 
-	
+	<dependency org="org.slf4j" name="slf4j-api" rev="1.6.1"/>	
+	<dependency org="org.slf4j" name="slf4j-log4j12" rev="1.6.1"/>	
 
 	<!-- Hadoop dependencies --> 
 	<dependency org="org.apache.hadoop" name="hadoop-core" rev="0.20.2"/>
