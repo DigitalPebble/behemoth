@@ -1,0 +1,158 @@
+<?xml version="1.0"?>
+<!-- $Id: creole.xml 12329 2010-03-08 16:04:16Z thomas_heitz $ -->
+<!-- creole.xml directory file for GATE builtins -->
+<CREOLE-DIRECTORY>
+  <!-- Language Resources -->
+  <CREOLE>
+    <!-- Documents -->
+    <RESOURCE>
+      <CLASS>gate.corpora.DocumentImpl</CLASS>
+    </RESOURCE>
+    <!-- Corpora -->
+    <RESOURCE>
+      <CLASS>gate.corpora.CorpusImpl</CLASS>
+    </RESOURCE>
+    <RESOURCE>
+      <NAME>GATE Database Document</NAME>
+      <CLASS>gate.corpora.DatabaseDocumentImpl</CLASS>
+      <COMMENT>GATE persistent document (Oracle or PostgreSQL)</COMMENT>
+      <INTERFACE>gate.Document</INTERFACE>
+      <ICON>document</ICON>
+      <PRIVATE/>
+    </RESOURCE>
+    <RESOURCE>
+      <CLASS>gate.corpora.SerialCorpusImpl</CLASS>
+    </RESOURCE>
+    <RESOURCE>
+      <NAME>GATE Database Corpus</NAME>
+      <CLASS>gate.corpora.DatabaseCorpusImpl</CLASS>
+      <COMMENT>GATE persistent corpus (Oracle or PostgreSQL)</COMMENT>
+      <INTERFACE>gate.Corpus</INTERFACE>
+      <ICON>corpus</ICON>
+      <PRIVATE/>
+    </RESOURCE>
+    <RESOURCE>
+      <CLASS>gate.corpora.XmlDocumentFormat</CLASS>
+    </RESOURCE>
+    <RESOURCE>
+      <CLASS>gate.corpora.TextualDocumentFormat</CLASS>
+    </RESOURCE>
+    <RESOURCE>
+      <CLASS>gate.corpora.NekoHtmlDocumentFormat</CLASS>
+    </RESOURCE>
+    <RESOURCE>
+      <CLASS>gate.corpora.SgmlDocumentFormat</CLASS>
+    </RESOURCE>
+    <RESOURCE>
+      <CLASS>gate.corpora.RtfDocumentFormat</CLASS>
+    </RESOURCE>
+    <RESOURCE>
+      <CLASS>gate.corpora.EmailDocumentFormat</CLASS>
+    </RESOURCE>
+    <RESOURCE>
+      <CLASS>gate.corpora.PdfDocumentFormat</CLASS>
+    </RESOURCE>
+    <RESOURCE>
+      <CLASS>gate.corpora.MSWordDocumentFormat</CLASS>
+    </RESOURCE>
+  </CREOLE>
+
+  <!-- creole.xml for Controllers -->
+  <CREOLE>
+    <RESOURCE>
+      <CLASS>gate.creole.SerialController</CLASS>
+    </RESOURCE>
+    <RESOURCE>
+      <CLASS>gate.creole.SerialAnalyserController</CLASS>
+    </RESOURCE>
+    <RESOURCE>
+      <CLASS>gate.creole.ConditionalSerialController</CLASS>
+    </RESOURCE>
+    <RESOURCE>
+      <CLASS>gate.creole.ConditionalSerialAnalyserController</CLASS>
+    </RESOURCE>
+    <RESOURCE>
+      <CLASS>gate.creole.RealtimeCorpusController</CLASS>
+    </RESOURCE>
+  </CREOLE>
+
+  <!-- creole.xml for Visual Resources -->
+  <CREOLE>
+    <RESOURCE>
+      <CLASS>gate.gui.FeaturesSchemaEditor</CLASS>
+    </RESOURCE>
+
+
+    <RESOURCE>
+      <CLASS>gate.gui.PRViewer</CLASS>
+    </RESOURCE>
+
+    <RESOURCE>
+      <CLASS>gate.gui.docview.DocumentEditor</CLASS>
+    </RESOURCE>
+
+    <RESOURCE>
+      <NAME>Text</NAME>
+      <CLASS>gate.gui.docview.TextualDocumentView</CLASS>
+    </RESOURCE>
+    <RESOURCE>
+      <NAME>Annotation Sets</NAME>
+      <CLASS>gate.gui.docview.AnnotationSetsView</CLASS>
+    </RESOURCE>
+    <RESOURCE>
+      <NAME>Annotations List</NAME>
+      <CLASS>gate.gui.docview.AnnotationListView</CLASS>
+    </RESOURCE>
+    <RESOURCE>
+      <NAME>Annotations Stack</NAME>
+      <CLASS>gate.gui.docview.AnnotationStackView</CLASS>
+    </RESOURCE>
+
+    <RESOURCE>
+      <NAME>Co-reference Editor</NAME>
+      <CLASS>gate.gui.docview.CorefEditor</CLASS>
+    </RESOURCE>
+<!-- uncomment to get the new ontology annotation tool in the document editor
+    <RESOURCE>
+      <NAME>Class</NAME>
+      <CLASS>gate.gui.docview.OntologyClassView</CLASS>
+    </RESOURCE>
+    <RESOURCE>
+      <NAME>Instance</NAME>
+      <CLASS>gate.gui.docview.OntologyInstanceView</CLASS>
+      <PRIVATE/>
+    </RESOURCE>
+-->
+
+		<!-- The default annotation editor -->
+    <RESOURCE>
+      <NAME>Annotations Editor</NAME>
+      <CLASS>gate.gui.docview.AnnotationEditor</CLASS>
+    </RESOURCE>
+
+    <RESOURCE>
+      <CLASS>gate.gui.CorpusQualityAssurance</CLASS>
+    </RESOURCE>
+
+    <RESOURCE>
+      <CLASS>gate.gui.CorpusEditor</CLASS>
+    </RESOURCE>
+
+    <RESOURCE>
+      <CLASS>gate.gui.SerialControllerEditor</CLASS>
+    </RESOURCE>
+
+    <RESOURCE>
+      <CLASS>gate.gui.SerialDatastoreViewer</CLASS>
+    </RESOURCE>
+
+    <RESOURCE>
+      <CLASS>gate.gui.OracleDatastoreViewer</CLASS>
+    </RESOURCE>
+
+    <RESOURCE>
+      <CLASS>gate.gui.LuceneDataStoreSearchGUI</CLASS>
+    </RESOURCE>
+
+  </CREOLE>
+</CREOLE-DIRECTORY>
