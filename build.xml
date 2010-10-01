@@ -84,9 +84,6 @@
 		<mkdir dir="${test.build.dir}" />
 		<mkdir dir="${test.build.classes}" />
 		<mkdir dir="${lib.dir}" />
-		<copy todir="${lib.dir}">
-			<zipfileset dir="lib-ext" includes="*.jar" />
-		</copy>
 		<ivy:retrieve pattern="lib/[artifact]-[revision].[ext]" />
 	</target>
 

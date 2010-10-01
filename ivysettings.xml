@@ -42,6 +42,10 @@
 			root="http://maven.ontotext.com/archiva/repository/public"
 			pattern="[organisation]/[module]/[revision]/[artifact]-[revision](-[classifier]).[ext]"
 			m2compatible="true" />
+		<filesystem name="localLibs">
+			<artifact
+				pattern="${ivy.settings.dir}/lib-ext/[artifact]-[revision].[ext]" />
+		</filesystem>
 		<chain name="default" dual="true">
 			<resolver ref="local" />
 			<resolver ref="maven2" />
@@ -60,4 +64,12 @@
 			<resolver ref="apache-incubating" />
 		</chain>
 	</resolvers>
+
+	<modules>
+
+		<!-- This forces a requirement for other nutch-artifacts to be built locally 
+			rather than look for them online. -->
+		<module organisation="org.apache.nutch" name=".*" resolver="localLibs" />
+	</modules>
+
 </ivysettings>
