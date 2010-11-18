@@ -75,7 +75,7 @@ public class TikaProcessor implements DocumentProcessor {
     }
 
     // determine the content type if missing
-    if (inputDoc.getContentType() == null) {
+    if (inputDoc.getContentType() == null || inputDoc.getContentType().equals("") == true) {
       String mt = null;
       // using the original content
       if (inputDoc.getContent() != null) {

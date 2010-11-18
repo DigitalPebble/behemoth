@@ -1,3 +1,11 @@
 Behemoth Change Log
 
+Versions:
+1. Tika 0.8
+
+
 Unreleased Changes
+
+# Added TikaDriver and Tika processing support (gsingers)
+
+# Fixed NullPointerException when contentType is not specified on BehemothDocument 

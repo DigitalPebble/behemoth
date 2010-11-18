@@ -18,7 +18,10 @@
 package com.digitalpebble.behemoth.util;
 
 import java.io.File;
+import java.io.FileFilter;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
@@ -41,7 +44,7 @@ public class CorpusGenerator {
 
     // Populate a SequenceFile with the content of a local directory
 
-    String usage = "Content localdir outputDFSDir";
+    String usage = "Content localdir outputDFSDir [--recurse]";
 
     if (argv.length < 2) {
       System.out.println("usage:" + usage);
@@ -55,6 +58,11 @@ public class CorpusGenerator {
 
     Path output = new Path(argv[1]);
 
+    boolean recurse = false;
+    if (argv.length > 2 && argv[2].equals("--recurse")){
+      recurse = true;
+    }
+
     // read from input path
     // create new Content object and add it to the SequenceFile
     Text key = new Text();
@@ -63,33 +71,72 @@ public class CorpusGenerator {
     try {
       writer = SequenceFile.createWriter(fs, conf, output, key.getClass(),
           value.getClass());
-
+      PerformanceFileFilter pff = new PerformanceFileFilter(writer, key, value);
       // iterate on the files in the source dir
-      for (File file : inputDir.listFiles()) {
-
-        if (file.isDirectory())
-          continue;
-
-        String URI = file.toURI().toString();
-
-        byte[] fileBArray = new byte[(int) file.length()];
-        FileInputStream fis = new FileInputStream(file);
-        fis.read(fileBArray);
-        fis.close();
-
-        key.set(URI);
-
-        // fill the values for the content object
-        value.setUrl(URI);
-        value.setContent(fileBArray);
-
-        writer.append(key, value);
-      }
+      processFiles(inputDir, recurse, pff);
 
     } finally {
       IOUtils.closeStream(writer);
     }
 
+  }
+
+  private static void processFiles(File inputDir, boolean recurse, PerformanceFileFilter pff) {
+    for (File file : inputDir.listFiles(pff)) {
+      //handle directories here, as they are the only thing coming back due to the use of the PFF
+      if (recurse == true){
+        processFiles(file, recurse, pff);
+      }
+    }
+  }
+  //Java hack to move the work of processing files into a filter, so that we can process large directories of files
+  //without having to create a huge list of files
+  static class PerformanceFileFilter implements FileFilter{
+
+    FileFilter defaultIgnores = new FileFilter() {
+        @Override
+        public boolean accept(File file) {
+          String name = file.getName();
+          return name.startsWith(".") == false;//ignore hidden directories
+        }
+      };
+
+    private SequenceFile.Writer writer;
+    private Text key;
+    private BehemothDocument value;
+
+    public PerformanceFileFilter(SequenceFile.Writer writer, Text key, BehemothDocument value) {
+      this.writer = writer;
+      this.key = key;
+      this.value = value;
+    }
+
+    @Override
+    public boolean accept(File file) {
+      if (defaultIgnores.accept(file)){
+        String URI = file.toURI().toString();
+
+        byte[] fileBArray = new byte[(int) file.length()];
+        FileInputStream fis = null;
+        try {
+          fis = new FileInputStream(file);
+          fis.read(fileBArray);
+          fis.close();
+          key.set(URI);
+          // fill the values for the content object
+          value.setUrl(URI);
+          value.setContent(fileBArray);
+
+          writer.append(key, value);
+        } catch (FileNotFoundException e) {
+          throw new RuntimeException(e);
+        } catch (IOException e) {
+          throw new RuntimeException(e);
+        }
+      }
+      //if it is a directory, accept it so we can possibly recurse on it, otherwise we don't care about actually accepting the file, since all the work is done in the accept method here.
+      return file.isDirectory();
+    }
   }
 
 }
