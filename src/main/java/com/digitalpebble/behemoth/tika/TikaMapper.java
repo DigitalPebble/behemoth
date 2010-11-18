@@ -33,6 +33,7 @@ public class TikaMapper extends MapReduceBase implements
       for (int i = 0; i < documents.length; i++) {
         outputCollector.collect(text, documents[i]);
       }
+      reporter.setStatus("processed " + documents.length + " documents");
     }
   }
 
