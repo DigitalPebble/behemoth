@@ -158,7 +158,11 @@ public class BehemothDocument implements Writable {
         Text.writeString(out, url); // write url
         out.writeInt(content.length); // write content
         out.write(content);
+      if (contentType != null){
         Text.writeString(out, contentType); // write contentType
+      } else {
+        Text.writeString(out, "");
+      }
         out.writeBoolean(text != null);
         if (text != null)
             Text.writeString(out, text); // write text
@@ -255,9 +259,9 @@ public class BehemothDocument implements Writable {
     public String toString() {
         StringBuffer buffer = new StringBuffer();
 
-        buffer.append("\nurl: " + url);
-        buffer.append("\ncontentType: " + contentType);
-        buffer.append("\nmetadata: " + metadata);
+        buffer.append("\nurl: ").append(url);
+        buffer.append("\ncontentType: ").append(contentType);
+        buffer.append("\nmetadata: ").append(metadata);
         buffer.append("\nContent:\n");
         int maxLengthText = Math.min(200, content.length);
         buffer.append(new String(content).substring(0, maxLengthText)); // try

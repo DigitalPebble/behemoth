@@ -2,8 +2,13 @@
     <info organisation="digitalpebble" module="behemoth"/>
     <dependencies defaultconf="*->*,!sources,!javadoc">
 
+
+    <dependency org="org.apache.mahout.commons" name="commons-cli" rev="2.0-mahout"/>
+
+
 	<!-- Tika dependencies --> 
     <dependency org="org.apache.tika" name="tika-parsers" rev="0.8"/>
+
 
 	<dependency org="bouncycastle" name="bcprov-jdk14" rev="136"/>
 	<dependency org="bouncycastle" name="bcmail-jdk14" rev="136"/>

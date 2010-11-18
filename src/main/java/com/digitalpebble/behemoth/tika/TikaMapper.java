@@ -29,8 +29,10 @@ public class TikaMapper extends MapReduceBase implements
                   OutputCollector<Text, BehemothDocument> outputCollector, Reporter reporter) throws IOException {
 
     BehemothDocument[] documents = processor.process(inputDoc, reporter);
-    for (int i = 0; i < documents.length; i++) {
-      outputCollector.collect(text, documents[i]);
+    if (documents != null) {
+      for (int i = 0; i < documents.length; i++) {
+        outputCollector.collect(text, documents[i]);
+      }
     }
   }
 

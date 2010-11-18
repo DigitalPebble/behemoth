@@ -113,7 +113,7 @@ public class CorpusGenerator {
 
     @Override
     public boolean accept(File file) {
-      if (defaultIgnores.accept(file)){
+      if (defaultIgnores.accept(file) && file.isDirectory() == false){
         String URI = file.toURI().toString();
 
         byte[] fileBArray = new byte[(int) file.length()];
