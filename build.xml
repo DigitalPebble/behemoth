@@ -103,6 +103,14 @@
 		</jar>
 	</target>
 
+  <target name="jar-core" depends="compile">
+		<jar jarfile="${build.dir}/${final.name}-core.jar">
+			<zipfileset dir="${build.classes}">
+        <include name="com/digitalpebble/behemoth/*.class"/>
+      </zipfileset>
+		</jar>
+	</target>
+
 	<!-- ================================================================== -->
 	<!-- Make job jar                                                       -->
 	<!-- ================================================================== -->
@@ -116,6 +124,9 @@
 			<zipfileset dir="${lib.dir}" prefix="lib" includes="**/*.jar" excludes="hadoop-*.jar" />
 		</jar>
 	</target>
+
+
+
 
 	<!-- ================================================================== -->
 	<!-- Compile test code                                                  -->
