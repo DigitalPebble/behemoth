@@ -17,30 +17,27 @@
 
 package com.digitalpebble.behemoth.tika;
 
-import java.io.ByteArrayInputStream;
-import java.io.InputStream;
-
-import org.apache.hadoop.io.MapWritable;
-import org.apache.hadoop.io.Text;
-import org.apache.hadoop.io.Writable;
-import org.apache.tika.Tika;
-import org.apache.tika.metadata.Metadata;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.mapred.Reporter;
-import org.apache.tika.config.TikaConfig;
-import org.apache.tika.mime.MimeType;
-import org.apache.tika.mime.MimeTypes;
-import org.apache.tika.utils.ParseUtils;
-
 import com.digitalpebble.behemoth.BehemothDocument;
 import com.digitalpebble.behemoth.DocumentProcessor;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.io.MapWritable;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapred.Reporter;
+import org.apache.tika.Tika;
+import org.apache.tika.config.TikaConfig;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.mime.MimeType;
+import org.apache.tika.mime.MimeTypes;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 
 /**
  * Tika as a document processor. Extracts the text and metadata from the
  * original content + converts the XHTML tags into annotations.
- **/
+ */
 
 public class TikaProcessor implements DocumentProcessor, TikaConstants {
 
@@ -51,7 +48,7 @@ public class TikaProcessor implements DocumentProcessor, TikaConstants {
   private String mimeType = "text/plain";
   private Tika tika = new Tika();
   private MimeTypes mimetypes = TikaConfig.getDefaultConfig()
-      .getMimeRepository();
+          .getMimeRepository();
 
   @Override
   public Configuration getConf() {
@@ -70,9 +67,9 @@ public class TikaProcessor implements DocumentProcessor, TikaConstants {
 
   /**
    * Process a BehemothDocument with Tika
-   * 
+   *
    * @return an array of documents or null if an exception is encountered
-   **/
+   */
   @Override
   public BehemothDocument[] process(BehemothDocument inputDoc, Reporter reporter) {
     // check that it has some text or content
@@ -88,7 +85,7 @@ public class TikaProcessor implements DocumentProcessor, TikaConstants {
       if (mimeType == null) {
         if (inputDoc.getContent() != null) {
           MimeType mimetype = mimetypes.getMimeType(inputDoc.getUrl(), inputDoc
-              .getContent());
+                  .getContent());
           mt = mimetype.getName();
         } else if (inputDoc.getText() != null) {
           // force it to text
@@ -97,13 +94,13 @@ public class TikaProcessor implements DocumentProcessor, TikaConstants {
       } else {
         mt = mimeType;//allow outside user to specify a mime type if they know all the content, saves time and reduces error
       }
-      if (mt != null){
+      if (mt != null) {
         inputDoc.setContentType(mt);
       }
     }
-    
+
     // TODO extract the text AND the annotations
-    
+
     // does the input document have a some text?
     // if not use Tika to extract it
     if (inputDoc.getText() == null) {
@@ -112,7 +109,7 @@ public class TikaProcessor implements DocumentProcessor, TikaConstants {
       String textContent;
       try {
         Metadata metadata = new Metadata();
-        textContent =  tika.parseToString(is, metadata);//ParseUtils.getStringContent(is, TikaConfig.getDefaultConfig(), inputDoc.getContentType());
+        textContent = tika.parseToString(is, metadata);//ParseUtils.getStringContent(is, TikaConfig.getDefaultConfig(), inputDoc.getContentType());
         processText(inputDoc, textContent);
         processMetadata(inputDoc, metadata);
       } catch (Exception e) {
@@ -122,13 +119,14 @@ public class TikaProcessor implements DocumentProcessor, TikaConstants {
     }
     // TODO if the content type is an archive maybe process and return 
     // all the subdocuments
-    
-    return new BehemothDocument[] { inputDoc };
+
+    return new BehemothDocument[]{inputDoc};
   }
 
   /**
    * Classes that wish to handle how text is processed may override this method, otherwise it
    * just calls {@link com.digitalpebble.behemoth.BehemothDocument#setText(String)}
+   *
    * @param inputDoc
    * @param textContent
    */
@@ -139,12 +137,13 @@ public class TikaProcessor implements DocumentProcessor, TikaConstants {
 
   /**
    * Classes that wish to handle Metadata separately may override this method
+   *
    * @param metadata the extracted {@link org.apache.tika.metadata.Metadata}
    */
   protected void processMetadata(BehemothDocument inputDoc, Metadata metadata) {
     MapWritable mapW = new MapWritable();
     for (String name : metadata.names()) {
-      String [] values = metadata.getValues(name);      
+      String[] values = metadata.getValues(name);
       mapW.put(new Text(name), new TextArrayWritable(values));
     }
     inputDoc.setMetadata(mapW);
