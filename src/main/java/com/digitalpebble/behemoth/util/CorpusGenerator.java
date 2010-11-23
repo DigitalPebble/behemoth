@@ -34,109 +34,118 @@ import com.digitalpebble.behemoth.BehemothDocument;
 
 /**
  * Generates a SequenceFile containing BehemothDocuments given a local
- * directory. The BehemothDocument gets its byte content and URL. The detection of
- * MIME-type and text extraction can be done later using the TikaProcessor.
+ * directory. The BehemothDocument gets its byte content and URL. The detection
+ * of MIME-type and text extraction can be done later using the TikaProcessor.
  **/
 
 public class CorpusGenerator {
 
-  public static void main(String argv[]) throws Exception {
+    public static void main(String argv[]) throws Exception {
 
-    // Populate a SequenceFile with the content of a local directory
+        // Populate a SequenceFile with the content of a local directory
 
-    String usage = "Content localdir outputDFSDir [--recurse]";
+        String usage = "Content localdir outputDFSDir [--recurse]";
 
-    if (argv.length < 2) {
-      System.out.println("usage:" + usage);
-      return;
+        if (argv.length < 2) {
+            System.out.println("usage:" + usage);
+            return;
+        }
+
+        Configuration conf = new Configuration();
+        FileSystem fs = FileSystem.get(conf);
+
+        File inputDir = new File(argv[0]);
+
+        Path output = new Path(argv[1]);
+
+        boolean recurse = false;
+        if (argv.length > 2 && argv[2].equals("--recurse")) {
+            recurse = true;
+        }
+
+        // read from input path
+        // create new Content object and add it to the SequenceFile
+        Text key = new Text();
+        BehemothDocument value = new BehemothDocument();
+        SequenceFile.Writer writer = null;
+        try {
+            writer = SequenceFile.createWriter(fs, conf, output,
+                    key.getClass(), value.getClass());
+            PerformanceFileFilter pff = new PerformanceFileFilter(writer, key,
+                    value);
+            // iterate on the files in the source dir
+            processFiles(inputDir, recurse, pff);
+
+        } finally {
+            IOUtils.closeStream(writer);
+        }
+
     }
 
-    Configuration conf = new Configuration();
-    FileSystem fs = FileSystem.get(conf);
-
-    File inputDir = new File(argv[0]);
-
-    Path output = new Path(argv[1]);
-
-    boolean recurse = false;
-    if (argv.length > 2 && argv[2].equals("--recurse")){
-      recurse = true;
+    private static void processFiles(File inputDir, boolean recurse,
+            PerformanceFileFilter pff) {
+        for (File file : inputDir.listFiles(pff)) {
+            // handle directories here, as they are the only thing coming back
+            // due to the use of the PFF
+            if (recurse == true) {
+                processFiles(file, recurse, pff);
+            }
+        }
     }
 
-    // read from input path
-    // create new Content object and add it to the SequenceFile
-    Text key = new Text();
-    BehemothDocument value = new BehemothDocument();
-    SequenceFile.Writer writer = null;
-    try {
-      writer = SequenceFile.createWriter(fs, conf, output, key.getClass(),
-          value.getClass());
-      PerformanceFileFilter pff = new PerformanceFileFilter(writer, key, value);
-      // iterate on the files in the source dir
-      processFiles(inputDir, recurse, pff);
+    // Java hack to move the work of processing files into a filter, so that we
+    // can process large directories of files
+    // without having to create a huge list of files
+    static class PerformanceFileFilter implements FileFilter {
 
-    } finally {
-      IOUtils.closeStream(writer);
-    }
+        FileFilter defaultIgnores = new FileFilter() {
+            @Override
+            public boolean accept(File file) {
+                String name = file.getName();
+                return name.startsWith(".") == false;// ignore hidden
+                                                     // directories
+            }
+        };
 
-  }
+        private SequenceFile.Writer writer;
+        private Text key;
+        private BehemothDocument value;
 
-  private static void processFiles(File inputDir, boolean recurse, PerformanceFileFilter pff) {
-    for (File file : inputDir.listFiles(pff)) {
-      //handle directories here, as they are the only thing coming back due to the use of the PFF
-      if (recurse == true){
-        processFiles(file, recurse, pff);
-      }
-    }
-  }
-  //Java hack to move the work of processing files into a filter, so that we can process large directories of files
-  //without having to create a huge list of files
-  static class PerformanceFileFilter implements FileFilter{
+        public PerformanceFileFilter(SequenceFile.Writer writer, Text key,
+                BehemothDocument value) {
+            this.writer = writer;
+            this.key = key;
+            this.value = value;
+        }
 
-    FileFilter defaultIgnores = new FileFilter() {
         @Override
         public boolean accept(File file) {
-          String name = file.getName();
-          return name.startsWith(".") == false;//ignore hidden directories
+            if (defaultIgnores.accept(file) && file.isDirectory() == false) {
+                String URI = file.toURI().toString();
+
+                byte[] fileBArray = new byte[(int) file.length()];
+                FileInputStream fis = null;
+                try {
+                    fis = new FileInputStream(file);
+                    fis.read(fileBArray);
+                    fis.close();
+                    key.set(URI);
+                    // fill the values for the content object
+                    value.setUrl(URI);
+                    value.setContent(fileBArray);
+
+                    writer.append(key, value);
+                } catch (FileNotFoundException e) {
+                    throw new RuntimeException(e);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+            // if it is a directory, accept it so we can possibly recurse on it,
+            // otherwise we don't care about actually accepting the file, since
+            // all the work is done in the accept method here.
+            return file.isDirectory();
         }
-      };
-
-    private SequenceFile.Writer writer;
-    private Text key;
-    private BehemothDocument value;
-
-    public PerformanceFileFilter(SequenceFile.Writer writer, Text key, BehemothDocument value) {
-      this.writer = writer;
-      this.key = key;
-      this.value = value;
     }
-
-    @Override
-    public boolean accept(File file) {
-      if (defaultIgnores.accept(file) && file.isDirectory() == false){
-        String URI = file.toURI().toString();
-
-        byte[] fileBArray = new byte[(int) file.length()];
-        FileInputStream fis = null;
-        try {
-          fis = new FileInputStream(file);
-          fis.read(fileBArray);
-          fis.close();
-          key.set(URI);
-          // fill the values for the content object
-          value.setUrl(URI);
-          value.setContent(fileBArray);
-
-          writer.append(key, value);
-        } catch (FileNotFoundException e) {
-          throw new RuntimeException(e);
-        } catch (IOException e) {
-          throw new RuntimeException(e);
-        }
-      }
-      //if it is a directory, accept it so we can possibly recurse on it, otherwise we don't care about actually accepting the file, since all the work is done in the accept method here.
-      return file.isDirectory();
-    }
-  }
 
 }

@@ -21,21 +21,21 @@ import org.apache.hadoop.conf.Configuration;
 
 public class BehemothConfiguration extends org.apache.hadoop.conf.Configuration {
 
-	private BehemothConfiguration() {
-	}
+    private BehemothConfiguration() {
+    }
 
-	/** Create a {@link Configuration} for Behemoth. */
-	public static Configuration create() {
-		Configuration conf = new Configuration();
-		addBehemothResources(conf);
-		return conf;
-	}
+    /** Create a {@link Configuration} for Behemoth. */
+    public static Configuration create() {
+        Configuration conf = new Configuration();
+        addBehemothResources(conf);
+        return conf;
+    }
 
-	/** Add the standard Behemoth resources to {@link Configuration}. */
-	private static Configuration addBehemothResources(Configuration conf) {
-		conf.addResource("behemoth-default.xml");
-		conf.addResource("behemoth-site.xml");
-		return conf;
-	}
+    /** Add the standard Behemoth resources to {@link Configuration}. */
+    private static Configuration addBehemothResources(Configuration conf) {
+        conf.addResource("behemoth-default.xml");
+        conf.addResource("behemoth-site.xml");
+        return conf;
+    }
 
 }

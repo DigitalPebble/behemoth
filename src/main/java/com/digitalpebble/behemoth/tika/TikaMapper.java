@@ -28,51 +28,53 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 
-
 /**
- * Uses a {@link com.digitalpebble.behemoth.tika.TikaProcessor} to extract text using Tika.  Users wanting to
- * override the default work of the TikaProcessor can set the "tika.processor" value in the JobConf and give it a
- * fully qualified class name.  The implementation must extend TikaProcessor and it must have a zero arg. constructor.
+ * Uses a {@link com.digitalpebble.behemoth.tika.TikaProcessor} to extract text
+ * using Tika. Users wanting to override the default work of the TikaProcessor
+ * can set the "tika.processor" value in the JobConf and give it a fully
+ * qualified class name. The implementation must extend TikaProcessor and it
+ * must have a zero arg. constructor.
  */
 public class TikaMapper extends MapReduceBase implements
         Mapper<Text, BehemothDocument, Text, BehemothDocument> {
-  private static final Logger LOG = LoggerFactory.getLogger(TikaMapper.class);
+    private static final Logger LOG = LoggerFactory.getLogger(TikaMapper.class);
 
-  protected TikaProcessor processor;
+    protected TikaProcessor processor;
 
-  @Override
-  public void map(Text text, BehemothDocument inputDoc,
-                  OutputCollector<Text, BehemothDocument> outputCollector, Reporter reporter) throws IOException {
+    @Override
+    public void map(Text text, BehemothDocument inputDoc,
+            OutputCollector<Text, BehemothDocument> outputCollector,
+            Reporter reporter) throws IOException {
 
-    BehemothDocument[] documents = processor.process(inputDoc, reporter);
-    if (documents != null) {
-      for (int i = 0; i < documents.length; i++) {
-        outputCollector.collect(text, documents[i]);
-      }
-      reporter.setStatus("processed " + documents.length + " documents");
+        BehemothDocument[] documents = processor.process(inputDoc, reporter);
+        if (documents != null) {
+            for (int i = 0; i < documents.length; i++) {
+                outputCollector.collect(text, documents[i]);
+            }
+            reporter.setStatus("processed " + documents.length + " documents");
+        }
     }
-  }
 
-  @Override
-  public void configure(JobConf job) {
+    @Override
+    public void configure(JobConf job) {
 
-    String handlerName = job.get("tika.processor");
-    if (handlerName != null) {
-      Class handlerClass = job.getClass(handlerName, TikaProcessor.class);
-      try {
-        processor = (TikaProcessor) handlerClass.newInstance();
+        String handlerName = job.get("tika.processor");
+        if (handlerName != null) {
+            Class handlerClass = job.getClass(handlerName, TikaProcessor.class);
+            try {
+                processor = (TikaProcessor) handlerClass.newInstance();
 
-      } catch (InstantiationException e) {
-        LOG.error("Exception", e);
-        //TODO: what's the best way to do this?
-        throw new RuntimeException(e);
-      } catch (IllegalAccessException e) {
-        LOG.error("Exception", e);
-        throw new RuntimeException(e);
-      }
-    } else {
-      processor = new TikaProcessor();
+            } catch (InstantiationException e) {
+                LOG.error("Exception", e);
+                // TODO: what's the best way to do this?
+                throw new RuntimeException(e);
+            } catch (IllegalAccessException e) {
+                LOG.error("Exception", e);
+                throw new RuntimeException(e);
+            }
+        } else {
+            processor = new TikaProcessor();
+        }
+        processor.setConf(job);
     }
-    processor.setConf(job);
-  }
 }

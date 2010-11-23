@@ -45,8 +45,7 @@ import com.digitalpebble.behemoth.BehemothDocument;
  */
 
 public class SOLRIndexerJob extends Configured implements Tool {
-    private static final Log LOG = LogFactory
-            .getLog(SOLRIndexerJob.class);
+    private static final Log LOG = LogFactory.getLog(SOLRIndexerJob.class);
 
     public SOLRIndexerJob() {
     }

@@ -67,7 +67,8 @@ public class SOLRWriter {
                 featureName = val.substring(separator + 1);
             featureValMap.put(featureName, fieldName);
             fieldMapping.put(entry.getValue(), featureValMap);
-            LOG.debug("Adding to mapping "+entry.getValue()+" "+featureName+" "+fieldName);
+            LOG.debug("Adding to mapping " + entry.getValue() + " "
+                    + featureName + " " + fieldName);
         }
     }
 
@@ -87,9 +88,9 @@ public class SOLRWriter {
         // to match the SOLR schema
         inputDoc.setField("id", doc.getUrl());
         inputDoc.setField("text", doc.getText());
-        
-        LOG.info("Adding field : id\t"+doc.getUrl());
-        LOG.info("Adding field : text\t"+doc.getText());
+
+        LOG.info("Adding field : id\t" + doc.getUrl());
+        LOG.info("Adding field : text\t" + doc.getText());
 
         // iterate on the annotations of interest and
         // create a new field for each one
@@ -121,11 +122,11 @@ public class SOLRWriter {
                 // get the value for the feature
                 else {
                     value = current.getFeatures().get(targetFeature);
-                }              
-                LOG.debug("Adding field : "+SOLRFieldName+"\t"+value);
-                // skip if no value has been found  
-                if (value!=null)
-                inputDoc.setField(SOLRFieldName, value);
+                }
+                LOG.debug("Adding field : " + SOLRFieldName + "\t" + value);
+                // skip if no value has been found
+                if (value != null)
+                    inputDoc.setField(SOLRFieldName, value);
             }
         }
 

@@ -158,11 +158,11 @@ public class BehemothDocument implements Writable {
         Text.writeString(out, url); // write url
         out.writeInt(content.length); // write content
         out.write(content);
-      if (contentType != null){
-        Text.writeString(out, contentType); // write contentType
-      } else {
-        Text.writeString(out, "");
-      }
+        if (contentType != null) {
+            Text.writeString(out, contentType); // write contentType
+        } else {
+            Text.writeString(out, "");
+        }
         out.writeBoolean(text != null);
         if (text != null)
             Text.writeString(out, text); // write text

@@ -83,8 +83,9 @@ public class GATEMapper extends MapReduceBase implements
             String applicationName = new File(application_path)
                     .getCanonicalFile().getName();
             // trim the zip
-            if (applicationName.endsWith(".zip")) applicationName = applicationName.replaceAll(".zip", "");
-            
+            if (applicationName.endsWith(".zip"))
+                applicationName = applicationName.replaceAll(".zip", "");
+
             Path[] localArchives = DistributedCache.getLocalCacheArchives(job);
             // identify the right archive
             for (Path la : localArchives) {

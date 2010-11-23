@@ -36,7 +36,8 @@ import com.digitalpebble.behemoth.DocumentProcessor;
 
 public class UIMAProcessor implements DocumentProcessor {
 
-    private static final Logger LOG = LoggerFactory.getLogger(UIMAProcessor.class);
+    private static final Logger LOG = LoggerFactory
+            .getLogger(UIMAProcessor.class);
 
     private AnalysisEngine tae;
 
@@ -77,8 +78,9 @@ public class UIMAProcessor implements DocumentProcessor {
             if (behemoth.getText() == null) {
                 // convert binary content into Gate doc
                 InputStream is = new ByteArrayInputStream(behemoth.getContent());
-                String textContent = ParseUtils.getStringContent(is, TikaConfig
-                        .getDefaultConfig(), behemoth.getContentType());
+                String textContent = ParseUtils.getStringContent(is,
+                        TikaConfig.getDefaultConfig(),
+                        behemoth.getContentType());
                 behemoth.setText(textContent);
             }
             // detect language if specified by user
@@ -113,8 +115,8 @@ public class UIMAProcessor implements DocumentProcessor {
 
         File pearFile = new File(urlPEAR.getPath());
 
-        PackageBrowser instPear = PackageInstaller.installPackage(pearFile
-                .getParentFile(), pearFile, true);
+        PackageBrowser instPear = PackageInstaller.installPackage(
+                pearFile.getParentFile(), pearFile, true);
 
         // get the resources required for the AnalysisEngine
         org.apache.uima.resource.ResourceManager rsrcMgr = UIMAFramework
@@ -185,7 +187,7 @@ public class UIMAProcessor implements DocumentProcessor {
             Object annotObject = annotIterator.next();
             if (annotObject instanceof AnnotationImpl == false)
                 continue;
-            AnnotationImpl annotation = (AnnotationImpl)annotObject;
+            AnnotationImpl annotation = (AnnotationImpl) annotObject;
             if (!uimatypes.contains(annotation.getType()))
                 continue;
             String atype = annotation.getType().toString();

@@ -44,75 +44,75 @@ public class UIMADriver extends Configured implements Tool {
     private static final Logger LOG = LoggerFactory.getLogger(UIMADriver.class);
 
     public UIMADriver() {
-	super(null);
+        super(null);
     }
 
     public UIMADriver(Configuration conf) {
-	super(conf);
+        super(conf);
     }
 
     public static void main(String args[]) throws Exception {
-	int res = ToolRunner.run(BehemothConfiguration.create(),
-		new UIMADriver(), args);
-	System.exit(res);
+        int res = ToolRunner.run(BehemothConfiguration.create(),
+                new UIMADriver(), args);
+        System.exit(res);
     }
 
     public int run(String[] args) throws Exception {
 
-	final FileSystem fs = FileSystem.get(getConf());
+        final FileSystem fs = FileSystem.get(getConf());
 
-	if (args.length != 3) {
-	    String syntax = "com.digitalpebble.behemoth.uima.UIMADriver in out path_pear_file";
-	    System.err.println(syntax);
-	    return -1;
-	}
+        if (args.length != 3) {
+            String syntax = "com.digitalpebble.behemoth.uima.UIMADriver in out path_pear_file";
+            System.err.println(syntax);
+            return -1;
+        }
 
-	Path inputPath = new Path(args[0]);
-	Path outputPath = new Path(args[1]);
-	String pearPath = args[2];
+        Path inputPath = new Path(args[0]);
+        Path outputPath = new Path(args[1]);
+        String pearPath = args[2];
 
-	// check that the GATE application has been stored on HDFS
-	Path zap = new Path(pearPath);
-	if (fs.exists(zap) == false) {
-	    System.err.println("The UIMA application " + pearPath
-		    + "can't be found on HDFS - aborting");
-	    return -1;
-	}
+        // check that the GATE application has been stored on HDFS
+        Path zap = new Path(pearPath);
+        if (fs.exists(zap) == false) {
+            System.err.println("The UIMA application " + pearPath
+                    + "can't be found on HDFS - aborting");
+            return -1;
+        }
 
-	JobConf job = new JobConf(getConf());
-	job.setJarByClass(this.getClass());
-	job.setJobName("Processing with UIMA application : " + pearPath);
+        JobConf job = new JobConf(getConf());
+        job.setJarByClass(this.getClass());
+        job.setJobName("Processing with UIMA application : " + pearPath);
 
-	job.setInputFormat(SequenceFileInputFormat.class);
-	job.setOutputFormat(SequenceFileOutputFormat.class);
+        job.setInputFormat(SequenceFileInputFormat.class);
+        job.setOutputFormat(SequenceFileOutputFormat.class);
 
-	job.setMapOutputKeyClass(Text.class);
-	job.setMapOutputValueClass(BehemothDocument.class);
-	job.setOutputKeyClass(Text.class);
-	job.setOutputValueClass(BehemothDocument.class);
+        job.setMapOutputKeyClass(Text.class);
+        job.setMapOutputValueClass(BehemothDocument.class);
+        job.setOutputKeyClass(Text.class);
+        job.setOutputValueClass(BehemothDocument.class);
 
-	job.setMapperClass(UIMAMapper.class);
+        job.setMapperClass(UIMAMapper.class);
 
-	job.setNumReduceTasks(0);
+        job.setNumReduceTasks(0);
 
-	FileInputFormat.addInputPath(job, inputPath);
-	FileOutputFormat.setOutputPath(job, outputPath);
+        FileInputFormat.addInputPath(job, inputPath);
+        FileOutputFormat.setOutputPath(job, outputPath);
 
-	// push the UIMA pear onto the DistributedCache
-	DistributedCache.addCacheFile(new URI(pearPath), job);
+        // push the UIMA pear onto the DistributedCache
+        DistributedCache.addCacheFile(new URI(pearPath), job);
 
-	job.set("uima.pear.path", pearPath);
+        job.set("uima.pear.path", pearPath);
 
-	try {
-	    JobClient.runJob(job);
-	} catch (Exception e) {
-	    e.printStackTrace();
-	    fs.delete(outputPath, true);
-	} finally {
-	    DistributedCache.purgeCache(job);
-	}
+        try {
+            JobClient.runJob(job);
+        } catch (Exception e) {
+            e.printStackTrace();
+            fs.delete(outputPath, true);
+        } finally {
+            DistributedCache.purgeCache(job);
+        }
 
-	return 0;
+        return 0;
     }
 
 }

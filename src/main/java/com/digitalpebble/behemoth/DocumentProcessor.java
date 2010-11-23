@@ -23,10 +23,11 @@ import org.apache.hadoop.mapred.Reporter;
 
 public interface DocumentProcessor extends Configurable {
 
-	/** Returns one or more processed documents**/
-	public BehemothDocument[] process(BehemothDocument inputDoc, Reporter reporter);
-	
-	/** Closes all resources held by the processor **/
-	public void close();
+    /** Returns one or more processed documents **/
+    public BehemothDocument[] process(BehemothDocument inputDoc,
+            Reporter reporter);
+
+    /** Closes all resources held by the processor **/
+    public void close();
 
 }

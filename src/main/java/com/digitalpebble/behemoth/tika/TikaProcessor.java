@@ -41,112 +41,122 @@ import java.io.InputStream;
 
 public class TikaProcessor implements DocumentProcessor, TikaConstants {
 
-  private static final Logger LOG = LoggerFactory.getLogger(TikaProcessor.class);
+    private static final Logger LOG = LoggerFactory
+            .getLogger(TikaProcessor.class);
 
-  private Configuration config;
+    private Configuration config;
 
-  private String mimeType = "text/plain";
-  private Tika tika = new Tika();
-  private MimeTypes mimetypes = TikaConfig.getDefaultConfig()
-          .getMimeRepository();
+    private String mimeType = "text/plain";
+    private Tika tika = new Tika();
+    private MimeTypes mimetypes = TikaConfig.getDefaultConfig()
+            .getMimeRepository();
 
-  @Override
-  public Configuration getConf() {
-    return config;
-  }
-
-  @Override
-  public void setConf(Configuration conf) {
-    config = conf;
-    mimeType = config.get(TIKA_MIME_TYPE_KEY);
-  }
-
-  @Override
-  public void close() {
-  }
-
-  /**
-   * Process a BehemothDocument with Tika
-   *
-   * @return an array of documents or null if an exception is encountered
-   */
-  @Override
-  public BehemothDocument[] process(BehemothDocument inputDoc, Reporter reporter) {
-    // check that it has some text or content
-    if (inputDoc.getContent() == null && inputDoc.getText() == null) {
-      LOG.info("No content or text for " + inputDoc.getUrl() + " skipping");
-      return null;
+    @Override
+    public Configuration getConf() {
+        return config;
     }
 
-    // determine the content type if missing
-    if (inputDoc.getContentType() == null || inputDoc.getContentType().equals("") == true) {
-      String mt = null;
-      // using the original content
-      if (mimeType == null) {
-        if (inputDoc.getContent() != null) {
-          MimeType mimetype = mimetypes.getMimeType(inputDoc.getUrl(), inputDoc
-                  .getContent());
-          mt = mimetype.getName();
-        } else if (inputDoc.getText() != null) {
-          // force it to text
-          mt = "text/plain";
+    @Override
+    public void setConf(Configuration conf) {
+        config = conf;
+        mimeType = config.get(TIKA_MIME_TYPE_KEY);
+    }
+
+    @Override
+    public void close() {
+    }
+
+    /**
+     * Process a BehemothDocument with Tika
+     * 
+     * @return an array of documents or null if an exception is encountered
+     */
+    @Override
+    public BehemothDocument[] process(BehemothDocument inputDoc,
+            Reporter reporter) {
+        // check that it has some text or content
+        if (inputDoc.getContent() == null && inputDoc.getText() == null) {
+            LOG.info("No content or text for " + inputDoc.getUrl()
+                    + " skipping");
+            return null;
         }
-      } else {
-        mt = mimeType;//allow outside user to specify a mime type if they know all the content, saves time and reduces error
-      }
-      if (mt != null) {
-        inputDoc.setContentType(mt);
-      }
+
+        // determine the content type if missing
+        if (inputDoc.getContentType() == null
+                || inputDoc.getContentType().equals("") == true) {
+            String mt = null;
+            // using the original content
+            if (mimeType == null) {
+                if (inputDoc.getContent() != null) {
+                    MimeType mimetype = mimetypes.getMimeType(
+                            inputDoc.getUrl(), inputDoc.getContent());
+                    mt = mimetype.getName();
+                } else if (inputDoc.getText() != null) {
+                    // force it to text
+                    mt = "text/plain";
+                }
+            } else {
+                mt = mimeType;// allow outside user to specify a mime type if
+                              // they know all the content, saves time and
+                              // reduces error
+            }
+            if (mt != null) {
+                inputDoc.setContentType(mt);
+            }
+        }
+
+        // TODO extract the text AND the annotations
+
+        // does the input document have a some text?
+        // if not use Tika to extract it
+        if (inputDoc.getText() == null) {
+            // convert binary content into Gate doc
+            InputStream is = new ByteArrayInputStream(inputDoc.getContent());
+            String textContent;
+            try {
+                Metadata metadata = new Metadata();
+                textContent = tika.parseToString(is, metadata);// ParseUtils.getStringContent(is,
+                                                               // TikaConfig.getDefaultConfig(),
+                                                               // inputDoc.getContentType());
+                processText(inputDoc, textContent);
+                processMetadata(inputDoc, metadata);
+            } catch (Exception e) {
+                LOG.error(inputDoc.getUrl().toString(), e);
+                return null;
+            }
+        }
+        // TODO if the content type is an archive maybe process and return
+        // all the subdocuments
+
+        return new BehemothDocument[] { inputDoc };
     }
 
-    // TODO extract the text AND the annotations
-
-    // does the input document have a some text?
-    // if not use Tika to extract it
-    if (inputDoc.getText() == null) {
-      // convert binary content into Gate doc
-      InputStream is = new ByteArrayInputStream(inputDoc.getContent());
-      String textContent;
-      try {
-        Metadata metadata = new Metadata();
-        textContent = tika.parseToString(is, metadata);//ParseUtils.getStringContent(is, TikaConfig.getDefaultConfig(), inputDoc.getContentType());
-        processText(inputDoc, textContent);
-        processMetadata(inputDoc, metadata);
-      } catch (Exception e) {
-        LOG.error(inputDoc.getUrl().toString(), e);
-        return null;
-      }
+    /**
+     * Classes that wish to handle how text is processed may override this
+     * method, otherwise it just calls
+     * {@link com.digitalpebble.behemoth.BehemothDocument#setText(String)}
+     * 
+     * @param inputDoc
+     * @param textContent
+     */
+    protected void processText(BehemothDocument inputDoc, String textContent) {
+        if (textContent != null)
+            inputDoc.setText(textContent);
     }
-    // TODO if the content type is an archive maybe process and return 
-    // all the subdocuments
 
-    return new BehemothDocument[]{inputDoc};
-  }
-
-  /**
-   * Classes that wish to handle how text is processed may override this method, otherwise it
-   * just calls {@link com.digitalpebble.behemoth.BehemothDocument#setText(String)}
-   *
-   * @param inputDoc
-   * @param textContent
-   */
-  protected void processText(BehemothDocument inputDoc, String textContent) {
-    if (textContent != null)
-      inputDoc.setText(textContent);
-  }
-
-  /**
-   * Classes that wish to handle Metadata separately may override this method
-   *
-   * @param metadata the extracted {@link org.apache.tika.metadata.Metadata}
-   */
-  protected void processMetadata(BehemothDocument inputDoc, Metadata metadata) {
-    MapWritable mapW = new MapWritable();
-    for (String name : metadata.names()) {
-      String[] values = metadata.getValues(name);
-      mapW.put(new Text(name), new TextArrayWritable(values));
+    /**
+     * Classes that wish to handle Metadata separately may override this method
+     * 
+     * @param metadata
+     *            the extracted {@link org.apache.tika.metadata.Metadata}
+     */
+    protected void processMetadata(BehemothDocument inputDoc, Metadata metadata) {
+        MapWritable mapW = new MapWritable();
+        for (String name : metadata.names()) {
+            String[] values = metadata.getValues(name);
+            mapW.put(new Text(name), new TextArrayWritable(values));
+        }
+        inputDoc.setMetadata(mapW);
     }
-    inputDoc.setMetadata(mapW);
-  }
 
 }

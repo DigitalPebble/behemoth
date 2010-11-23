@@ -45,22 +45,23 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.RecordReader;
 import org.apache.hadoop.mapred.Reporter;
 
-public class WarcFileInputFormat extends FileInputFormat<LongWritable, WritableWarcRecord> {
+public class WarcFileInputFormat extends
+        FileInputFormat<LongWritable, WritableWarcRecord> {
 
-  /**
-   * Don't allow the files to be split!
-   */
-  @Override
-  protected boolean isSplitable(FileSystem fs, Path filename) {
-    // ensure the input files are not splittable!
-    return false;
-  }
+    /**
+     * Don't allow the files to be split!
+     */
+    @Override
+    protected boolean isSplitable(FileSystem fs, Path filename) {
+        // ensure the input files are not splittable!
+        return false;
+    }
 
-  /**
-   * Just return the record reader
-   */
-  public RecordReader getRecordReader(InputSplit split, JobConf conf, Reporter reporter) throws IOException {
-    return new WarcFileRecordReader(conf, split);
-  }
+    /**
+     * Just return the record reader
+     */
+    public RecordReader getRecordReader(InputSplit split, JobConf conf,
+            Reporter reporter) throws IOException {
+        return new WarcFileRecordReader(conf, split);
+    }
 }
-

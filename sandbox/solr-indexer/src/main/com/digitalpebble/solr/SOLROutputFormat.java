@@ -28,23 +28,25 @@ import org.apache.hadoop.util.Progressable;
 
 import com.digitalpebble.behemoth.BehemothDocument;
 
-public class SOLROutputFormat extends FileOutputFormat<Text,BehemothDocument> {
-  
-  public RecordWriter<Text,BehemothDocument> getRecordWriter(FileSystem ignored,
-      JobConf job, String name, Progressable progress) throws IOException {
-    
-    final SOLRWriter writer = new SOLRWriter();
-    writer.open(job, name);
-    
-    return new RecordWriter<Text,BehemothDocument>() {
-      
-      public void close(Reporter reporter) throws IOException {
-        writer.close();
-      }
-      
-      public void write(Text key, BehemothDocument doc) throws IOException {
-        writer.write(doc);
-      }
-    };
-  }
+public class SOLROutputFormat extends FileOutputFormat<Text, BehemothDocument> {
+
+    public RecordWriter<Text, BehemothDocument> getRecordWriter(
+            FileSystem ignored, JobConf job, String name, Progressable progress)
+            throws IOException {
+
+        final SOLRWriter writer = new SOLRWriter();
+        writer.open(job, name);
+
+        return new RecordWriter<Text, BehemothDocument>() {
+
+            public void close(Reporter reporter) throws IOException {
+                writer.close();
+            }
+
+            public void write(Text key, BehemothDocument doc)
+                    throws IOException {
+                writer.write(doc);
+            }
+        };
+    }
 }

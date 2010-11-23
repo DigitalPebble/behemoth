@@ -50,7 +50,8 @@ import com.digitalpebble.behemoth.DocumentProcessor;
  **/
 public class GATEProcessor implements DocumentProcessor {
 
-    private static final Logger LOG = LoggerFactory.getLogger(GATEProcessor.class);
+    private static final Logger LOG = LoggerFactory
+            .getLogger(GATEProcessor.class);
 
     private static boolean inited = false;
 
@@ -93,8 +94,9 @@ public class GATEProcessor implements DocumentProcessor {
             if (inputDoc.getText() == null) {
                 // convert binary content into Gate doc
                 InputStream is = new ByteArrayInputStream(inputDoc.getContent());
-                String textContent = ParseUtils.getStringContent(is, TikaConfig
-                        .getDefaultConfig(), inputDoc.getContentType());
+                String textContent = ParseUtils.getStringContent(is,
+                        TikaConfig.getDefaultConfig(),
+                        inputDoc.getContentType());
                 inputDoc.setText(textContent);
             }
 
@@ -179,7 +181,7 @@ public class GATEProcessor implements DocumentProcessor {
                 Gate.setPluginsHome(pluginsHome);
                 Gate.setSiteConfigFile(siteConfigFile);
                 Gate.setUserConfigFile(userConfig);
-                // the builtInCreoleDir files 
+                // the builtInCreoleDir files
                 // are stored in the same place as the config ones
                 Gate.setBuiltinCreoleDir(conf.getResource("creole.xml"));
                 Gate.init();
@@ -190,7 +192,7 @@ public class GATEProcessor implements DocumentProcessor {
 
             this.GATEapplication = (CorpusController) PersistenceManager
                     .loadObjectFromUrl(applicationDescriptorPath);
-            
+
             // load the annotation and feature filters from the configuration
             this.filters = GATEAnnotationFilters.getFilters(config);
         } catch (Exception e) {

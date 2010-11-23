@@ -53,138 +53,160 @@ import org.apache.hadoop.mapred.MultiFileSplit;
 import org.apache.hadoop.mapred.RecordReader;
 import org.apache.hadoop.util.ReflectionUtils;
 
-public class WarcFileRecordReader<K extends WritableComparable, V extends Writable>  implements RecordReader<LongWritable, WritableWarcRecord> {
-  public static final Logger LOG = LoggerFactory.getLogger(WarcFileRecordReader.class);
+public class WarcFileRecordReader<K extends WritableComparable, V extends Writable>
+        implements RecordReader<LongWritable, WritableWarcRecord> {
+    public static final Logger LOG = LoggerFactory
+            .getLogger(WarcFileRecordReader.class);
 
-  private long recordNumber=1;
+    private long recordNumber = 1;
 
-  private Path[] filePathList=null;
-  private int currentFilePath=-1;
+    private Path[] filePathList = null;
+    private int currentFilePath = -1;
 
-  private FSDataInputStream currentFile=null;
-  private CompressionCodec compressionCodec=null;
-  private DataInputStream compressionInput=null;
-  private FileSystem fs=null;
-  private long totalFileSize=0;
-  private long totalNumBytesRead=0;
+    private FSDataInputStream currentFile = null;
+    private CompressionCodec compressionCodec = null;
+    private DataInputStream compressionInput = null;
+    private FileSystem fs = null;
+    private long totalFileSize = 0;
+    private long totalNumBytesRead = 0;
 
-  public WarcFileRecordReader(Configuration conf, InputSplit split) throws IOException {
-    this.fs = FileSystem.get(conf);
-    if (split instanceof FileSplit) {
-      this.filePathList=new Path[1];
-      this.filePathList[0]=((FileSplit)split).getPath();
-    } else if (split instanceof MultiFileSplit) {
-      this.filePathList=((MultiFileSplit)split).getPaths();
-    } else {
-      throw new IOException("InputSplit is not a file split or a multi-file split - aborting");
+    public WarcFileRecordReader(Configuration conf, InputSplit split)
+            throws IOException {
+        this.fs = FileSystem.get(conf);
+        if (split instanceof FileSplit) {
+            this.filePathList = new Path[1];
+            this.filePathList[0] = ((FileSplit) split).getPath();
+        } else if (split instanceof MultiFileSplit) {
+            this.filePathList = ((MultiFileSplit) split).getPaths();
+        } else {
+            throw new IOException(
+                    "InputSplit is not a file split or a multi-file split - aborting");
+        }
+
+        // get the total file sizes
+        for (int i = 0; i < filePathList.length; i++) {
+            totalFileSize += fs.getFileStatus(filePathList[i]).getLen();
+        }
+
+        Class<? extends CompressionCodec> codecClass = null;
+
+        try {
+            codecClass = conf.getClassByName(
+                    "org.apache.hadoop.io.compress.GzipCodec").asSubclass(
+                    CompressionCodec.class);
+            compressionCodec = (CompressionCodec) ReflectionUtils.newInstance(
+                    codecClass, conf);
+        } catch (ClassNotFoundException cnfEx) {
+            compressionCodec = null;
+            LOG.info("!!! ClassNotFoun Exception thrown setting Gzip codec");
+        }
+
+        openNextFile();
     }
 
-    // get the total file sizes
-    for (int i=0; i < filePathList.length; i++) {
-      totalFileSize += fs.getFileStatus(filePathList[i]).getLen();
+    private boolean openNextFile() {
+        try {
+            if (compressionInput != null) {
+                compressionInput.close();
+            } else if (currentFile != null) {
+                currentFile.close();
+            }
+            currentFile = null;
+            compressionInput = null;
+
+            currentFilePath++;
+            if (currentFilePath >= filePathList.length) {
+                return false;
+            }
+
+            currentFile = this.fs.open(filePathList[currentFilePath]);
+
+            // is the file gzipped?
+            if ((compressionCodec != null)
+                    && (filePathList[currentFilePath].getName().endsWith("gz"))) {
+                compressionInput = new DataInputStream(
+                        compressionCodec.createInputStream(currentFile));
+                LOG.info("Compression enabled");
+            }
+
+        } catch (IOException ex) {
+            LOG.info("IOError opening "
+                    + filePathList[currentFilePath].toString() + " - message: "
+                    + ex.getMessage());
+            return false;
+        }
+        return true;
     }
 
-    Class<? extends CompressionCodec> codecClass=null;
+    public boolean next(LongWritable key, WritableWarcRecord value)
+            throws IOException {
+        DataInputStream whichStream = null;
+        if (compressionInput != null) {
+            whichStream = compressionInput;
+        } else if (currentFile != null) {
+            whichStream = currentFile;
+        }
 
-    try {
-      codecClass=conf.getClassByName("org.apache.hadoop.io.compress.GzipCodec").asSubclass(CompressionCodec.class);
-      compressionCodec=(CompressionCodec)ReflectionUtils.newInstance(codecClass, conf);
-    } catch (ClassNotFoundException cnfEx) {
-      compressionCodec=null;
-      LOG.info("!!! ClassNotFoun Exception thrown setting Gzip codec");
+        if (whichStream == null) {
+            return false;
+        }
+
+        WarcRecord newRecord = WarcRecord.readNextWarcRecord(whichStream);
+        if (newRecord == null) {
+            // try advancing the file
+            if (openNextFile()) {
+                newRecord = WarcRecord.readNextWarcRecord(whichStream);
+            }
+
+            if (newRecord == null) {
+                return false;
+            }
+        }
+
+        totalNumBytesRead += (long) newRecord.getTotalRecordLength();
+        newRecord.setWarcFilePath(filePathList[currentFilePath].toString());
+
+        // now, set our output variables
+        value.setRecord(newRecord);
+        key.set(recordNumber);
+
+        recordNumber++;
+        return true;
     }
 
-    openNextFile();
-  }
-
-  private boolean openNextFile() {
-    try {
-      if (compressionInput!=null) {
-        compressionInput.close();
-      } else if (currentFile!=null) {
-        currentFile.close();
-      }
-      currentFile=null;
-      compressionInput=null;
-
-      currentFilePath++;
-      if (currentFilePath >= filePathList.length) { return false; }
-
-      currentFile=this.fs.open(filePathList[currentFilePath]);
-
-      // is the file gzipped?
-      if ((compressionCodec!=null) && (filePathList[currentFilePath].getName().endsWith("gz"))) {
-        compressionInput=new DataInputStream(compressionCodec.createInputStream(currentFile));
-        LOG.info("Compression enabled");
-      }
-
-    } catch (IOException ex) {
-      LOG.info("IOError opening " + filePathList[currentFilePath].toString() + " - message: " + ex.getMessage());
-      return false;
-    }
-    return true;
-  }
-
-  public boolean next(LongWritable key, WritableWarcRecord value) throws IOException {
-    DataInputStream whichStream=null;
-    if (compressionInput!=null) {
-      whichStream=compressionInput;
-    } else if (currentFile!=null) {
-      whichStream=currentFile;
+    public LongWritable createKey() {
+        return new LongWritable();
     }
 
-    if (whichStream==null) { return false; }
-
-    WarcRecord newRecord=WarcRecord.readNextWarcRecord(whichStream);
-    if (newRecord==null) {
-      // try advancing the file
-      if (openNextFile()) {
-        newRecord=WarcRecord.readNextWarcRecord(whichStream);
-      }
-
-      if (newRecord==null) { return false; }
+    public WritableWarcRecord createValue() {
+        return new WritableWarcRecord();
     }
 
-    totalNumBytesRead += (long)newRecord.getTotalRecordLength();
-    newRecord.setWarcFilePath(filePathList[currentFilePath].toString());
-
-    // now, set our output variables
-    value.setRecord(newRecord);
-    key.set(recordNumber);
-
-    recordNumber++;
-    return true;
-  }
-
-  public LongWritable createKey() {
-    return new LongWritable();
-  }
-
-  public WritableWarcRecord createValue() {
-    return new WritableWarcRecord();
-  }
-
-  public long getPos() throws IOException {
-    return totalNumBytesRead;
-  }
-
-  public void close() throws IOException {
-    totalNumBytesRead=totalFileSize;
-    if (compressionInput!=null) {
-      compressionInput.close();
-    } else if (currentFile!=null) {
-      currentFile.close();
+    public long getPos() throws IOException {
+        return totalNumBytesRead;
     }
-  }
 
-  public float getProgress() throws IOException {
-    if (compressionInput!=null) {
-      if (filePathList.length==0) { return 1.0f; }
-      // return which file - can't do extact byte matching
-      return (float)currentFilePath / (float)(filePathList.length);
+    public void close() throws IOException {
+        totalNumBytesRead = totalFileSize;
+        if (compressionInput != null) {
+            compressionInput.close();
+        } else if (currentFile != null) {
+            currentFile.close();
+        }
     }
-    if (totalFileSize==0) { return 0.0f; }
-    return (float)totalNumBytesRead/(float)totalFileSize;
-  }
+
+    public float getProgress() throws IOException {
+        if (compressionInput != null) {
+            if (filePathList.length == 0) {
+                return 1.0f;
+            }
+            // return which file - can't do extact byte matching
+            return (float) currentFilePath / (float) (filePathList.length);
+        }
+        if (totalFileSize == 0) {
+            return 0.0f;
+        }
+        return (float) totalNumBytesRead / (float) totalFileSize;
+    }
 
 }

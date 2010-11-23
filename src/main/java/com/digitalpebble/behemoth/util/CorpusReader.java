@@ -33,27 +33,29 @@ import com.digitalpebble.behemoth.BehemothDocument;
  **/
 public class CorpusReader extends Configured implements Tool {
 
-  public static void main(String[] args) throws Exception {
-    int res = ToolRunner.run(BehemothConfiguration.create(), new CorpusReader(), args);
-    System.exit(res);
-  }
-
-  public int run(String[] args) throws Exception {
-
-    Path input = new Path(args[0]);
-
-    Reader[] cacheReaders = SequenceFileOutputFormat.getReaders(getConf(), input);
-    for (Reader current : cacheReaders) {
-      // read the key + values in that file
-      Text key = new Text();
-      BehemothDocument value = new BehemothDocument();
-      while (current.next(key, value)) {
-        System.out.println(value.toString());
-      }
-      current.close();
+    public static void main(String[] args) throws Exception {
+        int res = ToolRunner.run(BehemothConfiguration.create(),
+                new CorpusReader(), args);
+        System.exit(res);
     }
 
-    return 0;
-  }
+    public int run(String[] args) throws Exception {
+
+        Path input = new Path(args[0]);
+
+        Reader[] cacheReaders = SequenceFileOutputFormat.getReaders(getConf(),
+                input);
+        for (Reader current : cacheReaders) {
+            // read the key + values in that file
+            Text key = new Text();
+            BehemothDocument value = new BehemothDocument();
+            while (current.next(key, value)) {
+                System.out.println(value.toString());
+            }
+            current.close();
+        }
+
+        return 0;
+    }
 
 }

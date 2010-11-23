@@ -81,24 +81,25 @@ public class Annotation implements Comparable<Annotation> {
     public int compareTo(Annotation target) {
         long diff = this.start - target.start;
         if (diff != 0)
-            return (int)diff;
+            return (int) diff;
         diff = this.type.compareTo(target.type);
         if (diff != 0)
-            return (int)diff;
+            return (int) diff;
         diff = this.end - target.end;
         if (diff != 0)
-            return (int)diff;
+            return (int) diff;
         // eventually compare based on the features
         diff = this.getFeatureNum() - target.getFeatureNum();
         if (diff != 0)
-            return (int)diff;
+            return (int) diff;
         // TODO compare the features one by one?
         return 0;
     }
 
     public String toString() {
         StringBuffer buffer = new StringBuffer();
-        buffer.append(this.type).append("\t").append(start).append("\t").append(end);
+        buffer.append(this.type).append("\t").append(start).append("\t")
+                .append(end);
         if (features != null) {
             Iterator<String> keysiter = features.keySet().iterator();
             while (keysiter.hasNext()) {
