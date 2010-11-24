@@ -25,5 +25,8 @@
     </publications>
     <dependencies defaultconf="*->*,!sources,!javadoc">
       <dependency name="behemoth-core" rev="latest.integration" />
+	<!-- UIMA dependencies --> 
+	<dependency org="org.apache.uima" name="uimaj-core" rev="2.3.0-incubating"/>
+	<dependency org="org.apache.uima" name="uimaj-tools" rev="2.3.0-incubating"/>
     </dependencies>
 </ivy-module>
