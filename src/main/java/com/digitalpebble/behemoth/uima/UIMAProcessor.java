@@ -17,8 +17,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapred.Reporter;
-import org.apache.tika.config.TikaConfig;
-import org.apache.tika.utils.ParseUtils;
+
 import org.apache.uima.UIMAFramework;
 import org.apache.uima.analysis_engine.AnalysisEngine;
 import org.apache.uima.cas.CAS;
@@ -74,23 +73,18 @@ public class UIMAProcessor implements DocumentProcessor {
 
         try {
             // does the input document have a some text?
-            // if not use Tika to extract it
+            // if not - skip it
             if (behemoth.getText() == null) {
-                // convert binary content into Gate doc
-                InputStream is = new ByteArrayInputStream(behemoth.getContent());
-                String textContent = ParseUtils.getStringContent(is,
-                        TikaConfig.getDefaultConfig(),
-                        behemoth.getContentType());
-                behemoth.setText(textContent);
+                LOG.debug(behemoth.getUrl().toString() + " has null text");
+            } else {
+                // detect language if specified by user
+                String lang = this.config.get("uima.language", "en");
+                cas.setDocumentLanguage(lang);
+                cas.setDocumentText(behemoth.getText());
+                // process it
+                tae.process(cas);
+                convertCASToBehemoth(cas, behemoth, reporter);
             }
-            // detect language if specified by user
-            String lang = this.config.get("uima.language", "en");
-            cas.setDocumentLanguage(lang);
-
-            cas.setDocumentText(behemoth.getText());
-            // process it
-            tae.process(cas);
-            convertCASToBehemoth(cas, behemoth, reporter);
         } catch (Exception e) {
             if (reporter != null)
                 reporter.incrCounter("UIMA", "Exception", 1);
