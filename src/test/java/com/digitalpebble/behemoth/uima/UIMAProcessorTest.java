@@ -53,6 +53,7 @@ public class UIMAProcessorTest extends TestCase {
         String url = "dummyURL";
         BehemothDocument doc = new BehemothDocument();
         doc.setContent(text.getBytes());
+        doc.setText(text);
         doc.setUrl(url);
         doc.setContentType("text/plain");
         // don't set the text as such
