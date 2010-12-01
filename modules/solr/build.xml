@@ -20,4 +20,7 @@
 	<property file="build.properties"/>
 	
 	<import file="${common.dir}/common.xml"/>
+
+<!-- skip tests for this module --> 
+<target name="test"/>
 </project>
