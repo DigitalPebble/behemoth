@@ -48,6 +48,11 @@
     <subant target="publish" buildpathref="build-path" />
   </target>
 
+  <target name="test-all" depends="buildlist" 
+  			description="compile, jar and test all projects in the right order">
+    <subant target="test" buildpathref="build-path" />
+  </target>
+
   <target name="clean-all" depends="buildlist" description="clean all projects">
     <subant target="clean" buildpathref="build-path" />
   </target>

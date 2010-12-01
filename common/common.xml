@@ -61,10 +61,15 @@
     <path id="lib.path.id">
         <fileset dir="${lib.dir}" />
     </path>
-    <path id="run.path.id">
-        <path refid="lib.path.id" />
-        <path location="${classes.dir}" />
-    </path>
+
+
+  <!-- the unit test classpath: uses test.src.dir for configuration -->
+  <path id="test.path.id">
+    <pathelement location="${test.build.classes.dir}" />
+    <pathelement location="${test.src.dir}"/>
+    <pathelement location="${classes.dir}"/>
+    <path refid="lib.path.id"/>
+  </path>
 
     
 	<!-- setup ivy default configuration with some custom info -->
@@ -103,21 +108,57 @@
     </target>
     
     <!-- ================================= 
-          target: run
+          target: compile test classes         
          ================================= -->
-    <target name="run" depends="version, compile" description="--> compile and run the project">
-        <java classpathref="run.path.id" classname="${main.class.name}"/>
+    <target name="compile-test" depends="compile" description="--> compile the test classes">
+        <mkdir dir="${test.classes.dir}" />
+        <javac srcdir="${test.src.dir}" destdir="${test.classes.dir}" classpathref="test.path.id" debug="true" />
     </target>
+
+
+  <!-- ================================================================== -->
+  <!-- target: test                                                       -->
+  <!-- ================================================================== -->
+  <target name="test" depends="compile-test" description="Run core unit tests">
+    <delete dir="${test.build.data}"/>
+    <mkdir dir="${test.build.data}"/>
+    <!-- copy the test data from src -->
+    <copy todir="${test.build.data}" failonerror="false">
+	<fileset dir="${test.data.dir}" includes="**/*" />
+    </copy>
+
+    <junit showoutput="${test.junit.output}"
+      printsummary="${test.junit.printsummary}"
+      haltonfailure="${test.junit.haltonfailure}"
+      fork="yes"
+      forkmode="${test.junit.fork.mode}"
+      maxmemory="${test.junit.maxmemory}"
+      dir="${test.build.dir}" timeout="${test.junit.timeout}"
+      errorProperty="tests.failed" failureProperty="tests.failed">
+      <sysproperty key="test.build.data" value="${test.build.data}"/>
+      <classpath refid="test.path.id"/>
+      <formatter type="${test.junit.output.format}" />
+      <batchtest todir="${test.build.dir}" unless="testcase">
+        <fileset dir="${test.src.dir}"
+                 includes="**/${test.include}.java"
+                 excludes="**/${test.exclude}.java" />
+      </batchtest>
+      <batchtest todir="${test.build.dir}" if="testcase">
+        <fileset dir="${test.src.dir}" includes="**/${testcase}.java"/>
+      </batchtest>
+    </junit>
+    <fail if="tests.failed">Tests failed!</fail>
+  </target>
 
 	<target name="ivy-new-version" depends="load-ivy" unless="ivy.new.revision">
     	<!-- default module version prefix value -->
-		<property name="module.version.prefix" value="${module.version.target}-dev-b" />
+	<property name="module.version.prefix" value="${module.version.target}" />
 		
     	<!-- asks to ivy an available version number -->
-		<ivy:info file="${ivy.file}" />
+	<ivy:info file="${ivy.file}" />
     	<ivy:buildnumber 
     		organisation="${ivy.organisation}" module="${ivy.module}" 
-    		revision="${module.version.prefix}" defaultBuildNumber="1" revSep=""/>
+    		revision="${module.version.prefix}" defaultBuildNumber="1" revSep="."/>
 	</target>
 
     <target name="local-version">
