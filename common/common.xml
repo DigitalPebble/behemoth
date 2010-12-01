@@ -65,8 +65,7 @@
 
   <!-- the unit test classpath: uses test.src.dir for configuration -->
   <path id="test.path.id">
-    <pathelement location="${test.build.classes.dir}" />
-    <pathelement location="${test.src.dir}"/>
+    <pathelement location="${test.classes.dir}" />
     <pathelement location="${classes.dir}"/>
     <path refid="lib.path.id"/>
   </path>
