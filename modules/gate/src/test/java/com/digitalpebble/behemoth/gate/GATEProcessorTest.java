@@ -44,7 +44,7 @@ public class GATEProcessorTest extends TestCase {
         File appDescriptor = new File(unzippedANNIE, "application.xgapp");
         // try loading the GATE Processor
         Configuration conf = BehemothConfiguration.create();
-        conf.set("gate.application.path", unzippedANNIE.getCanonicalPath());
+        // conf.set("gate.application.path", unzippedANNIE.getCanonicalPath());
         conf.set("gate.annotationset.output", "");
         conf.set("gate.annotations.filter", "Token");
         gate = new GATEProcessor(appDescriptor.toURI().toURL());
@@ -79,8 +79,7 @@ public class GATEProcessorTest extends TestCase {
 
     /**
      * Unzips the argument into the temp directory and returns the unzipped
-     * location. The zip must have a root dir element and not just a flat list
-     * of files
+     * location.
      **/
     public static File unzip(File inputZip) {
 
@@ -90,20 +89,23 @@ public class GATEProcessorTest extends TestCase {
             BufferedInputStream is = null;
             ZipEntry entry;
             ZipFile zipfile = new ZipFile(inputZip);
+            // get the name of the zip file 
+            String zipname = inputZip.getName().replaceAll("\\.zip", "");
             File test = File.createTempFile("aaa", "aaa");
             String tempDir = test.getParent();
             test.delete();
+            rootDir = new File(tempDir,zipname);
+            rootDir.mkdir();
+            
             Enumeration e = zipfile.entries();
             while (e.hasMoreElements()) {
                 entry = (ZipEntry) e.nextElement();
                 is = new BufferedInputStream(zipfile.getInputStream(entry));
                 int count;
                 byte data[] = new byte[BUFFER];
-                File target = new File(tempDir, entry.getName());
+                File target = new File(rootDir, entry.getName());
                 if (entry.getName().endsWith("/")) {
                     target.mkdir();
-                    if (rootDir == null)
-                        rootDir = target;
                     continue;
                 }
                 FileOutputStream fos = new FileOutputStream(target);

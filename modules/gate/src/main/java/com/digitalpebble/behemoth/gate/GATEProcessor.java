@@ -172,15 +172,15 @@ public class GATEProcessor implements DocumentProcessor {
                 // the config files are in the job archive - not in the GATE
                 // application
                 // zip
-                File siteConfigFile = new File(conf
-                        .getResource("site-gate.xml").getFile());
-                File userConfig = new File(conf.getResource("user-gate.xml")
-                        .getFile());
-
+                // File siteConfigFile = new File(conf
+                // .getResource("site-gate.xml").getFile());
+                // File userConfig = new File(conf.getResource("user-gate.xml")
+                // .getFile());
+                Gate.runInSandbox(true);
                 Gate.setGateHome(gateHome);
                 Gate.setPluginsHome(pluginsHome);
-                Gate.setSiteConfigFile(siteConfigFile);
-                Gate.setUserConfigFile(userConfig);
+                // Gate.setSiteConfigFile(siteConfigFile);
+                // Gate.setUserConfigFile(userConfig);
                 // the builtInCreoleDir files
                 // are stored in the same place as the config ones
                 Gate.setBuiltinCreoleDir(conf.getResource("creole.xml"));
