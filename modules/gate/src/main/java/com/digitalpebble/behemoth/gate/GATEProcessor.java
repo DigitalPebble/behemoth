@@ -183,7 +183,7 @@ public class GATEProcessor implements DocumentProcessor {
                 // Gate.setUserConfigFile(userConfig);
                 // the builtInCreoleDir files
                 // are stored in the same place as the config ones
-                Gate.setBuiltinCreoleDir(conf.getResource("creole.xml"));
+                // Gate.setBuiltinCreoleDir(conf.getResource("creole.xml"));
                 Gate.init();
                 inited = true;
             }
