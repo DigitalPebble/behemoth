@@ -191,6 +191,17 @@
     </target>
 
     <!-- ================================= 
+          target: job              
+         ================================= -->
+    <target name="job" depends="jar" description="--> generate a job file for this project">
+        <jar destfile="${job.file}">     
+	 <zipfileset dir="${lib.dir}"
+                  includes="**/*.jar" excludes="hadoop-*.jar"/>
+	 <zipfileset file="${jar.file}"/>
+        </jar>
+    </target>
+
+    <!-- ================================= 
           target: publish              
          ================================= -->
     <target name="publish" depends="clean-build, jar" description="--> publish this project in the ivy repository">
