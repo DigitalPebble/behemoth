@@ -1,193 +1,67 @@
-<?xml version="1.0"?>
 <!--
- Licensed to the Apache Software Foundation (ASF) under one or more
- contributor license agreements.  See the NOTICE file distributed with
- this work for additional information regarding copyright ownership.
- The ASF licenses this file to You under the Apache License, Version 2.0
- (the "License"); you may not use this file except in compliance with
- the License.  You may obtain a copy of the License at
+   Licensed to the Apache Software Foundation (ASF) under one
+   or more contributor license agreements.  See the NOTICE file
+   distributed with this work for additional information
+   regarding copyright ownership.  The ASF licenses this file
+   to you under the Apache License, Version 2.0 (the
+   "License"); you may not use this file except in compliance
+   with the License.  You may obtain a copy of the License at
 
      http://www.apache.org/licenses/LICENSE-2.0
 
- Unless required by applicable law or agreed to in writing, software
- distributed under the License is distributed on an "AS IS" BASIS,
- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- See the License for the specific language governing permissions and
- limitations under the License.
+   Unless required by applicable law or agreed to in writing,
+   software distributed under the License is distributed on an
+   "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+   KIND, either express or implied.  See the License for the
+   specific language governing permissions and limitations
+   under the License.    
 -->
-<project name="behemoth" default="job" xmlns:ivy="antlib:org.apache.ivy.ant">
-
-	<property file="${basedir}/build.properties" />
-	<property name="test.junit.output.format" value="plain" />
-
-	<property name="ivy.install.version" value="2.1.0" />
-	<condition property="ivy.home" value="${env.IVY_HOME}">
-		<isset property="env.IVY_HOME" />
-	</condition>
-	<property name="ivy.home" value="${user.home}/.ant" />
-	<property name="ivy.checksums" value="" />
-	<property name="ivy.jar.dir" value="${ivy.home}/lib" />
+<project name="behemoth" 
+         xmlns:ivy="antlib:org.apache.ivy.ant">
+         
+	<property name="ivy.jar.dir" value="${user.home}/.ivy2/jars" />
 	<property name="ivy.jar.file" value="${ivy.jar.dir}/ivy.jar" />
 
-	<target name="download-ivy" unless="offline">
+    <property name="build.dir" value="build" />
+    <property name="src.dir" value="src" />
+    
+    <target name="load-ivy">
+    	<!-- try to load ivy here from home ivy dir, in case the user has not already dropped
+    	      it into ant's lib dir (note that the latter copy will always take precedence).
+    	      We will not fail as long as ivy home lib dir exists (it may be empty) and
+    	      ivy is in at least one of ant's lib dir or the ivy home lib dir. -->
+    	<path id="ivy.lib.path">
+    		<pathelement location="${ivy.jar.file}"/>
+    	</path>
+    	<taskdef resource="org/apache/ivy/ant/antlib.xml"
+    	          uri="antlib:org.apache.ivy.ant" classpathref="ivy.lib.path"/>
+    </target>    
+         
+  <target name="buildlist" depends="load-ivy"> 
+    <ivy:buildlist reference="build-path">
+      <fileset dir="modules" includes="**/build.xml"/>
+    </ivy:buildlist>
+  </target>
+  
+  <target name="publish-all" depends="buildlist" 
+  			description="compile, jar and publish all projects in the right order">
+    <subant target="publish" buildpathref="build-path" />
+  </target>
 
-		<mkdir dir="${ivy.jar.dir}" />
-		<!-- download Ivy from web site so that it can be used even without any special installation -->
-		<get src="http://repo2.maven.org/maven2/org/apache/ivy/ivy/${ivy.install.version}/ivy-${ivy.install.version}.jar" dest="${ivy.jar.file}" usetimestamp="true" />
-	</target>
+  <target name="test-all" depends="buildlist" 
+  			description="compile, jar and test all projects in the right order">
+    <subant target="test" buildpathref="build-path" />
+  </target>
 
-	<target name="init-ivy" depends="download-ivy">
-		<!-- try to load ivy here from ivy home, in case the user has not already dropped
-              it into ant's lib dir (note that the latter copy will always take precedence).
-              We will not fail as long as local lib dir exists (it may be empty) and
-              ivy is in at least one of ant's lib dir or the local lib dir. -->
-		<path id="ivy.lib.path">
-			<fileset dir="${ivy.jar.dir}" includes="*.jar" />
-
-		</path>
-		<taskdef resource="org/apache/ivy/ant/antlib.xml" uri="antlib:org.apache.ivy.ant" classpathref="ivy.lib.path" />
-	</target>
-
-	<!-- target: clean-cache  ============================================= -->
-	<target name="clean-cache" depends="" description="delete ivy cache">
-		<ivy:cleancache />
-	</target>
-
-	<target name="deps-jar" depends="init-ivy">
-		<ivy:retrieve pattern="lib/[artifact]-[revision].[ext]" />
-	</target>
-
-	<!-- the normal classpath -->
-	<path id="classpath">
-		<pathelement location="${build.classes}" />
-		<fileset dir="${lib.dir}">
-			<include name="*.jar" />
-		</fileset>
-	</path>
-
-	<!-- the unit test classpath -->
-	<path id="test.classpath">
-		<pathelement location="${test.build.classes}" />
-		<pathelement location="${conf.dir}" />
-		<pathelement location="${test.src.dir}" />
-		<path refid="classpath" />
-		<pathelement location="${build.dir}/${final.name}.job" />
-	</path>
-
-
-	<!-- ====================================================== -->
-	<!-- Stuff needed by all targets                            -->
-	<!-- ====================================================== -->
-	<target name="init" depends="init-ivy">
-		<mkdir dir="${build.dir}" />
-		<mkdir dir="${build.classes}" />
-		<mkdir dir="${test.build.dir}" />
-		<mkdir dir="${test.build.classes}" />
-		<mkdir dir="${lib.dir}" />
-		<ivy:retrieve pattern="lib/[artifact]-[revision].[ext]" />
-	</target>
-
-	<!-- ====================================================== -->
-	<!-- Compile the Java files                                 -->
-	<!-- ====================================================== -->
-
-	<target name="compile" depends="init">
-		<javac encoding="${build.encoding}" srcdir="${src.dir}" includes="**/*.java" destdir="${build.classes}" debug="${javac.debug}" optimize="${javac.optimize}" target="${javac.version}" source="${javac.version}" deprecation="${javac.deprecation}">
-			<classpath refid="classpath" />
-		</javac>
-	</target>
-
-	<target name="jar" depends="compile">
-		<jar jarfile="${build.dir}/${final.name}.jar">
-			<zipfileset dir="${build.classes}" />
-		</jar>
-	</target>
-
-  <target name="jar-core" depends="compile">
-		<jar jarfile="${build.dir}/${final.name}-core.jar">
-			<zipfileset dir="${build.classes}">
-        <include name="com/digitalpebble/behemoth/*.class"/>
-      </zipfileset>
-		</jar>
-	</target>
-
-	<!-- ================================================================== -->
-	<!-- Make job jar                                                       -->
-	<!-- ================================================================== -->
-	<!--                                                                    -->
-	<!-- ================================================================== -->
-	<target name="job" depends="compile">
-		<jar jarfile="${build.dir}/${final.name}.job">
-			<zipfileset dir="${build.classes}" />
-			<zipfileset dir="${conf.dir}" excludes="behemoth*.xml" />
-			<!--<zipfileset dir="${build.dir}" includes="${final.name}.jar"/> -->
-			<zipfileset dir="${lib.dir}" prefix="lib" includes="**/*.jar" excludes="hadoop-*.jar" />
-		</jar>
-	</target>
-
-
-
-
-	<!-- ================================================================== -->
-	<!-- Compile test code                                                  -->
-	<!-- ================================================================== -->
-	<target name="compile-test" depends="compile">
-		<javac encoding="${build.encoding}" srcdir="${test.src.dir}" includes="**/*.java" destdir="${test.build.classes}" debug="${javac.debug}" optimize="${javac.optimize}" target="${javac.version}" source="${javac.version}" deprecation="${javac.deprecation}">
-			<classpath refid="test.classpath" />
-		</javac>
-	</target>
-
-	<target name="test" depends="job, compile-test">
-
-		<delete dir="${test.build.data}" />
-		<mkdir dir="${test.build.data}" />
-		<!-- 
-     copy resources needed in junit tests
-    -->
-		<copy todir="${test.build.data}">
-			<fileset dir="src/test/data" includes="**/*" />
-		</copy>
-
-		<!--  
-    <copy file="${test.src.dir}/log4j.properties"
-          todir="${test.build.classes}"/>
-    -->
-
-		<junit printsummary="yes" haltonfailure="no" fork="yes" dir="${basedir}" errorProperty="tests.failed" failureProperty="tests.failed" maxmemory="1000m">
-			<sysproperty key="test.build.data" value="${test.build.data}" />
-			<sysproperty key="test.src.dir" value="${test.src.dir}" />
-			<sysproperty key="javax.xml.parsers.DocumentBuilderFactory" value="com.sun.org.apache.xerces.internal.jaxp.DocumentBuilderFactoryImpl" />
-			<classpath refid="test.classpath" />
-			<formatter type="${test.junit.output.format}" />
-			<batchtest todir="${test.build.dir}" unless="testcase">
-				<fileset dir="${test.src.dir}" includes="**/*Test.java" excludes="**/${test.exclude}.java" />
-			</batchtest>
-			<batchtest todir="${test.build.dir}" if="testcase">
-				<fileset dir="${test.src.dir}" includes="**/${testcase}.java" />
-			</batchtest>
-		</junit>
-
-		<fail if="tests.failed">Tests failed!</fail>
-
-	</target>
-
-	<!-- ================================================================== -->
-	<!-- Documentation                                                      -->
-	<!-- ================================================================== -->
-	<target name="javadoc" depends="compile">
-		<mkdir dir="${build.javadoc}" />
-		<javadoc destdir="${build.javadoc}" author="true" version="true" use="true" windowtitle="${Name} ${version} API" doctitle="${Name} ${version} API" bottom="Copyright &amp;copy; ${year} The Apache Software Foundation">
-			<packageset dir="${src.dir}" />
-			<classpath refid="classpath" />
-		</javadoc>
-	</target>
-
-	<!-- ================================================================== -->
-	<!-- Clean.  Delete the build files, and their directories              -->
-	<!-- ================================================================== -->
-	<target name="clean">
-		<delete dir="${build.dir}" />
-		<delete dir="${lib.dir}" />
-	</target>
-
+  <target name="clean-all" depends="buildlist" description="clean all projects">
+    <subant target="clean" buildpathref="build-path" />
+  </target>
+  
+  <target name="clean" depends="clean-all, load-ivy" 
+  			description="clean tutorial: delete repository, ivy cache, and all projects">
+    <delete dir="repository"/>
+  	<ivy:cleancache />
+  </target>
+  
+  
 </project>
