@@ -1,12 +1,12 @@
 Behemoth Change Log
 
-Versions:
-1. Tika 0.8
-
-
 Unreleased Changes
 
+# Reorganised code as discrete modules managed with IVY (jnioche)
+
 # Added TikaDriver and Tika processing support (gsingers)
+
+# Tika 0.8 (gsingers)
 
 # Fixed NullPointerException when contentType is not specified on BehemothDocument (gsingers)
 
