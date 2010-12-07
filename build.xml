@@ -16,11 +16,11 @@
    specific language governing permissions and limitations
    under the License.    
 -->
-<project name="behemoth" 
+<project name="behemoth" default="publish-all"
          xmlns:ivy="antlib:org.apache.ivy.ant">
          
-	<property name="ivy.jar.dir" value="${user.home}/.ivy2/jars" />
-	<property name="ivy.jar.file" value="${ivy.jar.dir}/ivy.jar" />
+    <property name="ivy.jar.dir" value="${user.home}/.ivy2/jars" />
+    <property name="ivy.jar.file" value="${ivy.jar.dir}/ivy.jar" />
 
     <property name="build.dir" value="build" />
     <property name="src.dir" value="src" />
@@ -44,23 +44,23 @@
   </target>
   
   <target name="publish-all" depends="buildlist" 
-  			description="compile, jar and publish all projects in the right order">
+  			description="compile, jar and publish all modules in the right order">
     <subant target="publish" buildpathref="build-path" />
   </target>
 
   <target name="test-all" depends="buildlist" 
-  			description="compile, jar and test all projects in the right order">
+  			description="compile, jar and test all modules in the right order">
     <subant target="test" buildpathref="build-path" />
   </target>
 
-  <target name="clean-all" depends="buildlist" description="clean all projects">
+  <target name="clean-all" depends="buildlist" description="clean all modules">
     <subant target="clean" buildpathref="build-path" />
   </target>
   
-  <target name="clean" depends="clean-all, load-ivy" 
-  			description="clean tutorial: delete repository, ivy cache, and all projects">
+  <target name="clean-full" depends="clean-all, load-ivy" 
+  			description="clean-full : delete repository, ivy cache, and all modules">
     <delete dir="repository"/>
-  	<ivy:cleancache />
+    <ivy:cleancache />
   </target>
   
   
