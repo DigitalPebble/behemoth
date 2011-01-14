@@ -43,23 +43,22 @@
     </ivy:buildlist>
   </target>
   
-  <target name="publish-all" depends="buildlist" 
+  <target name="publish-modules" depends="buildlist" 
   			description="compile, jar and publish all modules in the right order">
     <subant target="publish" buildpathref="build-path" />
   </target>
 
-  <target name="test-all" depends="buildlist" 
+  <target name="test-modules" depends="buildlist" 
   			description="compile, jar and test all modules in the right order">
     <subant target="test" buildpathref="build-path" />
   </target>
 
-  <target name="clean-all" depends="buildlist" description="clean all modules">
+  <target name="clean-modules" depends="buildlist" description="clean all modules">
     <subant target="clean" buildpathref="build-path" />
   </target>
   
-  <target name="clean-full" depends="clean-all, load-ivy" 
-  			description="clean-full : delete repository, ivy cache, and all modules">
-    <delete dir="repository"/>
+  <target name="clean-full" depends="clean-modules, load-ivy" 
+  			description="clean-full : clean ivy cache and all modules">
     <ivy:cleancache />
   </target>
   
