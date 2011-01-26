@@ -196,9 +196,9 @@
          ================================= -->
     <target name="job" depends="jar" description="--> generate a job file for this project">
         <jar destfile="${job.file}">     
-	 <zipfileset dir="${lib.dir}"
+	 <zipfileset dir="${lib.dir}" prefix="lib"
                   includes="**/*.jar" excludes="hadoop-*.jar"/>
-	 <zipfileset file="${jar.file}"/>
+	 <zipfileset file="${jar.file}" prefix="lib"/>
         </jar>
     </target>
 
