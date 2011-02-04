@@ -16,7 +16,7 @@
    specific language governing permissions and limitations
    under the License.    
 -->
-<project name="behemoth" default="publish-all"
+<project name="behemoth" default="publish-modules"
          xmlns:ivy="antlib:org.apache.ivy.ant">
 
     <property name="build.dir" value="build" />

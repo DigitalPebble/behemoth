@@ -90,7 +90,7 @@
     	
     	<!-- the call to resolve is not mandatory, retrieve makes an implicit call if we don't -->
     	<ivy:resolve file="${ivy.file}"/>
-    	<ivy:retrieve pattern="${lib.dir}/[artifact]-[version].[ext]" />
+    	<ivy:retrieve pattern="${lib.dir}/[artifact]-[revision].[ext]" />
     </target>
     
     <!-- ================================= 
@@ -198,7 +198,8 @@
         <jar destfile="${job.file}">     
 	 <zipfileset dir="${lib.dir}" prefix="lib"
                   includes="**/*.jar" excludes="hadoop-*.jar"/>
-	 <zipfileset file="${jar.file}" prefix="lib"/>
+	 <zipfileset dir="${classes.dir}"
+                  excludes="*.properties"/>
         </jar>
     </target>
 
