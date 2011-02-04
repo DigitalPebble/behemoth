@@ -105,12 +105,11 @@ public class TikaProcessor implements DocumentProcessor, TikaConstants {
             }
         }
 
-        // TODO extract the text AND the annotations
+        // TODO extract the markup as annotations
 
         // does the input document have a some text?
         // if not use Tika to extract it
         if (inputDoc.getText() == null) {
-            // convert binary content into Gate doc
             InputStream is = new ByteArrayInputStream(inputDoc.getContent());
             String textContent;
             try {

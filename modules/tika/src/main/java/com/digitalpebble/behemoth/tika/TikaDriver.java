@@ -92,6 +92,7 @@ public class TikaDriver extends Configured implements Tool, TikaConstants {
         try {
             Parser parser = new Parser();
             parser.setGroup(group);
+            // TODO catch exceptions with parsing of opts
             CommandLine cmdLine = parser.parse(args);
             Path inputPath = new Path(cmdLine.getValue(inputOpt).toString());
             Path outputPath = new Path(cmdLine.getValue(outOpt).toString());
@@ -99,17 +100,19 @@ public class TikaDriver extends Configured implements Tool, TikaConstants {
             if (cmdLine.hasOption(tikaOpt)) {
                 handlerName = cmdLine.getValue(tikaOpt).toString();
             }
-            String mimeType = null;
-            if (cmdLine.hasOption(mimeTypeOpt)) {
-                mimeType = cmdLine.getValue(mimeTypeOpt).toString();
-            }
-
+            
             JobConf job = new JobConf(getConf());
             job.setJarByClass(this.getClass());
+
+            if (cmdLine.hasOption(mimeTypeOpt)) {
+                String mimeType = cmdLine.getValue(mimeTypeOpt).toString();
+                job.set(TikaConstants.TIKA_MIME_TYPE_KEY, mimeType);
+            }
+
             if (handlerName != null && handlerName.equals("") == false) {
                 job.set(TIKA_PROCESSOR_KEY, handlerName);
             }
-            job.set(TikaConstants.TIKA_MIME_TYPE_KEY, mimeType);
+            
             job.setJobName("Processing with Tika");
 
             job.setInputFormat(SequenceFileInputFormat.class);
@@ -127,19 +130,12 @@ public class TikaDriver extends Configured implements Tool, TikaConstants {
             FileInputFormat.addInputPath(job, inputPath);
             FileOutputFormat.setOutputPath(job, outputPath);
 
-            // push the UIMA pear onto the DistributedCache
-            // DistributedCache.addCacheFile(new URI(pearPath), job);
-
-            // job.set("uima.pear.path", pearPath);
-
             try {
                 JobClient.runJob(job);
             } catch (Exception e) {
                 e.printStackTrace();
                 fs.delete(outputPath, true);
-            } finally {
-                // DistributedCache.purgeCache(job);
-            }
+            } finally {}
 
         } catch (OptionException e) {
             log.error("Exception", e);
