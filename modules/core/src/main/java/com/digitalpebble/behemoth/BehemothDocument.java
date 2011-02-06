@@ -127,9 +127,10 @@ public class BehemothDocument implements Writable {
 		else
 			text = null;
 		boolean hasMD = in.readBoolean();
-		if (hasMD)
+		if (hasMD) {
+			metadata = new MapWritable();
 			metadata.readFields(in);
-		else
+		} else
 			metadata = null;
 		// read the number of annotation types
 		int numTypes = in.readInt();
@@ -256,7 +257,6 @@ public class BehemothDocument implements Writable {
 		return doc;
 	}
 
-	
 	/** By default includes the binary content in the string representation **/
 	public String toString() {
 		return toString(true);
@@ -268,7 +268,7 @@ public class BehemothDocument implements Writable {
 		buffer.append("\nurl: ").append(url);
 		buffer.append("\ncontentType: ").append(contentType);
 		buffer.append("\nmetadata: ").append(metadata);
-		if (binaryContent){
+		if (binaryContent) {
 			buffer.append("\nContent:\n");
 			int maxLengthText = Math.min(200, content.length);
 			buffer.append(new String(content).substring(0, maxLengthText));
