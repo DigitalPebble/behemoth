@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map.Entry;
 
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.MapWritable;
@@ -267,7 +268,15 @@ public class BehemothDocument implements Writable {
 
 		buffer.append("\nurl: ").append(url);
 		buffer.append("\ncontentType: ").append(contentType);
-		buffer.append("\nmetadata: ").append(metadata);
+		buffer.append("\nmetadata: ");
+		if (metadata != null) {
+			for (Entry<Writable, Writable> e : metadata.entrySet()) {
+				buffer.append("\n\t");
+				buffer.append(e.getKey());
+				buffer.append(": ");
+				buffer.append(e.getValue());
+			}
+		}
 		if (binaryContent) {
 			buffer.append("\nContent:\n");
 			int maxLengthText = Math.min(200, content.length);
