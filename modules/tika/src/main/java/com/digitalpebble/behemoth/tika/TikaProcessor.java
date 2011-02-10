@@ -17,22 +17,28 @@
 
 package com.digitalpebble.behemoth.tika;
 
-import com.digitalpebble.behemoth.BehemothDocument;
-import com.digitalpebble.behemoth.DocumentProcessor;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.List;
+
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.Reporter;
-import org.apache.tika.Tika;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MimeType;
 import org.apache.tika.mime.MimeTypes;
+import org.apache.tika.parser.AutoDetectParser;
+import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.ByteArrayInputStream;
-import java.io.InputStream;
+import com.digitalpebble.behemoth.BehemothDocument;
+import com.digitalpebble.behemoth.DocumentProcessor;
 
 /**
  * Tika as a document processor. Extracts the text and metadata from the
@@ -47,7 +53,7 @@ public class TikaProcessor implements DocumentProcessor, TikaConstants {
     private Configuration config;
 
     private String mimeType = "text/plain";
-    private Tika tika = new Tika();
+
     private MimeTypes mimetypes = TikaConfig.getDefaultConfig()
             .getMimeRepository();
 
@@ -105,25 +111,40 @@ public class TikaProcessor implements DocumentProcessor, TikaConstants {
             }
         }
 
-        // TODO extract the markup as annotations
+        // determine which parser to use
+        Parser parser = TikaConfig.getDefaultConfig().getParser();
 
-        // does the input document have a some text?
-        // if not use Tika to extract it
-        if (inputDoc.getText() == null) {
-            InputStream is = new ByteArrayInputStream(inputDoc.getContent());
-            String textContent;
+        // skip the processing if the input document already has some text
+        if (inputDoc.getText() != null)
+            return new BehemothDocument[] { inputDoc };
+
+        // otherwise parse the document and retrieve the text, metadata and
+        // markup annotations
+
+        InputStream is = new ByteArrayInputStream(inputDoc.getContent());
+
+        Metadata metadata = new Metadata();
+        // put the mimetype in the metadata so that Tika can
+        // decide which parser to use
+        metadata.set(Metadata.CONTENT_TYPE, inputDoc.getContentType());
+
+        TikaMarkupHandler handler = new TikaMarkupHandler();
+        ParseContext context = new ParseContext();
+        try {
+            parser.parse(is, handler, metadata, context);
+            processText(inputDoc, handler.getText());
+            processMetadata(inputDoc, metadata);
+            processMarkupAnnotations(inputDoc, handler.getAnnotations());
+        } catch (Exception e) {
+            LOG.error(inputDoc.getUrl().toString(), e);
+            return null;
+        } finally {
             try {
-                Metadata metadata = new Metadata();
-                textContent = tika.parseToString(is, metadata);// ParseUtils.getStringContent(is,
-                // TikaConfig.getDefaultConfig(),
-                // inputDoc.getContentType());
-                processText(inputDoc, textContent);
-                processMetadata(inputDoc, metadata);
-            } catch (Exception e) {
-                LOG.error(inputDoc.getUrl().toString(), e);
-                return null;
+                is.close();
+            } catch (IOException e) {
             }
         }
+
         // TODO if the content type is an archive maybe process and return
         // all the subdocuments
 
@@ -141,6 +162,18 @@ public class TikaProcessor implements DocumentProcessor, TikaConstants {
     protected void processText(BehemothDocument inputDoc, String textContent) {
         if (textContent != null)
             inputDoc.setText(textContent);
+    }
+
+    /**
+     * Classes that wish to handle Markup annotations separately may override
+     * this method
+     * 
+     * @param annotations
+     *            the markup {@link com.digitalpebble.behemoth.Annotations}
+     */
+    protected void processMarkupAnnotations(BehemothDocument inputDoc,
+            List<com.digitalpebble.behemoth.Annotation> annotations) {
+        inputDoc.getAnnotations().addAll(annotations);
     }
 
     /**
