@@ -94,9 +94,8 @@ public class GATEProcessor implements DocumentProcessor {
             if (inputDoc.getText() == null) {
                 // convert binary content into Gate doc
                 InputStream is = new ByteArrayInputStream(inputDoc.getContent());
-                String textContent = ParseUtils.getStringContent(is,
-                        TikaConfig.getDefaultConfig(),
-                        inputDoc.getContentType());
+                String textContent = ParseUtils.getStringContent(is, TikaConfig
+                        .getDefaultConfig(), inputDoc.getContentType());
                 inputDoc.setText(textContent);
             }
 

@@ -100,7 +100,7 @@ public class TikaDriver extends Configured implements Tool, TikaConstants {
             if (cmdLine.hasOption(tikaOpt)) {
                 handlerName = cmdLine.getValue(tikaOpt).toString();
             }
-            
+
             JobConf job = new JobConf(getConf());
             job.setJarByClass(this.getClass());
 
@@ -112,7 +112,7 @@ public class TikaDriver extends Configured implements Tool, TikaConstants {
             if (handlerName != null && handlerName.equals("") == false) {
                 job.set(TIKA_PROCESSOR_KEY, handlerName);
             }
-            
+
             job.setJobName("Processing with Tika");
 
             job.setInputFormat(SequenceFileInputFormat.class);
@@ -135,7 +135,8 @@ public class TikaDriver extends Configured implements Tool, TikaConstants {
             } catch (Exception e) {
                 e.printStackTrace();
                 fs.delete(outputPath, true);
-            } finally {}
+            } finally {
+            }
 
         } catch (OptionException e) {
             log.error("Exception", e);
@@ -151,8 +152,8 @@ public class TikaDriver extends Configured implements Tool, TikaConstants {
             String defaultValue) {
 
         DefaultOptionBuilder optBuilder = new DefaultOptionBuilder()
-                .withLongName(name).withDescription(description)
-                .withRequired(required);
+                .withLongName(name).withDescription(description).withRequired(
+                        required);
 
         if (shortName != null) {
             optBuilder.withShortName(shortName);

@@ -42,10 +42,10 @@ public class CorpusReader extends Configured implements Tool {
     public int run(String[] args) throws Exception {
 
         Path input = new Path(args[0]);
-        
+
         boolean showBinaryContent = false;
-        if (args.length>1 && "-showBinaryContent".equalsIgnoreCase(args[1]))
-        	showBinaryContent = true;
+        if (args.length > 1 && "-showBinaryContent".equalsIgnoreCase(args[1]))
+            showBinaryContent = true;
 
         Reader[] cacheReaders = SequenceFileOutputFormat.getReaders(getConf(),
                 input);

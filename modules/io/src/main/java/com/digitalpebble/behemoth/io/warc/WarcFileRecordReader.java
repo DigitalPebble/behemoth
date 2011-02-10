@@ -124,8 +124,8 @@ public class WarcFileRecordReader<K extends WritableComparable, V extends Writab
             // is the file gzipped?
             if ((compressionCodec != null)
                     && (filePathList[currentFilePath].getName().endsWith("gz"))) {
-                compressionInput = new DataInputStream(
-                        compressionCodec.createInputStream(currentFile));
+                compressionInput = new DataInputStream(compressionCodec
+                        .createInputStream(currentFile));
                 LOG.info("Compression enabled");
             }
 

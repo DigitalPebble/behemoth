@@ -103,7 +103,7 @@ public class CorpusGenerator {
             public boolean accept(File file) {
                 String name = file.getName();
                 return name.startsWith(".") == false;// ignore hidden
-                                                     // directories
+                // directories
             }
         };
 

@@ -97,8 +97,8 @@ public class TikaProcessor implements DocumentProcessor, TikaConstants {
                 }
             } else {
                 mt = mimeType;// allow outside user to specify a mime type if
-                              // they know all the content, saves time and
-                              // reduces error
+                // they know all the content, saves time and
+                // reduces error
             }
             if (mt != null) {
                 inputDoc.setContentType(mt);
@@ -115,8 +115,8 @@ public class TikaProcessor implements DocumentProcessor, TikaConstants {
             try {
                 Metadata metadata = new Metadata();
                 textContent = tika.parseToString(is, metadata);// ParseUtils.getStringContent(is,
-                                                               // TikaConfig.getDefaultConfig(),
-                                                               // inputDoc.getContentType());
+                // TikaConfig.getDefaultConfig(),
+                // inputDoc.getContentType());
                 processText(inputDoc, textContent);
                 processMetadata(inputDoc, metadata);
             } catch (Exception e) {
@@ -154,16 +154,20 @@ public class TikaProcessor implements DocumentProcessor, TikaConstants {
         for (String name : metadata.names()) {
             String[] values = metadata.getValues(name);
             // temporary fix to avoid
-            // Exception in thread "main" java.io.IOException: can't find class: com.digitalpebble.behemoth.tika.TextArrayWritable because com.digitalpebble.behemoth.tika.TextArrayWritable
-        	// at org.apache.hadoop.io.AbstractMapWritable.readFields(AbstractMapWritable.java:204)
+            // Exception in thread "main" java.io.IOException: can't find class:
+            // com.digitalpebble.behemoth.tika.TextArrayWritable because
+            // com.digitalpebble.behemoth.tika.TextArrayWritable
+            // at
+            // org.apache.hadoop.io.AbstractMapWritable.readFields(AbstractMapWritable.java:204)
             // simply store multiple values as a , separated Text
             StringBuffer buff = new StringBuffer();
-            for (int i=0; i<values.length; i++){
-            	 if (i>0) buff.append(",");
-            	 buff.append(values[i]);
+            for (int i = 0; i < values.length; i++) {
+                if (i > 0)
+                    buff.append(",");
+                buff.append(values[i]);
             }
             mapW.put(new Text(name), new Text(buff.toString()));
-            //mapW.put(new Text(name), new TextArrayWritable(values));
+            // mapW.put(new Text(name), new TextArrayWritable(values));
         }
         inputDoc.setMetadata(mapW);
     }

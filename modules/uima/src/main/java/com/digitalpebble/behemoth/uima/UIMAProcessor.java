@@ -109,8 +109,8 @@ public class UIMAProcessor implements DocumentProcessor {
 
         File pearFile = new File(urlPEAR.getPath());
 
-        PackageBrowser instPear = PackageInstaller.installPackage(
-                pearFile.getParentFile(), pearFile, true);
+        PackageBrowser instPear = PackageInstaller.installPackage(pearFile
+                .getParentFile(), pearFile, true);
 
         // get the resources required for the AnalysisEngine
         org.apache.uima.resource.ResourceManager rsrcMgr = UIMAFramework
@@ -221,4 +221,3 @@ public class UIMAProcessor implements DocumentProcessor {
     }
 
 }
-

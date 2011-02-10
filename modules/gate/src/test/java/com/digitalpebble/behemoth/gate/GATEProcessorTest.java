@@ -89,14 +89,14 @@ public class GATEProcessorTest extends TestCase {
             BufferedInputStream is = null;
             ZipEntry entry;
             ZipFile zipfile = new ZipFile(inputZip);
-            // get the name of the zip file 
+            // get the name of the zip file
             String zipname = inputZip.getName().replaceAll("\\.zip", "");
             File test = File.createTempFile("aaa", "aaa");
             String tempDir = test.getParent();
             test.delete();
-            rootDir = new File(tempDir,zipname);
+            rootDir = new File(tempDir, zipname);
             rootDir.mkdir();
-            
+
             Enumeration e = zipfile.entries();
             while (e.hasMoreElements()) {
                 entry = (ZipEntry) e.nextElement();
