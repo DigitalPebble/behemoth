@@ -28,12 +28,11 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MimeType;
 import org.apache.tika.mime.MimeTypes;
-import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
+import org.apache.tika.parser.html.HtmlMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -130,6 +129,9 @@ public class TikaProcessor implements DocumentProcessor, TikaConstants {
 
         TikaMarkupHandler handler = new TikaMarkupHandler();
         ParseContext context = new ParseContext();
+        // specify a custom HTML mapper via the Context
+        context.set(HtmlMapper.class, new IdentityHtmlMapper());
+        
         try {
             parser.parse(is, handler, metadata, context);
             processText(inputDoc, handler.getText());

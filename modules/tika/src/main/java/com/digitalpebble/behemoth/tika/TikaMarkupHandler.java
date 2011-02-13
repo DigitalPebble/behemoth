@@ -113,6 +113,7 @@ public class TikaMarkupHandler implements ContentHandler {
 
     public void ignorableWhitespace(char[] ch, int start, int length)
             throws SAXException {
+        characters(ch, start, length);
     }
 
     // the following methods are simply ignored
