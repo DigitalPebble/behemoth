@@ -40,7 +40,7 @@ public class TikaProcessorTest extends TestCase {
 
     public void testTextExtractionTika() {
         // Create a very simple Behemoth document
-        String text = "<HTML><BODY>This is a <B>simple</B> test</HTML>";
+        String text = "<HTML><TITLE>A TITLE</TITLE><BODY>This is a <B>simple</B> test</HTML>";
         String url = "dummyDoc.html";
         BehemothDocument doc = new BehemothDocument();
         doc.setContent(text.getBytes());
@@ -54,7 +54,7 @@ public class TikaProcessorTest extends TestCase {
         // the output document must be marked as text/html
         assertEquals("text/html", output.getContentType());
         // and have the following text
-        assertEquals("This is a simple test", output.getText());
+        assertEquals("A TITLE\nThis is a simple test", output.getText());
     }
 
 }

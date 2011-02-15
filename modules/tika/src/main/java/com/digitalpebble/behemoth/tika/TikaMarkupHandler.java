@@ -50,7 +50,6 @@ public class TikaMarkupHandler implements ContentHandler {
 
     public void characters(char[] ch, int start, int length)
             throws SAXException {
-        // store the characters in the textBuffer
         textBuffer.append(ch, start, length);
     }
 
@@ -86,7 +85,13 @@ public class TikaMarkupHandler implements ContentHandler {
 
     public void endElement(String uri, String localName, String qName)
             throws SAXException {
+
         int endOffset = textBuffer.length();
+
+        // add a \n after the head if the text is not empty
+        // i.e. there is a title
+        if (localName.equals("head") && endOffset > 0)
+            textBuffer.append("\n");
 
         // try to get the corresponding annotation
         // we start from the last temporary
