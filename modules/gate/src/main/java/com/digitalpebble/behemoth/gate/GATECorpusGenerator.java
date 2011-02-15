@@ -155,7 +155,7 @@ public class GATECorpusGenerator extends Configured implements Tool {
                     }
 
                     // then save as XML
-                    File outputFile = new File(output, key.toString() + ".xml");
+                    File outputFile = new File(output, num + ".xml");
                     if (outputFile.exists() == false)
                         outputFile.createNewFile();
 
