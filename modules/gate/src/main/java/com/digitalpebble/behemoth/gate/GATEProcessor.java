@@ -21,27 +21,35 @@ import gate.AnnotationSet;
 import gate.Corpus;
 import gate.CorpusController;
 import gate.Factory;
+import gate.FeatureMap;
 import gate.Gate;
+import gate.creole.ResourceInstantiationException;
+import gate.util.InvalidOffsetException;
 import gate.util.OffsetComparator;
 import gate.util.persistence.PersistenceManager;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map.Entry;
 import java.util.Set;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.tika.config.TikaConfig;
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.utils.ParseUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import com.digitalpebble.behemoth.Annotation;
 import com.digitalpebble.behemoth.BehemothDocument;
 import com.digitalpebble.behemoth.DocumentProcessor;
 
@@ -89,21 +97,8 @@ public class GATEProcessor implements DocumentProcessor {
         gate.Document gatedocument = null;
         try {
 
-            // does the input document have a some text?
-            // if not use Tika to extract it
-            if (inputDoc.getText() == null) {
-                // convert binary content into Gate doc
-                InputStream is = new ByteArrayInputStream(inputDoc.getContent());
-                String textContent = ParseUtils.getStringContent(is, TikaConfig
-                        .getDefaultConfig(), inputDoc.getContentType());
-                inputDoc.setText(textContent);
-            }
-
-            // simple version = create a GATE doc from a simple text
-            // representation
-            // regardless of the original markup
-            gatedocument = Factory.newDocument(inputDoc.getText());
-
+            gatedocument = generateGATEDoc(inputDoc);
+            // add it to the current corpus
             corpus.add(gatedocument);
             // get the application and assign the corpus to it
             this.GATEapplication.setCorpus(corpus);
@@ -207,6 +202,75 @@ public class GATEProcessor implements DocumentProcessor {
 
     public Configuration getConf() {
         return config;
+    }
+
+    /**
+     * Generation of a GATE document from a Behemoth one
+     * 
+     * @param key
+     *            URL of the input doc
+     * @param inputDoc
+     * @return
+     * @throws ResourceInstantiationException
+     * @throws InvalidOffsetException
+     * @throws IOException 
+     * @throws TikaException 
+     */
+    public static gate.Document generateGATEDoc(BehemothDocument inputDoc)
+            throws ResourceInstantiationException, InvalidOffsetException, TikaException, IOException {
+
+        // first put the text
+        // if not use Tika to extract it
+        // TODO rely on GATE's parsing instead to avoid 
+        // a direct dependency with Tika
+        
+        if (inputDoc.getText() == null) {
+            InputStream is = new ByteArrayInputStream(inputDoc.getContent());
+            String textContent = ParseUtils.getStringContent(is,
+                    TikaConfig.getDefaultConfig(), inputDoc.getContentType());
+            inputDoc.setText(textContent);
+        }
+
+        // if the input document does not have any text -> create a doc with an
+        // empty text
+
+        String text = inputDoc.getText();
+        if (inputDoc.getText() == null)
+            text = "";
+        else
+            text = inputDoc.getText();
+        gate.Document gatedocument = Factory.newDocument(text);
+
+        // then the metadata as document features
+        FeatureMap docFeatures = gatedocument.getFeatures();
+        String docUrl = inputDoc.getUrl();
+        if (docUrl != null)
+            docFeatures.put("gate.SourceURL", docUrl);
+        if (inputDoc.getMetadata() != null) {
+            Iterator<Entry<Writable, Writable>> iter = inputDoc.getMetadata()
+                    .entrySet().iterator();
+            while (iter.hasNext()) {
+                Entry<Writable, Writable> entry = iter.next();
+                String skey = entry.getKey().toString().trim();
+                String svalue = null;
+                if (entry.getValue() != null)
+                    svalue = entry.getValue().toString().trim();
+                docFeatures.put(skey, svalue);
+            }
+        }
+
+        // finally the annotations as original markups
+        // TODO change the name of the annotation set via config
+        AnnotationSet outputAS = gatedocument
+                .getAnnotations("Original markups");
+        for (Annotation annot : inputDoc.getAnnotations()) {
+            // add to outputAS as a GATE annotation
+            FeatureMap features = Factory.newFeatureMap();
+            features.putAll(annot.getFeatures());
+            outputAS.add(annot.getStart(), annot.getEnd(), annot.getType(),
+                    features);
+        }
+        return gatedocument;
     }
 
     /**

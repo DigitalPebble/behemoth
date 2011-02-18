@@ -17,9 +17,6 @@
 
 package com.digitalpebble.behemoth.gate;
 
-import gate.AnnotationSet;
-import gate.Factory;
-import gate.FeatureMap;
 import gate.Gate;
 import gate.creole.ResourceInstantiationException;
 import gate.util.GateException;
@@ -29,9 +26,6 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Map.Entry;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -41,15 +35,13 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.SequenceFile.Reader;
-import org.apache.hadoop.io.Writable;
+import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.SequenceFileOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
-import org.apache.tika.metadata.Metadata;
+import org.apache.tika.exception.TikaException;
 
-import com.digitalpebble.behemoth.Annotation;
 import com.digitalpebble.behemoth.BehemothConfiguration;
 import com.digitalpebble.behemoth.BehemothDocument;
 
@@ -127,32 +119,8 @@ public class GATECorpusGenerator extends Configured implements Tool {
                 // generate a GATE document then save it to XML
                 try {
                     // first put the text
-                    gate.Document gatedocument = Factory.newDocument(inputDoc
-                            .getText());
-                    // then the metadata as document features
-                    FeatureMap docFeatures = gatedocument.getFeatures();
-                    docFeatures.put("gate.SourceURL", key.toString());
-                    Iterator<Entry<Writable, Writable>> iter = inputDoc
-                            .getMetadata().entrySet().iterator();
-                    while (iter.hasNext()) {
-                        Entry<Writable, Writable> entry = iter.next();
-                        String skey = entry.getKey().toString().trim();
-                        String svalue = null;
-                        if (entry.getValue() != null)
-                            svalue = entry.getValue().toString().trim();
-                        docFeatures.put(skey,svalue);
-                    }
-
-                    // finally the annotations as original markups
-                    AnnotationSet outputAS = gatedocument
-                            .getAnnotations("Original markups");
-                    for (Annotation annot : inputDoc.getAnnotations()) {
-                        // add to outputAS as a GATE annotation
-                        FeatureMap features = Factory.newFeatureMap();
-                        features.putAll(annot.getFeatures());
-                        outputAS.add(annot.getStart(), annot.getEnd(),
-                                annot.getType(), features);
-                    }
+                    gate.Document gatedocument = GATEProcessor
+                            .generateGATEDoc(inputDoc);
 
                     // then save as XML
                     File outputFile = new File(output, num + ".xml");
@@ -164,14 +132,10 @@ public class GATECorpusGenerator extends Configured implements Tool {
                     writer.write(gatedocument.toXml());
                     writer.close();
 
-                } catch (ResourceInstantiationException e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
-                } catch (InvalidOffsetException e) {
+                } catch (Exception e) {
                     // TODO Auto-generated catch block
                     e.printStackTrace();
                 }
-
             }
             current.close();
         }
