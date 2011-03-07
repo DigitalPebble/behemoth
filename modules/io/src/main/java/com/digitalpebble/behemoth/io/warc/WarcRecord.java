@@ -40,6 +40,7 @@ import java.io.DataOutput;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map.Entry;
@@ -601,7 +602,7 @@ public class WarcRecord {
         StringBuffer retBuffer = new StringBuffer();
         retBuffer.append(warcHeader.toString());
         retBuffer.append(NEWLINE);
-        retBuffer.append(warcContent);
+        retBuffer.append(Arrays.toString(warcContent));
         return retBuffer.toString();
     }
 
