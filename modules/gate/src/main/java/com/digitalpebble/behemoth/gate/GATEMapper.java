@@ -21,8 +21,6 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.filecache.DistributedCache;
 import org.apache.hadoop.fs.Path;
@@ -32,6 +30,8 @@ import org.apache.hadoop.mapred.MapReduceBase;
 import org.apache.hadoop.mapred.Mapper;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reporter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.digitalpebble.behemoth.BehemothDocument;
 
@@ -90,8 +90,16 @@ public class GATEMapper extends MapReduceBase implements
             // identify the right archive
             for (Path la : localArchives) {
                 String localPath = la.toUri().toString();
+                LOG.info("LocalCache : " + localPath);
                 if (!localPath.endsWith(application_path))
                     continue;
+                // see if the gapp file is directly under the dir
+                applicationDescriptorURL = new URL("file://" + localPath + "/"
+                        + gapp_file);
+                File f = new File(applicationDescriptorURL.getFile());
+                if (f.exists())
+                    break;
+                // or for older versions of the zipped pipelines
                 applicationDescriptorURL = new URL("file://" + localPath + "/"
                         + applicationName + "/" + gapp_file);
                 break;
@@ -109,5 +117,4 @@ public class GATEMapper extends MapReduceBase implements
         processor = new GATEProcessor(applicationDescriptorURL);
         processor.setConf(config);
     }
-
 }
