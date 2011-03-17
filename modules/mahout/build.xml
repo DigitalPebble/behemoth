@@ -20,4 +20,6 @@
 	<property file="build.properties"/>
 	
 	<import file="${common.dir}/common.xml"/>
+
+	<target name="test" />
 </project>
