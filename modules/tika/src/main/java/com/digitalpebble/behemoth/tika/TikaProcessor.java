@@ -127,11 +127,14 @@ public class TikaProcessor implements DocumentProcessor, TikaConstants {
         // decide which parser to use
         metadata.set(Metadata.CONTENT_TYPE, inputDoc.getContentType());
 
+        reporter.getCounter("MIME-TYPE", inputDoc.getContentType())
+                .increment(1);
+
         TikaMarkupHandler handler = new TikaMarkupHandler();
         ParseContext context = new ParseContext();
         // specify a custom HTML mapper via the Context
         context.set(HtmlMapper.class, new IdentityHtmlMapper());
-        
+
         try {
             parser.parse(is, handler, metadata, context);
             processText(inputDoc, handler.getText());
@@ -149,6 +152,8 @@ public class TikaProcessor implements DocumentProcessor, TikaConstants {
 
         // TODO if the content type is an archive maybe process and return
         // all the subdocuments
+
+        reporter.getCounter("TIKA", "DOC-PARSED").increment(1);
 
         return new BehemothDocument[] { inputDoc };
     }
