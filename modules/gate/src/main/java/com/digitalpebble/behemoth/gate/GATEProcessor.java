@@ -37,8 +37,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map.Entry;
 import java.util.Set;
+import java.util.Map.Entry;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Writable;
@@ -125,7 +125,7 @@ public class GATEProcessor implements DocumentProcessor {
             // add counters about num of annotations added
             if (reporter != null)
                 for (com.digitalpebble.behemoth.Annotation annot : beheannotations) {
-                    reporter.incrCounter("Gate", annot.getType(), 1);
+                    reporter.incrCounter("GATE", annot.getType(), 1);
                 }
 
             // transfer the annotations from the GATE document
@@ -213,21 +213,22 @@ public class GATEProcessor implements DocumentProcessor {
      * @return
      * @throws ResourceInstantiationException
      * @throws InvalidOffsetException
-     * @throws IOException 
-     * @throws TikaException 
+     * @throws IOException
+     * @throws TikaException
      */
     public static gate.Document generateGATEDoc(BehemothDocument inputDoc)
-            throws ResourceInstantiationException, InvalidOffsetException, TikaException, IOException {
+            throws ResourceInstantiationException, InvalidOffsetException,
+            TikaException, IOException {
 
         // first put the text
         // if not use Tika to extract it
-        // TODO rely on GATE's parsing instead to avoid 
+        // TODO rely on GATE's parsing instead to avoid
         // a direct dependency with Tika
-        
+
         if (inputDoc.getText() == null) {
             InputStream is = new ByteArrayInputStream(inputDoc.getContent());
-            String textContent = ParseUtils.getStringContent(is,
-                    TikaConfig.getDefaultConfig(), inputDoc.getContentType());
+            String textContent = ParseUtils.getStringContent(is, TikaConfig
+                    .getDefaultConfig(), inputDoc.getContentType());
             inputDoc.setText(textContent);
         }
 
