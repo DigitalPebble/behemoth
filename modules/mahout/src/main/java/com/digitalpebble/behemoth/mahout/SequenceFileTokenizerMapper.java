@@ -33,8 +33,8 @@ import com.digitalpebble.behemoth.BehemothDocument;
 public class SequenceFileTokenizerMapper extends
         Mapper<Text, BehemothDocument, Text, StringTuple> {
 
-    String tokenType;
-    String tokenFeature;
+    private String tokenType;
+    private String tokenFeature;
 
     @Override
     protected void map(Text key, BehemothDocument value, Context context)
@@ -63,7 +63,7 @@ public class SequenceFileTokenizerMapper extends
     protected void setup(Context context) throws IOException,
             InterruptedException {
         super.setup(context);
-        tokenType = context.getConfiguration()
+        this.tokenType = context.getConfiguration()
                 .get(DocumentProcessor.TOKEN_TYPE);
         this.tokenFeature = context.getConfiguration().get(
                 DocumentProcessor.FEATURE_NAME);
