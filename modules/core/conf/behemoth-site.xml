@@ -72,8 +72,15 @@
 
 <property>
   <name>uima.annotations.filter</name>
-  <value>de.julielab.jules.types.Token</value>
+  <value>org.apache.uima.TokenAnnotation,org.apache.uima.SentenceAnnotation</value>
   <description>Annotations types to consider when serializing to the behemoth format, separated by commas 
+  </description>
+</property>
+
+<property>
+  <name>uima.features.filter</name>
+  <value>org.apache.uima.TokenAnnotation:posTag</value>
+  <description>Feature names to consider when serializing to the behemoth format, separated by commas 
   </description>
 </property>
 
