@@ -143,7 +143,9 @@ public class TikaProcessor implements DocumentProcessor, TikaConstants {
             processMarkupAnnotations(inputDoc, handler.getAnnotations());
         } catch (Exception e) {
             LOG.error(inputDoc.getUrl().toString(), e);
-            return null;
+            if (reporter != null)
+                reporter.getCounter("TIKA", "PARSING_ERROR").increment(1);
+            return new BehemothDocument[] { inputDoc };
         } finally {
             try {
                 is.close();
