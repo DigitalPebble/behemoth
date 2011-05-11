@@ -25,6 +25,6 @@
     </publications>
     <dependencies defaultconf="*->*,!sources,!javadoc">
       <dependency name="behemoth-core" rev="latest.integration" />
-      <dependency org="uk.ac.gate" name="gate-core" rev="6.0"/>
+      <dependency org="uk.ac.gate" name="gate-core" rev="6.1"/>
     </dependencies>
 </ivy-module>
