@@ -19,8 +19,7 @@ package com.digitalpebble.behemoth.io.warc;
 
 import java.io.IOException;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.commons.cli.ParseException;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.Path;
@@ -38,9 +37,12 @@ import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 import org.apache.nutch.metadata.HttpHeaders;
 import org.apache.nutch.protocol.ProtocolException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.digitalpebble.behemoth.BehemothConfiguration;
 import com.digitalpebble.behemoth.BehemothDocument;
+import com.digitalpebble.behemoth.InputOutputCliProcessor;
 
 /**
  * Converts a WARC archive into a Behemoth datastructure for further processing
@@ -135,17 +137,19 @@ public class WARCConverterJob extends Configured implements Tool,
         System.exit(res);
     }
 
-    public int run(String[] args) throws Exception {
-        String usage = "Usage: WARCConverterJob archive output";
-
-        if (args.length == 0) {
-            System.err.println(usage);
-            System.exit(-1);
-        }
-        Path segment = new Path(args[0]);
-        Path output = new Path(args[1]);
-        convert(segment, output);
-        return 0;
-    }
+	public int run(String[] args) throws Exception {
+		InputOutputCliProcessor cliProcessor = new InputOutputCliProcessor(
+				WARCConverterJob.class,
+				"Convert a WARC Web Archive into a Behemoth Corpus");
+		try {
+			cliProcessor.parse(args);
+		} catch (ParseException me) {
+			return -1;
+		}
+		Path segment = new Path(cliProcessor.getInputValue());
+		Path output = new Path(cliProcessor.getOutputValue());
+		convert(segment, output);
+		return 0;
+	}
 
 }

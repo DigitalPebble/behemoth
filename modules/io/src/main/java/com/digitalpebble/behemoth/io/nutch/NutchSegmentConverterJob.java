@@ -19,8 +19,7 @@ package com.digitalpebble.behemoth.io.nutch;
 
 import java.io.IOException;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.commons.cli.ParseException;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.Path;
@@ -39,9 +38,12 @@ import org.apache.hadoop.util.ToolRunner;
 import org.apache.nutch.crawl.CrawlDatum;
 import org.apache.nutch.metadata.Nutch;
 import org.apache.nutch.protocol.Content;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.digitalpebble.behemoth.BehemothConfiguration;
 import com.digitalpebble.behemoth.BehemothDocument;
+import com.digitalpebble.behemoth.InputOutputCliProcessor;
 
 /**
  * Converts a Nutch segment into a Behemoth datastructure. The binary data can
@@ -130,16 +132,20 @@ public class NutchSegmentConverterJob extends Configured implements Tool,
     }
 
     public int run(String[] args) throws Exception {
-        String usage = "Usage: SegmentConverter segment output";
+		InputOutputCliProcessor cliProcessor = new InputOutputCliProcessor(
+				NutchSegmentConverterJob.class,
+				"Convert a Nutch Segment into a Behemoth Corpus");
 
-        if (args.length == 0) {
-            System.err.println(usage);
-            System.exit(-1);
-        }
-        Path segment = new Path(args[0]);
-        Path output = new Path(args[1]);
-        convert(segment, output);
-        return 0;
+		try {
+			cliProcessor.parse(args);
+		} catch (ParseException me) {
+			return -1;
+		}
+
+		Path segment = new Path(cliProcessor.getInputValue());
+		Path output = new Path(cliProcessor.getOutputValue());
+		convert(segment, output);
+		return 0;
     }
 
 }

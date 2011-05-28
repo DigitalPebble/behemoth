@@ -17,16 +17,18 @@
 
 package com.digitalpebble.behemoth.util;
 
+import org.apache.commons.cli.MissingOptionException;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.SequenceFile.Reader;
+import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.SequenceFileOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 
 import com.digitalpebble.behemoth.BehemothConfiguration;
 import com.digitalpebble.behemoth.BehemothDocument;
+import com.digitalpebble.behemoth.CliProcessor;
 
 /**
  * Utility class used to read the content of a Behemoth SequenceFile.
@@ -40,12 +42,23 @@ public class CorpusReader extends Configured implements Tool {
     }
 
     public int run(String[] args) throws Exception {
+        
+		CliProcessor cliProcessor = new CliProcessor(CorpusReader.class,
+				"Read a Behemoth Corpus on HDFS and output to System.out");
+		String inputOpt = cliProcessor.addRequiredOption("i", "input",
+				"Input directory on HDFS", true);
+		String binaryOpt = cliProcessor.addRequiredOption("b",
+				"showBinaryContent", "Show binary content", false);
 
-        Path input = new Path(args[0]);
+		try {
+			cliProcessor.parse(args);
+		} catch (MissingOptionException me) {
+			return -1;
+		}
 
-        boolean showBinaryContent = false;
-        if (args.length > 1 && "-showBinaryContent".equalsIgnoreCase(args[1]))
-            showBinaryContent = true;
+        Path input = new Path(cliProcessor.getOptionValue(inputOpt));
+
+        boolean showBinaryContent = cliProcessor.hasOption(binaryOpt);
 
         Reader[] cacheReaders = SequenceFileOutputFormat.getReaders(getConf(),
                 input);

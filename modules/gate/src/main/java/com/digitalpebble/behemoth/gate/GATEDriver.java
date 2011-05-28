@@ -19,8 +19,7 @@ package com.digitalpebble.behemoth.gate;
 
 import java.net.URI;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.commons.cli.ParseException;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.filecache.DistributedCache;
@@ -35,9 +34,12 @@ import org.apache.hadoop.mapred.SequenceFileInputFormat;
 import org.apache.hadoop.mapred.SequenceFileOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.digitalpebble.behemoth.BehemothConfiguration;
 import com.digitalpebble.behemoth.BehemothDocument;
+import com.digitalpebble.behemoth.InputOutputCliProcessor;
 
 public class GATEDriver extends Configured implements Tool {
     private static final Logger LOG = LoggerFactory.getLogger(GATEDriver.class);
@@ -59,16 +61,22 @@ public class GATEDriver extends Configured implements Tool {
     public int run(String[] args) throws Exception {
 
         final FileSystem fs = FileSystem.get(getConf());
+        
+		InputOutputCliProcessor cliProcessor = new InputOutputCliProcessor(
+				GATEDriver.class, "Parse a Behemoth corpus with GATE");
+		String gateOpt = cliProcessor.addRequiredOption("g", "gate",
+				"Path to GATE file", true, "path_to_gate_file");
 
-        if (args.length != 3) {
-            String syntax = "com.digitalpebble.behemoth.gate.GATEDriver in out path_gate_file";
-            System.err.println(syntax);
-            return -1;
-        }
+		try {
+			cliProcessor.parse(args);
+		} catch (ParseException me) {
+			return -1;
+		}
 
-        Path inputPath = new Path(args[0]);
-        Path outputPath = new Path(args[1]);
-        String zip_application_path = args[2];
+		Path inputPath = new Path(cliProcessor.getInputValue());
+		Path outputPath = new Path(cliProcessor.getOutputValue());
+
+        String zip_application_path = cliProcessor.getOptionValue(gateOpt);
 
         // check that the GATE application has been stored on HDFS
         Path zap = new Path(zip_application_path);

@@ -18,20 +18,13 @@
 package com.digitalpebble.behemoth.gate;
 
 import gate.Gate;
-import gate.creole.ResourceInstantiationException;
 import gate.util.GateException;
-import gate.util.InvalidOffsetException;
 
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.CommandLineParser;
-import org.apache.commons.cli.GnuParser;
-import org.apache.commons.cli.HelpFormatter;
-import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.Path;
@@ -40,10 +33,10 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.SequenceFileOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
-import org.apache.tika.exception.TikaException;
 
 import com.digitalpebble.behemoth.BehemothConfiguration;
 import com.digitalpebble.behemoth.BehemothDocument;
+import com.digitalpebble.behemoth.InputOutputCliProcessor;
 
 /**
  * Converts a Behemoth corpus into a XML corpus for GATE. This is used mostly
@@ -62,38 +55,24 @@ public class GATECorpusGenerator extends Configured implements Tool {
         System.exit(res);
     }
 
-    public int run(String[] args) throws Exception {
+	public int run(String[] args) throws Exception {
 
-        Options options = new Options();
-        // automatically generate the help statement
-        HelpFormatter formatter = new HelpFormatter();
-        // create the parser
-        CommandLineParser parser = new GnuParser();
+		InputOutputCliProcessor cliProcessor = new InputOutputCliProcessor(
+				GATECorpusGenerator.class,
+				"Converts a Behemoth corpus into a XML corpus for GATE. This is not a Map/Reduce job.");
 
-        options.addOption("h", "help", false, "print this message");
-        options.addOption("i", "input", true, "Behemoth corpus");
-        options.addOption("o", "output", true, "GATE corpus dir");
+		try {
+			cliProcessor.parse(args);
+		} catch (ParseException me) {
+			return -1;
+		}
 
-        // parse the command line arguments
-        try {
-            CommandLine line = parser.parse(options, args);
-            String input = line.getOptionValue("i");
-            String output = line.getOptionValue("o");
-            if (line.hasOption("help")) {
-                formatter.printHelp("GATECorpusGenerator", options);
-                return 0;
-            }
-            if (input == null || output == null) {
-                formatter.printHelp("GATECorpusGenerator", options);
-                return -1;
-            }
-            generateXMLdocs(input, output);
+		String input = cliProcessor.getOutputValue();
+		String output = cliProcessor.getOutputValue();
+		generateXMLdocs(input, output);
 
-        } catch (ParseException e) {
-            formatter.printHelp("GATECorpusGenerator", options);
-        }
-        return 0;
-    }
+		return 0;
+	}
 
     private void generateXMLdocs(String inputf, String outputf)
             throws IOException {

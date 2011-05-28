@@ -27,5 +27,7 @@
 	<dependency org="org.slf4j" name="slf4j-api" rev="1.6.1"/>	
 	<dependency org="org.slf4j" name="slf4j-log4j12" rev="1.6.1"/>	
 	<dependency org="org.apache.hadoop" name="hadoop-core" rev="0.20.2"/>
+    <dependency org="org.apache.mahout.commons" name="commons-cli" rev="2.0-mahout"/>
+    <dependency org="commons-lang" name="commons-lang" rev="2.5"/>
     </dependencies>
 </ivy-module>

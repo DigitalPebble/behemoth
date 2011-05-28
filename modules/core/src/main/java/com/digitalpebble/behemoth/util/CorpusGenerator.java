@@ -23,6 +23,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 
+import org.apache.commons.cli.ParseException;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -31,6 +32,7 @@ import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.Text;
 
 import com.digitalpebble.behemoth.BehemothDocument;
+import com.digitalpebble.behemoth.CliProcessor;
 
 /**
  * Generates a SequenceFile containing BehemothDocuments given a local
@@ -43,26 +45,31 @@ public class CorpusGenerator {
     public static void main(String argv[]) throws Exception {
 
         // Populate a SequenceFile with the content of a local directory
+        
+		CliProcessor cliProcessor = new CliProcessor(CorpusGenerator.class,
+				"Generate a Behemoth corpus on HDFS from a local directory");
+		String inputOpt = cliProcessor.addRequiredOption("i", "input",
+				"Input directory on local file system", true);
+		String outputOpt = cliProcessor.addRequiredOption("o", "output",
+				"Output directory on HDFS", true);
+		String recurseOpt = cliProcessor.addOption("s", "recurse",
+				"Recurse through input directories", false);
 
-        String usage = "Content localdir outputDFSDir [--recurse]";
-
-        if (argv.length < 2) {
-            System.out.println("usage:" + usage);
-            return;
-        }
-
+		try {
+			cliProcessor.parse(argv);
+		} catch (ParseException me) {
+			return;
+		}
+        
         Configuration conf = new Configuration();
         FileSystem fs = FileSystem.get(conf);
 
-        File inputDir = new File(argv[0]);
+        File inputDir = new File(cliProcessor.getOptionValue(inputOpt));
 
-        Path output = new Path(argv[1]);
+        Path output = new Path(cliProcessor.getOptionValue(outputOpt));
 
-        boolean recurse = false;
-        if (argv.length > 2 && argv[2].equals("--recurse")) {
-            recurse = true;
-        }
-
+        boolean recurse = cliProcessor.hasOption(recurseOpt);
+        
         // read from input path
         // create new Content object and add it to the SequenceFile
         Text key = new Text();

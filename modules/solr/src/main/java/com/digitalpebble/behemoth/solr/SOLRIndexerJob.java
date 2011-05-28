@@ -19,6 +19,7 @@ package com.digitalpebble.behemoth.solr;
 
 import java.util.Random;
 
+import org.apache.commons.cli.MissingOptionException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -32,13 +33,13 @@ import org.apache.hadoop.mapred.FileOutputFormat;
 import org.apache.hadoop.mapred.JobClient;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.SequenceFileInputFormat;
-import org.apache.hadoop.mapred.SequenceFileOutputFormat;
 import org.apache.hadoop.mapred.lib.IdentityMapper;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 
 import com.digitalpebble.behemoth.BehemothConfiguration;
 import com.digitalpebble.behemoth.BehemothDocument;
+import com.digitalpebble.behemoth.CliProcessor;
 
 /**
  * Sends annotated documents to SOLR for indexing
@@ -63,15 +64,22 @@ public class SOLRIndexerJob extends Configured implements Tool {
     public int run(String[] args) throws Exception {
 
         final FileSystem fs = FileSystem.get(getConf());
+        
+		CliProcessor cliProcessor = new CliProcessor(SOLRIndexerJob.class,
+				"Sends annotated documents to SOLR for indexing");
+		String inputOpt = cliProcessor.addRequiredOption("i", "input",
+				"Input directory on HDFS", true);
+		String solrOpt = cliProcessor.addRequiredOption("l", "solr",
+				"SOLR URL", true);
 
-        if (args.length != 2) {
-            String syntax = "com.digitalpebble.solr.SOLRIndexerJob in solrURL";
-            System.err.println(syntax);
-            return -1;
-        }
+		try {
+			cliProcessor.parse(args);
+		} catch (MissingOptionException me) {
+			return -1;
+		}
 
-        Path inputPath = new Path(args[0]);
-        String solrURL = args[1];
+        Path inputPath = new Path(cliProcessor.getOptionValue(inputOpt));
+        String solrURL = cliProcessor.getOptionValue(solrOpt);
 
         JobConf job = new JobConf(getConf());
 
