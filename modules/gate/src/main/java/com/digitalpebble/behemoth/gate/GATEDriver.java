@@ -26,12 +26,11 @@ import org.apache.hadoop.filecache.DistributedCache;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
-import org.apache.hadoop.mapred.FileInputFormat;
-import org.apache.hadoop.mapred.FileOutputFormat;
-import org.apache.hadoop.mapred.JobClient;
-import org.apache.hadoop.mapred.JobConf;
-import org.apache.hadoop.mapred.SequenceFileInputFormat;
-import org.apache.hadoop.mapred.SequenceFileOutputFormat;
+import org.apache.hadoop.mapreduce.Job;
+import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
+import org.apache.hadoop.mapreduce.lib.input.SequenceFileInputFormat;
+import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
+import org.apache.hadoop.mapreduce.lib.output.SequenceFileOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 import org.slf4j.Logger;
@@ -44,6 +43,8 @@ import com.digitalpebble.behemoth.InputOutputCliProcessor;
 public class GATEDriver extends Configured implements Tool {
     private static final Logger LOG = LoggerFactory.getLogger(GATEDriver.class);
 
+    public static final String USAGE = "Parse a Behemoth corpus with GATE";
+    
     public GATEDriver() {
         super(null);
     }
@@ -63,7 +64,7 @@ public class GATEDriver extends Configured implements Tool {
         final FileSystem fs = FileSystem.get(getConf());
         
 		InputOutputCliProcessor cliProcessor = new InputOutputCliProcessor(
-				GATEDriver.class, "Parse a Behemoth corpus with GATE");
+				GATEDriver.class.getSimpleName(), USAGE);
 		String gateOpt = cliProcessor.addRequiredOption("g", "gate",
 				"Path to GATE file", true, "path_to_gate_file");
 
@@ -86,15 +87,16 @@ public class GATEDriver extends Configured implements Tool {
             return -1;
         }
 
-        JobConf job = new JobConf(getConf());
+        Configuration conf = getConf();
+        Job job = new Job(conf);
         // MUST not forget the line below
         job.setJarByClass(this.getClass());
 
         job.setJobName("Processing with GATE application from "
                 + zip_application_path);
-
-        job.setInputFormat(SequenceFileInputFormat.class);
-        job.setOutputFormat(SequenceFileOutputFormat.class);
+        
+        job.setInputFormatClass(SequenceFileInputFormat.class);
+        job.setOutputFormatClass(SequenceFileOutputFormat.class);
 
         job.setOutputKeyClass(Text.class);
         job.setOutputValueClass(BehemothDocument.class);
@@ -107,17 +109,17 @@ public class GATEDriver extends Configured implements Tool {
         FileOutputFormat.setOutputPath(job, outputPath);
 
         // push the zipped_gate_application onto the DistributedCache
-        DistributedCache.addCacheArchive(new URI(zip_application_path), job);
+        DistributedCache.addCacheArchive(new URI(zip_application_path), conf);
 
-        job.set("gate.application.path", zip_application_path.toString());
+        conf.set("gate.application.path", zip_application_path.toString());
 
         try {
-            JobClient.runJob(job);
+        	job.waitForCompletion(true);
         } catch (Exception e) {
             e.printStackTrace();
             fs.delete(outputPath, true);
         } finally {
-            DistributedCache.purgeCache(job);
+            DistributedCache.purgeCache(conf);
         }
 
         return 0;

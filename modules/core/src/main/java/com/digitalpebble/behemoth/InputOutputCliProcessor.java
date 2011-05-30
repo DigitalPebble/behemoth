@@ -6,8 +6,8 @@ public class InputOutputCliProcessor extends CliProcessor {
 	
 	String outputOpt;
 	
-	public InputOutputCliProcessor(Class clazz, String description) {
-		super(clazz, description);
+	public InputOutputCliProcessor(String name, String description) {
+		super(name, description);
 		inputOpt = addRequiredOption("i", "input",
 				"Input path on HDFS", true);
 		outputOpt = addRequiredOption("o", "output",

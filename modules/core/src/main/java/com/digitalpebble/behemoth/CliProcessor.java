@@ -7,7 +7,6 @@ import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.GnuParser;
 import org.apache.commons.cli.HelpFormatter;
-import org.apache.commons.cli.MissingOptionException;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
@@ -23,8 +22,8 @@ public class CliProcessor {
 
 	CommandLine cli = null;
 
-	public CliProcessor(Class clazz, String description) {
-		this.name = clazz.getSimpleName();
+	public CliProcessor(String name, String description) {
+		this.name = name;
 		this.description = description;
 	}
 

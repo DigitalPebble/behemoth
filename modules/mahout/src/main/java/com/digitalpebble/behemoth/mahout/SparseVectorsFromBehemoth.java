@@ -39,15 +39,17 @@ public final class SparseVectorsFromBehemoth {
 
 	private static final Logger log = LoggerFactory
 			.getLogger(SparseVectorsFromBehemoth.class);
+	
+	public static final String USAGE = "Similar to SparseVectorsFromSequenceFiles but gets the Tokens from a Behemoth corpus. "
+		+ "Converts a given set of sequence files into SparseVectors";
 
 	private SparseVectorsFromBehemoth() {
 	}
 
 	public static void main(String[] args) throws Exception {
 		InputOutputCliProcessor cliProcessor = new InputOutputCliProcessor(
-				SparseVectorsFromBehemoth.class,
-				"Similar to SparseVectorsFromSequenceFiles but gets the Tokens from a Behemoth corpus. "
-						+ "Converts a given set of sequence files into SparseVectors");
+				SparseVectorsFromBehemoth.class.getSimpleName(),
+				USAGE);
 
 		String typeNameOpt = cliProcessor.addRequiredOption("t", "typeToken",
 				"The annotation type for Tokens", true);

@@ -24,18 +24,13 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
-import org.apache.hadoop.mapred.FileInputFormat;
-import org.apache.hadoop.mapred.FileOutputFormat;
-import org.apache.hadoop.mapred.JobClient;
-import org.apache.hadoop.mapred.JobConf;
-import org.apache.hadoop.mapred.Mapper;
-import org.apache.hadoop.mapred.OutputCollector;
-import org.apache.hadoop.mapred.Reporter;
-import org.apache.hadoop.mapred.SequenceFileInputFormat;
-import org.apache.hadoop.mapred.SequenceFileOutputFormat;
+import org.apache.hadoop.mapreduce.Job;
+import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
+import org.apache.hadoop.mapreduce.lib.input.SequenceFileInputFormat;
+import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
+import org.apache.hadoop.mapreduce.lib.output.SequenceFileOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
-import org.apache.nutch.crawl.CrawlDatum;
 import org.apache.nutch.metadata.Nutch;
 import org.apache.nutch.protocol.Content;
 import org.slf4j.Logger;
@@ -50,76 +45,48 @@ import com.digitalpebble.behemoth.InputOutputCliProcessor;
  * be stored (or not), the text representation can be stored if available, the
  * parse or fetch metadata are stored in the document metadata.
  */
-public class NutchSegmentConverterJob extends Configured implements Tool,
-        Mapper<Text, Content, Text, BehemothDocument> {
+public class NutchSegmentConverterJob extends Configured implements Tool {
 
     public static final Logger LOG = LoggerFactory
             .getLogger(NutchSegmentConverterJob.class);
 
+    public static final String USAGE = "Parse a Behemoth corpus with GATE";
+    
     public NutchSegmentConverterJob() {
         this(null);
     }
-
+    
     public NutchSegmentConverterJob(Configuration conf) {
-        super(conf);
+    	super(conf);
     }
-
-    public void configure(JobConf job) {
-        setConf(job);
-    }
-
-    public void close() {
-    }
-
-    private Text newKey = new Text();
-
-    public void map(Text key, Content content,
-            OutputCollector<Text, BehemothDocument> output, Reporter reporter)
-            throws IOException {
-
-        BehemothDocument behemothDocument = new BehemothDocument();
-
-        int status = Integer.parseInt(content.getMetadata().get(
-                Nutch.FETCH_STATUS_KEY));
-        if (status != CrawlDatum.STATUS_FETCH_SUCCESS) {
-            // content not fetched successfully, skip document
-            LOG.debug("Skipping " + key
-                    + " as content is not fetched successfully");
-            return;
-        }
-
-        // TODO store the fetch metadata in the Behemoth document
-        // store the binary content and mimetype in the Behemoth document
-
-        String contentType = content.getContentType();
-        byte[] binarycontent = content.getContent();
-        behemothDocument.setUrl(key.toString());
-        behemothDocument.setContent(binarycontent);
-        behemothDocument.setContentType(contentType);
-        output.collect(key, behemothDocument);
-    }
-
+    
     public void convert(Path nutchsegment, Path output) throws IOException {
 
-        JobConf job = new JobConf(getConf());
+    	Configuration conf = getConf();
+        Job job = new Job(conf);
         job.setJobName("Convert Nutch segment" + nutchsegment);
         job.setJarByClass(this.getClass());
 
         FileInputFormat.addInputPath(job, new Path(nutchsegment,
                 Content.DIR_NAME));
-        job.set(Nutch.SEGMENT_NAME_KEY, nutchsegment.getName());
-        job.setInputFormat(SequenceFileInputFormat.class);
-        job.setMapperClass(NutchSegmentConverterJob.class);
+        conf.set(Nutch.SEGMENT_NAME_KEY, nutchsegment.getName());
+        job.setInputFormatClass(SequenceFileInputFormat.class);
+        job.setMapperClass(NutchSegmentConverterMapper.class);
 
         // no reducers
         job.setNumReduceTasks(0);
 
         FileOutputFormat.setOutputPath(job, output);
-        job.setOutputFormat(SequenceFileOutputFormat.class);
+        job.setOutputFormatClass(SequenceFileOutputFormat.class);
         job.setOutputKeyClass(Text.class);
         job.setOutputValueClass(BehemothDocument.class);
 
-        JobClient.runJob(job);
+        try {
+        	job.waitForCompletion(true);
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+        }
         if (LOG.isInfoEnabled()) {
             LOG.info("Conversion: done");
         }
@@ -133,8 +100,8 @@ public class NutchSegmentConverterJob extends Configured implements Tool,
 
     public int run(String[] args) throws Exception {
 		InputOutputCliProcessor cliProcessor = new InputOutputCliProcessor(
-				NutchSegmentConverterJob.class,
-				"Convert a Nutch Segment into a Behemoth Corpus");
+				NutchSegmentConverterJob.class.getSimpleName(),
+				USAGE);
 
 		try {
 			cliProcessor.parse(args);

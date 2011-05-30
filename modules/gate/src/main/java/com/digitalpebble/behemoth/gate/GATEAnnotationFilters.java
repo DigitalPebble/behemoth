@@ -28,8 +28,6 @@ import java.util.Set;
 
 import org.apache.hadoop.conf.Configuration;
 
-import com.digitalpebble.behemoth.Annotation;
-
 /** Container for the annotation filters which is built from **/
 
 public class GATEAnnotationFilters {

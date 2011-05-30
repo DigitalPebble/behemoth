@@ -26,11 +26,13 @@ import java.io.FileWriter;
 import java.io.IOException;
 
 import org.apache.commons.cli.ParseException;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
+import org.apache.hadoop.fs.FileStatus;
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.SequenceFile.Reader;
+import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.Text;
-import org.apache.hadoop.mapred.SequenceFileOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 
@@ -44,6 +46,8 @@ import com.digitalpebble.behemoth.InputOutputCliProcessor;
  **/
 public class GATECorpusGenerator extends Configured implements Tool {
 
+	public final static String USAGE = "Converts a Behemoth corpus into a XML corpus for GATE. This is not a Map/Reduce job.";
+	
     public GATECorpusGenerator() throws GateException {
         Gate.runInSandbox(true);
         Gate.init();
@@ -58,8 +62,8 @@ public class GATECorpusGenerator extends Configured implements Tool {
 	public int run(String[] args) throws Exception {
 
 		InputOutputCliProcessor cliProcessor = new InputOutputCliProcessor(
-				GATECorpusGenerator.class,
-				"Converts a Behemoth corpus into a XML corpus for GATE. This is not a Map/Reduce job.");
+				GATECorpusGenerator.class.getSimpleName(),
+				USAGE);
 
 		try {
 			cliProcessor.parse(args);
@@ -86,9 +90,12 @@ public class GATECorpusGenerator extends Configured implements Tool {
         if (output.exists() == false)
             output.mkdirs();
 
-        Reader[] cacheReaders = SequenceFileOutputFormat.getReaders(getConf(),
-                input);
-        for (Reader current : cacheReaders) {
+        Configuration conf = getConf();
+        FileSystem fs = FileSystem.get(conf);
+        FileStatus[] fss = fs.listStatus(input);
+        for (FileStatus status : fss) {
+            Path path = status.getPath();
+            SequenceFile.Reader current = new SequenceFile.Reader(fs, path, conf);
             // read the key + values in that file
             Text key = new Text();
             BehemothDocument inputDoc = new BehemothDocument();

@@ -42,12 +42,14 @@ import com.digitalpebble.behemoth.CliProcessor;
 
 public class CorpusGenerator {
 
+	public final static String USAGE = "Generate a Behemoth corpus on HDFS from a local directory";
+	
     public static void main(String argv[]) throws Exception {
 
         // Populate a SequenceFile with the content of a local directory
         
-		CliProcessor cliProcessor = new CliProcessor(CorpusGenerator.class,
-				"Generate a Behemoth corpus on HDFS from a local directory");
+		CliProcessor cliProcessor = new CliProcessor(CorpusGenerator.class.getSimpleName(),
+				USAGE);
 		String inputOpt = cliProcessor.addRequiredOption("i", "input",
 				"Input directory on local file system", true);
 		String outputOpt = cliProcessor.addRequiredOption("o", "output",

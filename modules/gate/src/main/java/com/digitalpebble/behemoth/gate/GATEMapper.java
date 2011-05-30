@@ -25,11 +25,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.filecache.DistributedCache;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
-import org.apache.hadoop.mapred.JobConf;
-import org.apache.hadoop.mapred.MapReduceBase;
-import org.apache.hadoop.mapred.Mapper;
-import org.apache.hadoop.mapred.OutputCollector;
-import org.apache.hadoop.mapred.Reporter;
+import org.apache.hadoop.mapreduce.Mapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,8 +36,7 @@ import com.digitalpebble.behemoth.BehemothDocument;
  * distributed cache
  **/
 
-public class GATEMapper extends MapReduceBase implements
-        Mapper<Text, BehemothDocument, Text, BehemothDocument> {
+public class GATEMapper extends Mapper<Text, BehemothDocument, Text, BehemothDocument> {
 
     private static final Logger LOG = LoggerFactory.getLogger(GATEMapper.class);
 
@@ -49,30 +44,32 @@ public class GATEMapper extends MapReduceBase implements
 
     private GATEProcessor processor;
 
-    public void map(Text key, BehemothDocument behedoc,
-            OutputCollector<Text, BehemothDocument> output, Reporter reporter)
-            throws IOException {
+    @Override
+    public void map(Text key, BehemothDocument behedoc, Mapper<Text, BehemothDocument, Text, BehemothDocument>.Context context)
+            throws IOException, InterruptedException {
 
-        BehemothDocument[] outputDocs = processor.process(behedoc, reporter);
+        BehemothDocument[] outputDocs = processor.process(behedoc, context);
         for (BehemothDocument doc : outputDocs) {
             // TODO output under a different key?
-            output.collect(key, doc);
+            context.write(key, doc);
         }
     }
 
-    public void close() throws IOException {
-        super.close();
+    @Override
+    public void cleanup(Context context) throws IOException, InterruptedException {
+        super.cleanup(context);
         processor.close();
     }
 
-    public void configure(JobConf job) {
-        super.configure(job);
-        config = job;
+    @Override
+    public void setup(Context context) throws IOException, InterruptedException {
+        super.setup(context);
+        config = context.getConfiguration();
 
         // we try to load the gate application
         // using the gate.app file
-        String application_path = job.get("gate.application.path");
-        String gapp_file = job.get("gate.application.descriptor",
+        String application_path = config.get("gate.application.path");
+        String gapp_file = config.get("gate.application.descriptor",
                 "application.xgapp");
 
         URL applicationDescriptorURL = null;
@@ -86,7 +83,7 @@ public class GATEMapper extends MapReduceBase implements
             if (applicationName.endsWith(".zip"))
                 applicationName = applicationName.replaceAll(".zip", "");
 
-            Path[] localArchives = DistributedCache.getLocalCacheArchives(job);
+            Path[] localArchives = DistributedCache.getLocalCacheArchives(config);
             // identify the right archive
             for (Path la : localArchives) {
                 String localPath = la.toUri().toString();
