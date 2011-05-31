@@ -30,6 +30,12 @@
          <exclude org="org.uncommons.watchmaker"/>
          <exclude org="com.google.code.gson"/>
          <exclude org="com.google.guava"/>
+         <exclude org="org.apache.hadoop"/>
+         <exclude org="commons-httpclient"/>
+         <exclude org="org.mortbay.jetty"/>
+         <exclude org="tomcat"/>
+         <exclude org="org.eclipse.jdt"/>
+         <exclude org="hsqldb"/>
       </dependency>
       <dependency org="com.google.guava" name="guava" rev="r08" />
       <dependency org="org.apache.mahout" name="mahout-math" rev="0.4">
@@ -37,6 +43,12 @@
          <exclude org="org.uncommons.watchmaker"/>
          <exclude org="com.google.code.gson"/>
          <exclude org="com.google.guava"/>
+         <exclude org="org.apache.hadoop"/>
+         <exclude org="commons-httpclient"/>
+         <exclude org="org.mortbay.jetty"/>
+         <exclude org="tomcat"/>
+         <exclude org="org.eclipse.jdt"/>
+         <exclude org="hsqldb"/>
       </dependency>
     </dependencies>
 </ivy-module>
