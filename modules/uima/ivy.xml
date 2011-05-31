@@ -26,6 +26,7 @@
     <dependencies defaultconf="*->*,!sources,!javadoc">
       <dependency name="behemoth-core" rev="latest.integration" />
 	<!-- UIMA dependencies --> 
+	<dependency org="commons-logging" name="commons-logging" rev="1.1.1"/>
 	<dependency org="org.apache.uima" name="uimaj-core" rev="2.3.1"/>
 	<dependency org="org.apache.uima" name="uimaj-tools" rev="2.3.1"/>
     </dependencies>
