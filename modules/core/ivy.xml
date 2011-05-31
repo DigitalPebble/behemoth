@@ -19,7 +19,10 @@
 <ivy-module version="1.0">
     <info 
         organisation="com.digitalpebble"
-        module="behemoth-core"/>  
+        module="behemoth-core"/> 
+    <configurations>
+  	  <conf name="test" description="Test dependencies"/>
+    </configurations>   
     <publications>
       <artifact name="behemoth-core" type="jar"/>
     </publications>
@@ -29,5 +32,6 @@
 	<dependency org="org.apache.hadoop" name="hadoop-core" rev="0.20.2" transitive="false"/>
     <dependency org="commons-cli" name="commons-cli" rev="1.2"/>
     <dependency org="commons-lang" name="commons-lang" rev="2.5"/>
+    <dependency org="junit" name="junit" rev="4.8.1" conf="test->default"/>
     </dependencies>
 </ivy-module>
