@@ -17,8 +17,10 @@
 
 package com.digitalpebble.behemoth.uima;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -28,11 +30,18 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.filecache.DistributedCache;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
-import org.apache.hadoop.mapreduce.Mapper;
+import org.apache.hadoop.mapred.JobConf;
+import org.apache.hadoop.mapred.MapReduceBase;
+import org.apache.hadoop.mapred.Mapper;
+import org.apache.hadoop.mapred.OutputCollector;
+import org.apache.hadoop.mapred.Reporter;
+
 import org.apache.uima.UIMAFramework;
 import org.apache.uima.analysis_engine.AnalysisEngine;
 import org.apache.uima.cas.CAS;
@@ -40,17 +49,14 @@ import org.apache.uima.cas.FSIterator;
 import org.apache.uima.cas.Feature;
 import org.apache.uima.cas.Type;
 import org.apache.uima.cas.impl.AnnotationImpl;
-import org.apache.uima.cas.text.AnnotationFS;
 import org.apache.uima.pear.tools.PackageBrowser;
 import org.apache.uima.pear.tools.PackageInstaller;
 import org.apache.uima.resource.ResourceSpecifier;
 import org.apache.uima.util.XMLInputSource;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.digitalpebble.behemoth.BehemothDocument;
 
-public class UIMAMapper extends 
+public class UIMAMapper extends MapReduceBase implements
         Mapper<Text, BehemothDocument, Text, BehemothDocument> {
 
     private static final Logger LOG = LoggerFactory.getLogger(UIMAMapper.class);
@@ -69,10 +75,10 @@ public class UIMAMapper extends
 
     @Override
     public void map(Text id, BehemothDocument behemoth,
-            Mapper<Text, BehemothDocument, Text, BehemothDocument>.Context context)
-            throws IOException, InterruptedException {
+            OutputCollector<Text, BehemothDocument> output, Reporter reporter)
+            throws IOException {
 
-        context.setStatus("UIMA : " + id.toString());
+        reporter.setStatus("UIMA : " + id.toString());
 
         // generate a CAS from the input document
         cas.reset();
@@ -89,33 +95,32 @@ public class UIMAMapper extends
                 cas.setDocumentText(behemoth.getText());
                 // process it
                 tae.process(cas);
-                convertCASToBehemoth(cas, behemoth, context);
+                convertCASToBehemoth(cas, behemoth, reporter);
             }
         } catch (Exception e) {
-            context.getCounter("UIMA", "Exception").increment(1);
+            reporter.incrCounter("UIMA", "Exception", 1);
             throw new IOException(e);
         }
 
-        context.getCounter("UIMA", "Document").increment(1);
+        reporter.incrCounter("UIMA", "Document", 1);
 
         // dump the modified document
-        context.write(id, behemoth);
+        output.collect(id, behemoth);
     }
 
-    @Override
-    public void setup(Context context) {
+    public void configure(JobConf conf) {
 
-        this.config = context.getConfiguration();
+        this.config = conf;
 
         storeshortnames = config.getBoolean("uima.store.short.names", true);
 
-        File pearpath = new File(config.get("uima.pear.path"));
+        File pearpath = new File(conf.get("uima.pear.path"));
         String pearname = pearpath.getName();
 
         URL urlPEAR = null;
 
         try {
-            Path[] localArchives = DistributedCache.getLocalCacheFiles(config);
+            Path[] localArchives = DistributedCache.getLocalCacheFiles(conf);
             // identify the right archive
             for (Path la : localArchives) {
                 String localPath = la.toUri().toString();
@@ -189,8 +194,7 @@ public class UIMAMapper extends
 
     }
 
-    @Override
-    public void cleanup(Context context) throws IOException {
+    public void close() throws IOException {
         if (cas != null)
             cas.release();
         if (tae != null)
@@ -200,7 +204,7 @@ public class UIMAMapper extends
     /** convert the annotations from the CAS into the Behemoth format **/
     private void convertCASToBehemoth(CAS uimadoc,
             com.digitalpebble.behemoth.BehemothDocument behemoth,
-            Mapper<Text, BehemothDocument, Text, BehemothDocument>.Context reporter) {
+            Reporter reporter) {
 
         String[] annotTypes = config.get("uima.annotations.filter", "").split(
                 ",");
@@ -211,7 +215,7 @@ public class UIMAMapper extends
             uimatypes.add(aType);
         }
 
-        FSIterator<AnnotationFS> annotIterator = cas.getAnnotationIndex().iterator();
+        FSIterator annotIterator = cas.getAnnotationIndex().iterator();
 
         while (annotIterator.hasNext()) {
             Object annotObject = annotIterator.next();
@@ -222,7 +226,7 @@ public class UIMAMapper extends
                 continue;
             String atype = annotation.getType().toString();
             // wanted type -> generate an annotation for it
-            reporter.getCounter("UIMA", atype).increment(1);
+            reporter.incrCounter("UIMA", atype, 1);
 
             com.digitalpebble.behemoth.Annotation target = new com.digitalpebble.behemoth.Annotation();
             // short version?

@@ -22,11 +22,12 @@ import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
-import org.apache.hadoop.mapreduce.Job;
-import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
-import org.apache.hadoop.mapreduce.lib.input.SequenceFileInputFormat;
-import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
-import org.apache.hadoop.mapreduce.lib.output.SequenceFileOutputFormat;
+import org.apache.hadoop.mapred.FileInputFormat;
+import org.apache.hadoop.mapred.FileOutputFormat;
+import org.apache.hadoop.mapred.JobClient;
+import org.apache.hadoop.mapred.JobConf;
+import org.apache.hadoop.mapred.SequenceFileInputFormat;
+import org.apache.hadoop.mapred.SequenceFileOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 import org.slf4j.Logger;
@@ -39,9 +40,8 @@ import com.digitalpebble.behemoth.InputOutputCliProcessor;
 public class TikaDriver extends Configured implements Tool, TikaConstants {
 	private transient static Logger log = LoggerFactory
 			.getLogger(TikaDriver.class);
-
 	public final static String USAGE = "Parse a Behemoth corpus with Tika";
-	
+
 	public TikaDriver() {
 		super(null);
 	}
@@ -61,8 +61,7 @@ public class TikaDriver extends Configured implements Tool, TikaConstants {
 		final FileSystem fs = FileSystem.get(getConf());
 
 		InputOutputCliProcessor cliProcessor = new InputOutputCliProcessor(
-				TikaDriver.class.getSimpleName(),
-				USAGE);
+				TikaDriver.class.getSimpleName(), USAGE);
 		String tikaOpt = cliProcessor
 				.addOption(
 						"t",
@@ -81,24 +80,23 @@ public class TikaDriver extends Configured implements Tool, TikaConstants {
 		Path inputPath = new Path(cliProcessor.getInputValue());
 		Path outputPath = new Path(cliProcessor.getOutputValue());
 
-		Configuration conf = getConf();
-		Job job = new Job(conf);
+		JobConf job = new JobConf(getConf());
 		job.setJarByClass(this.getClass());
 
 		String handlerName = cliProcessor.getOptionValue(tikaOpt);
 		if (handlerName != null) {
-			conf.set(TIKA_PROCESSOR_KEY, handlerName);
+			job.set(TIKA_PROCESSOR_KEY, handlerName);
 		}
 
 		String mimeType = cliProcessor.getOptionValue(mimeOpt);
 		if (mimeType != null) {
-			conf.set(TikaConstants.TIKA_MIME_TYPE_KEY, mimeType);
+			job.set(TikaConstants.TIKA_MIME_TYPE_KEY, mimeType);
 		}
 
 		job.setJobName("Processing with Tika");
 
-		job.setInputFormatClass(SequenceFileInputFormat.class);
-		job.setOutputFormatClass(SequenceFileOutputFormat.class);
+		job.setInputFormat(SequenceFileInputFormat.class);
+		job.setOutputFormat(SequenceFileOutputFormat.class);
 
 		job.setMapOutputKeyClass(Text.class);
 		job.setMapOutputValueClass(BehemothDocument.class);
@@ -113,7 +111,7 @@ public class TikaDriver extends Configured implements Tool, TikaConstants {
 		FileOutputFormat.setOutputPath(job, outputPath);
 
 		try {
-			job.waitForCompletion(true);
+			JobClient.runJob(job);
 		} catch (Exception e) {
 			e.printStackTrace();
 			fs.delete(outputPath, true);

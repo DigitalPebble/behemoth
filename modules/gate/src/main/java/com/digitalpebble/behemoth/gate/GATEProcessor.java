@@ -37,13 +37,12 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map.Entry;
 import java.util.Set;
+import java.util.Map.Entry;
 
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
-import org.apache.hadoop.mapreduce.Mapper;
+import org.apache.hadoop.mapred.Reporter;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.utils.ParseUtils;
@@ -85,7 +84,7 @@ public class GATEProcessor implements DocumentProcessor {
 
     // Process an input document with GATE and a Reporter
     public synchronized BehemothDocument[] process(BehemothDocument inputDoc,
-            Mapper<Text, BehemothDocument, Text, BehemothDocument>.Context reporter) {
+            Reporter reporter) {
         if (reporter != null)
             reporter.setStatus("GATE : " + inputDoc.getUrl().toString());
 
@@ -126,18 +125,18 @@ public class GATEProcessor implements DocumentProcessor {
             // add counters about num of annotations added
             if (reporter != null)
                 for (com.digitalpebble.behemoth.Annotation annot : beheannotations) {
-                    reporter.getCounter("GATE", annot.getType()).increment(1);
+                    reporter.incrCounter("GATE", annot.getType(), 1);
                 }
 
             // transfer the annotations from the GATE document
             // to the Behemoth one using the filters
             if (reporter != null)
-                reporter.getCounter("GATE", "Document").increment(1);
+                reporter.incrCounter("GATE", "Document", 1);
 
         } catch (Exception e) {
             LOG.error(inputDoc.getUrl().toString(), e);
             if (reporter != null)
-                reporter.getCounter("GATE", "Exceptions").increment(1);
+                reporter.incrCounter("GATE", "Exceptions", 1);
         } finally {
             // remove the document from the corpus again
             corpus.clear();

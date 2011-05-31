@@ -26,11 +26,12 @@ import org.apache.hadoop.filecache.DistributedCache;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
-import org.apache.hadoop.mapreduce.Job;
-import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
-import org.apache.hadoop.mapreduce.lib.input.SequenceFileInputFormat;
-import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
-import org.apache.hadoop.mapreduce.lib.output.SequenceFileOutputFormat;
+import org.apache.hadoop.mapred.FileInputFormat;
+import org.apache.hadoop.mapred.FileOutputFormat;
+import org.apache.hadoop.mapred.JobClient;
+import org.apache.hadoop.mapred.JobConf;
+import org.apache.hadoop.mapred.SequenceFileInputFormat;
+import org.apache.hadoop.mapred.SequenceFileOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 import org.slf4j.Logger;
@@ -87,16 +88,15 @@ public class GATEDriver extends Configured implements Tool {
             return -1;
         }
 
-        Configuration conf = getConf();
-        Job job = new Job(conf);
+        JobConf job = new JobConf(getConf());
         // MUST not forget the line below
         job.setJarByClass(this.getClass());
 
         job.setJobName("Processing with GATE application from "
                 + zip_application_path);
-        
-        job.setInputFormatClass(SequenceFileInputFormat.class);
-        job.setOutputFormatClass(SequenceFileOutputFormat.class);
+
+        job.setInputFormat(SequenceFileInputFormat.class);
+        job.setOutputFormat(SequenceFileOutputFormat.class);
 
         job.setOutputKeyClass(Text.class);
         job.setOutputValueClass(BehemothDocument.class);
@@ -109,17 +109,17 @@ public class GATEDriver extends Configured implements Tool {
         FileOutputFormat.setOutputPath(job, outputPath);
 
         // push the zipped_gate_application onto the DistributedCache
-        DistributedCache.addCacheArchive(new URI(zip_application_path), conf);
+        DistributedCache.addCacheArchive(new URI(zip_application_path), job);
 
-        conf.set("gate.application.path", zip_application_path.toString());
+        job.set("gate.application.path", zip_application_path.toString());
 
         try {
-        	job.waitForCompletion(true);
+            JobClient.runJob(job);
         } catch (Exception e) {
             e.printStackTrace();
             fs.delete(outputPath, true);
         } finally {
-            DistributedCache.purgeCache(conf);
+            DistributedCache.purgeCache(job);
         }
 
         return 0;

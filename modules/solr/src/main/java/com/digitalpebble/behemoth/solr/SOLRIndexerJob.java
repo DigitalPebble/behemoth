@@ -28,11 +28,12 @@ import org.apache.hadoop.filecache.DistributedCache;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
-import org.apache.hadoop.mapreduce.Job;
-import org.apache.hadoop.mapreduce.Mapper;
-import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
-import org.apache.hadoop.mapreduce.lib.input.SequenceFileInputFormat;
-import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
+import org.apache.hadoop.mapred.FileInputFormat;
+import org.apache.hadoop.mapred.FileOutputFormat;
+import org.apache.hadoop.mapred.JobClient;
+import org.apache.hadoop.mapred.JobConf;
+import org.apache.hadoop.mapred.SequenceFileInputFormat;
+import org.apache.hadoop.mapred.lib.IdentityMapper;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 
@@ -66,9 +67,7 @@ public class SOLRIndexerJob extends Configured implements Tool {
 
         final FileSystem fs = FileSystem.get(getConf());
         
-		CliProcessor cliProcessor = new CliProcessor(
-				SOLRIndexerJob.class.getSimpleName(),
-				USAGE);
+		CliProcessor cliProcessor = new CliProcessor(SOLRIndexerJob.class.getSimpleName(), USAGE);
 		String inputOpt = cliProcessor.addRequiredOption("i", "input",
 				"Input directory on HDFS", true);
 		String solrOpt = cliProcessor.addRequiredOption("l", "solr",
@@ -83,20 +82,19 @@ public class SOLRIndexerJob extends Configured implements Tool {
         Path inputPath = new Path(cliProcessor.getOptionValue(inputOpt));
         String solrURL = cliProcessor.getOptionValue(solrOpt);
 
-        Configuration conf = getConf();
-        Job job = new Job(conf);
+        JobConf job = new JobConf(getConf());
 
         job.setJarByClass(this.getClass());
 
         job.setJobName("Indexing " + inputPath + " into SOLR");
 
-        job.setInputFormatClass(SequenceFileInputFormat.class);
-        job.setOutputFormatClass(SOLROutputFormat.class);
+        job.setInputFormat(SequenceFileInputFormat.class);
+        job.setOutputFormat(SOLROutputFormat.class);
 
         job.setOutputKeyClass(Text.class);
         job.setOutputValueClass(BehemothDocument.class);
 
-        job.setMapperClass(Mapper.class);
+        job.setMapperClass(IdentityMapper.class);
         // no reducer : send straight to SOLR at end of mapping
         job.setNumReduceTasks(0);
 
@@ -105,15 +103,15 @@ public class SOLRIndexerJob extends Configured implements Tool {
                 + new Random().nextInt());
         FileOutputFormat.setOutputPath(job, tmp);
 
-        conf.set("solr.server.url", solrURL);
+        job.set("solr.server.url", solrURL);
 
         try {
-        	job.waitForCompletion(true);
+            JobClient.runJob(job);
         } catch (Exception e) {
             LOG.error(e);
         } finally {
             fs.delete(tmp, true);
-            DistributedCache.purgeCache(conf);
+            DistributedCache.purgeCache(job);
         }
 
         return 0;

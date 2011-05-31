@@ -26,11 +26,12 @@ import org.apache.hadoop.filecache.DistributedCache;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
-import org.apache.hadoop.mapreduce.Job;
-import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
-import org.apache.hadoop.mapreduce.lib.input.SequenceFileInputFormat;
-import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
-import org.apache.hadoop.mapreduce.lib.output.SequenceFileOutputFormat;
+import org.apache.hadoop.mapred.FileInputFormat;
+import org.apache.hadoop.mapred.FileOutputFormat;
+import org.apache.hadoop.mapred.JobClient;
+import org.apache.hadoop.mapred.JobConf;
+import org.apache.hadoop.mapred.SequenceFileInputFormat;
+import org.apache.hadoop.mapred.SequenceFileOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 import org.slf4j.Logger;
@@ -42,9 +43,9 @@ import com.digitalpebble.behemoth.InputOutputCliProcessor;
 
 public class UIMADriver extends Configured implements Tool {
 
-	public final static String USAGE = "Process a Behemoth corpus with UIMA";
-	
     private static final Logger LOG = LoggerFactory.getLogger(UIMADriver.class);
+    
+    public static final String USAGE = "Process a Behemoth corpus with UIMA";
 
     public UIMADriver() {
         super(null);
@@ -65,8 +66,7 @@ public class UIMADriver extends Configured implements Tool {
         final FileSystem fs = FileSystem.get(getConf());
         
 		InputOutputCliProcessor cliProcessor = new InputOutputCliProcessor(
-				UIMADriver.class.getSimpleName(),
-				USAGE);
+				UIMADriver.class.getSimpleName(), USAGE);
 		String pearOpt = cliProcessor.addRequiredOption("p", "pear",
 				"Path to PEAR file", true, "path_to_pear_file");
 
@@ -88,13 +88,12 @@ public class UIMADriver extends Configured implements Tool {
             return -1;
         }
 
-        Configuration conf = getConf();
-        Job job = new Job(getConf());
+        JobConf job = new JobConf(getConf());
         job.setJarByClass(this.getClass());
         job.setJobName("Processing with UIMA application : " + pearPath);
 
-        job.setInputFormatClass(SequenceFileInputFormat.class);
-        job.setOutputFormatClass(SequenceFileOutputFormat.class);
+        job.setInputFormat(SequenceFileInputFormat.class);
+        job.setOutputFormat(SequenceFileOutputFormat.class);
 
         job.setMapOutputKeyClass(Text.class);
         job.setMapOutputValueClass(BehemothDocument.class);
@@ -109,17 +108,17 @@ public class UIMADriver extends Configured implements Tool {
         FileOutputFormat.setOutputPath(job, outputPath);
 
         // push the UIMA pear onto the DistributedCache
-        DistributedCache.addCacheFile(new URI(pearPath), conf);
+        DistributedCache.addCacheFile(new URI(pearPath), job);
 
-        conf.set("uima.pear.path", pearPath);
+        job.set("uima.pear.path", pearPath);
 
         try {
-        	job.waitForCompletion(true);
+            JobClient.runJob(job);
         } catch (Exception e) {
             e.printStackTrace();
             fs.delete(outputPath, true);
         } finally {
-            DistributedCache.purgeCache(conf);
+            DistributedCache.purgeCache(job);
         }
 
         return 0;
