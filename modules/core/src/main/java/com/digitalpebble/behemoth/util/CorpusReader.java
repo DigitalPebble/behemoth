@@ -64,19 +64,23 @@ public class CorpusReader extends Configured implements Tool {
 
         boolean showBinaryContent = cliProcessor.hasOption(binaryOpt);
 
-        Configuration conf = getConf();
-        FileSystem fs = FileSystem.get(conf);
-        FileStatus[] fss = fs.listStatus(input);
-        for (FileStatus status : fss) {
-            Path path = status.getPath();
-            SequenceFile.Reader reader = new SequenceFile.Reader(fs, path, conf);
-            Text key = new Text();
-            BehemothDocument value = new BehemothDocument();
-            while (reader.next(key, value)) {
-                System.out.println(value.toString(showBinaryContent));
-            }
-            reader.close();
-        }
+		Configuration conf = getConf();
+		FileSystem fs = FileSystem.get(conf);
+		FileStatus[] fss = fs.listStatus(input);
+		for (FileStatus status : fss) {
+			Path path = status.getPath();
+			if (path.getName().startsWith("part-")
+					|| path.getName().equals(input.getName())) {
+				SequenceFile.Reader reader = new SequenceFile.Reader(fs, path,
+						conf);
+				Text key = new Text();
+				BehemothDocument value = new BehemothDocument();
+				while (reader.next(key, value)) {
+					System.out.println(value.toString(showBinaryContent));
+				}
+				reader.close();
+			}
+		}
 
         return 0;
     }
