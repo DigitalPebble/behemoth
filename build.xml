@@ -73,6 +73,11 @@
   			description="clean-full : clean ivy cache and all modules">
     <ivy:cleancache />
   </target>
+
+  <target name="report" depends="init-ivy,buildlist">
+    <subant target="report" buildpathref="build-path" />
+  </target>
+
   
   
 </project>
