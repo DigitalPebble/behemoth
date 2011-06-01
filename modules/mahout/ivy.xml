@@ -20,12 +20,17 @@
     <info 
         organisation="com.digitalpebble"
         module="behemoth-mahout"/>   
+    <configurations defaultconfmapping="job->default">
+        <conf name="job" description=".job file dependency"/>
+    	<conf name="test" description="Test dependency"/>
+    	<conf name="default" extends="job" description="Dependency required by users of .jar"/>
+    </configurations>   
     <publications>
       <artifact name="behemoth-mahout" type="jar"/>
     </publications>
     <dependencies defaultconf="*->*,!sources,!javadoc">
-      <dependency name="behemoth-core" rev="latest.integration" />
-      <dependency org="org.apache.mahout" name="mahout-core" rev="0.4">
+      <dependency name="behemoth-core" rev="latest.integration" conf="job->default"/>
+      <dependency org="org.apache.mahout" name="mahout-core" rev="0.4" conf="job->default(*),optional(*)">
          <exclude org="org.uncommons.maths"/>
          <exclude org="org.uncommons.watchmaker"/>
          <exclude org="com.google.code.gson"/>
@@ -37,8 +42,8 @@
          <exclude org="org.eclipse.jdt"/>
          <exclude org="hsqldb"/>
       </dependency>
-      <dependency org="com.google.guava" name="guava" rev="r08" />
-      <dependency org="org.apache.mahout" name="mahout-math" rev="0.4">
+      <dependency org="com.google.guava" name="guava" rev="r08" conf="job->default(*),optional(*)"/>
+      <dependency org="org.apache.mahout" name="mahout-math" rev="0.4" conf="job->default(*),optional(*)">
          <exclude org="org.uncommons.maths"/>
          <exclude org="org.uncommons.watchmaker"/>
          <exclude org="com.google.code.gson"/>

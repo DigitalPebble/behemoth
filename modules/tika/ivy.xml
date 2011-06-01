@@ -20,14 +20,20 @@
     <info 
         organisation="com.digitalpebble"
         module="behemoth-tika"
-        status="integration"/>   
+        status="integration"/>  
+    <configurations defaultconfmapping="job->default">
+        <conf name="job" description=".job file dependency"/>
+    	<conf name="test" description="Test dependency"/>
+    	<conf name="default" extends="job" description="Dependency required by users of .jar"/>
+    </configurations>   
     <publications>
       <artifact name="behemoth-tika" type="jar"/>
     </publications>
     <dependencies defaultconf="*->*,!sources,!javadoc">
-      <dependency name="behemoth-core" rev="latest.integration" />
-      <dependency org="org.apache.tika" name="tika-parsers" rev="0.9"/>
-      <dependency org="bouncycastle" name="bcprov-jdk14" rev="136"/>
-      <dependency org="bouncycastle" name="bcmail-jdk14" rev="136"/>
+      <dependency name="behemoth-core" rev="latest.integration" conf="job->default"/>
+      <dependency org="org.apache.tika" name="tika-parsers" rev="0.9" conf="job->default(*),optional(*)"/>
+      <dependency org="bouncycastle" name="bcprov-jdk14" rev="136" conf="job->default"/>
+      <dependency org="bouncycastle" name="bcmail-jdk14" rev="136" conf="job->default"/>
+      <dependency org="junit" name="junit" rev="4.8.1" conf="test->default"/>
     </dependencies>
 </ivy-module>

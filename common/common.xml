@@ -59,7 +59,7 @@
     </target>    
 
     <path id="lib.path.id">
-        <fileset dir="${lib.dir}" />
+        <fileset dir="${job.lib.dir}" />
     </path>
 
 
@@ -68,6 +68,7 @@
     <pathelement location="${test.classes.dir}" />
     <pathelement location="${classes.dir}"/>
     <pathelement location="${basedir}/src/test/conf"/>
+  	<fileset dir="${test.lib.dir}"/>
     <path refid="lib.path.id"/>
   </path>
 
@@ -86,13 +87,16 @@
           target: resolve              
          ================================= -->
     <target name="resolve" depends="clean-lib, load-ivy" description="--> resolve and retrieve dependencies with ivy">
-        <mkdir dir="${lib.dir}"/> <!-- not usually necessary, ivy creates the directory IF there are dependencies -->
+        <mkdir dir="${job.lib.dir}"/> <!-- not usually necessary, ivy creates the directory IF there are dependencies -->
+    	<mkdir dir="${test.lib.dir}"/> 
     	
     	<!-- the call to resolve is not mandatory, retrieve makes an implicit call if we don't -->
-    	<ivy:resolve file="${ivy.file}"/>
-    	<ivy:retrieve pattern="${lib.dir}/[artifact]-[revision].[ext]" />
+    	<ivy:resolve file="${ivy.file}" transitive="true"/>
+    	<ivy:retrieve pattern="${job.lib.dir}/[artifact]-[revision].[ext]" conf="job" />
+    	<ivy:retrieve pattern="${test.lib.dir}/[artifact]-[revision].[ext]" conf="test" />
     </target>
-    
+
+
     <!-- ================================= 
           target: report              
          ================================= -->
@@ -196,7 +200,7 @@
          ================================= -->
     <target name="job" depends="jar" description="--> generate a job file for this project">
         <jar destfile="${job.file}">     
-	 <zipfileset dir="${lib.dir}" prefix="lib"
+	 <zipfileset dir="${job.lib.dir}" prefix="lib"
                   includes="**/*.jar" excludes="hadoop-*.jar"/>
 	 <zipfileset dir="${classes.dir}"
                   excludes="*.properties"/>
@@ -206,7 +210,7 @@
     <!-- ================================= 
           target: publish              
          ================================= -->
-    <target name="publish" depends="clean-build, jar" description="--> publish this project in the ivy repository">
+    <target name="publish" depends="clean-build, jar, job" description="--> publish this project in the ivy repository">
     	<ivy:publish artifactspattern="${build.dir}/[artifact].[ext]" 
     			           resolver="shared"
     			           pubrevision="${version}" 
@@ -218,7 +222,7 @@
     <!-- ================================= 
           target: publish-local              
          ================================= -->
-    <target name="publish-local" depends="local-version, jar" description="--> publish this project in the local ivy repository">
+    <target name="publish-local" depends="local-version, jar, job" description="--> publish this project in the local ivy repository">
     	<ivy:publish artifactspattern="${build.dir}/[artifact].[ext]" 
     			        resolver="local"
     			        pubrevision="${version}"

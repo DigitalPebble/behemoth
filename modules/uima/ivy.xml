@@ -20,14 +20,20 @@
     <info 
         organisation="com.digitalpebble"
         module="behemoth-uima"/>   
+    <configurations defaultconfmapping="job->default">
+        <conf name="job" description=".job file dependency"/>
+    	<conf name="test" description="Test dependency"/>
+    	<conf name="default" extends="job" description="Dependency required by users of .jar"/>
+    </configurations>   
     <publications>
       <artifact name="behemoth-uima" type="jar"/>
     </publications>
     <dependencies defaultconf="*->*,!sources,!javadoc">
-      <dependency name="behemoth-core" rev="latest.integration" />
+      <dependency name="behemoth-core" rev="latest.integration" conf="job->default"/>
 	<!-- UIMA dependencies --> 
-	<dependency org="commons-logging" name="commons-logging" rev="1.1.1"/>
-	<dependency org="org.apache.uima" name="uimaj-core" rev="2.3.1"/>
-	<dependency org="org.apache.uima" name="uimaj-tools" rev="2.3.1"/>
+	<dependency org="commons-logging" name="commons-logging" rev="1.1.1" conf="job->default"/>
+	<dependency org="org.apache.uima" name="uimaj-core" rev="2.3.1" conf="job->default(*),optional(*)"/>
+	<dependency org="org.apache.uima" name="uimaj-tools" rev="2.3.1" conf="job->default(*),optional(*)"/>
+	<dependency org="junit" name="junit" rev="4.8.1" conf="test->default"/>
     </dependencies>
 </ivy-module>

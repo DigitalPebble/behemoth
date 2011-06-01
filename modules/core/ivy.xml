@@ -21,17 +21,18 @@
         organisation="com.digitalpebble"
         module="behemoth-core"/> 
     <configurations>
-  	  <conf name="test" description="Test dependencies"/>
+        <conf name="job" description=".job file dependency"/>
+    	<conf name="test" description="Test dependency"/>
+    	<conf name="default" extends="job" description="Dependency required by users of .jar"/>
     </configurations>   
     <publications>
       <artifact name="behemoth-core" type="jar"/>
     </publications>
     <dependencies defaultconf="*->*,!sources,!javadoc">
-	<dependency org="org.slf4j" name="slf4j-api" rev="1.6.1"/>	
-	<dependency org="org.slf4j" name="slf4j-log4j12" rev="1.6.1"/>	
-	<dependency org="org.apache.hadoop" name="hadoop-core" rev="0.20.2" transitive="false"/>
-    <dependency org="commons-cli" name="commons-cli" rev="1.2"/>
-    <dependency org="commons-lang" name="commons-lang" rev="2.5"/>
-    <dependency org="junit" name="junit" rev="4.8.1" conf="test->default"/>
+	<dependency org="org.slf4j" name="slf4j-api" rev="1.6.1" conf="job->default"/>	
+	<dependency org="org.slf4j" name="slf4j-log4j12" rev="1.6.1" conf="job->default"/>	
+	<dependency org="commons-cli" name="commons-cli" rev="1.2" conf="job->default"/>
+    <dependency org="commons-lang" name="commons-lang" rev="2.5" conf="job->default"/>
+	<dependency org="org.apache.hadoop" name="hadoop-core" rev="0.20.2" transitive="false" conf="job->default"/>
     </dependencies>
 </ivy-module>

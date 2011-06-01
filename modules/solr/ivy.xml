@@ -19,12 +19,17 @@
 <ivy-module version="1.0">
     <info 
         organisation="com.digitalpebble"
-        module="behemoth-solr"/>   
+        module="behemoth-solr"/>  
+    <configurations defaultconfmapping="job->default">
+        <conf name="job" description=".job file dependency"/>
+    	<conf name="test" description="Test dependency"/>
+    	<conf name="default" extends="job" description="Dependency required by users of .jar"/>
+    </configurations>    
     <publications>
       <artifact name="behemoth-solr" type="jar"/>
     </publications>
-    <dependencies defaultconf="*->*,!sources,!javadoc">
-      <dependency name="behemoth-core" rev="latest.integration" />
-      <dependency org="org.apache.solr" name="solr-solrj" rev="1.4.0"/> 
+    <dependencies  defaultconf="*->*,!sources,!javadoc">
+      <dependency name="behemoth-core" rev="latest.integration" conf="job->default"/>
+      <dependency org="org.apache.solr" name="solr-solrj" rev="1.4.0" conf="job->default(*),optional(*)"/> 
     </dependencies>
 </ivy-module>
