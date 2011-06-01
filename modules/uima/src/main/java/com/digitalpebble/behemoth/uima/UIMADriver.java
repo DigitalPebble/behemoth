@@ -40,6 +40,7 @@ import org.slf4j.LoggerFactory;
 import com.digitalpebble.behemoth.BehemothConfiguration;
 import com.digitalpebble.behemoth.BehemothDocument;
 import com.digitalpebble.behemoth.InputOutputCliProcessor;
+import com.digitalpebble.behemoth.InputOutputReplaceCliProcessor;
 
 public class UIMADriver extends Configured implements Tool {
 
@@ -65,7 +66,7 @@ public class UIMADriver extends Configured implements Tool {
 
         final FileSystem fs = FileSystem.get(getConf());
         
-		InputOutputCliProcessor cliProcessor = new InputOutputCliProcessor(
+        InputOutputReplaceCliProcessor cliProcessor = new InputOutputReplaceCliProcessor(
 				UIMADriver.class.getSimpleName(), USAGE);
 		String pearOpt = cliProcessor.addRequiredOption("p", "pear",
 				"Path to PEAR file", true, "path_to_pear_file");
@@ -114,6 +115,7 @@ public class UIMADriver extends Configured implements Tool {
 
         try {
             JobClient.runJob(job);
+            cliProcessor.replaceInputFile(getConf());
         } catch (Exception e) {
             e.printStackTrace();
             fs.delete(outputPath, true);

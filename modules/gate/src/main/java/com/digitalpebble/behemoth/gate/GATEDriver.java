@@ -39,7 +39,7 @@ import org.slf4j.LoggerFactory;
 
 import com.digitalpebble.behemoth.BehemothConfiguration;
 import com.digitalpebble.behemoth.BehemothDocument;
-import com.digitalpebble.behemoth.InputOutputCliProcessor;
+import com.digitalpebble.behemoth.InputOutputReplaceCliProcessor;
 
 public class GATEDriver extends Configured implements Tool {
     private static final Logger LOG = LoggerFactory.getLogger(GATEDriver.class);
@@ -64,7 +64,7 @@ public class GATEDriver extends Configured implements Tool {
 
         final FileSystem fs = FileSystem.get(getConf());
         
-		InputOutputCliProcessor cliProcessor = new InputOutputCliProcessor(
+		InputOutputReplaceCliProcessor cliProcessor = new InputOutputReplaceCliProcessor(
 				GATEDriver.class.getSimpleName(), USAGE);
 		String gateOpt = cliProcessor.addRequiredOption("g", "gate",
 				"Path to GATE file", true, "path_to_gate_file");
@@ -115,6 +115,7 @@ public class GATEDriver extends Configured implements Tool {
 
         try {
             JobClient.runJob(job);
+            cliProcessor.replaceInputFile(getConf());
         } catch (Exception e) {
             e.printStackTrace();
             fs.delete(outputPath, true);

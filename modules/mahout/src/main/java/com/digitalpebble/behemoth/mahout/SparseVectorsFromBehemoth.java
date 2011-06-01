@@ -29,6 +29,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.digitalpebble.behemoth.InputOutputCliProcessor;
+import com.digitalpebble.behemoth.InputOutputReplaceCliProcessor;
 import com.digitalpebble.behemoth.ParseArgumentException;
 
 /**
@@ -39,15 +40,15 @@ public final class SparseVectorsFromBehemoth {
 
 	private static final Logger log = LoggerFactory
 			.getLogger(SparseVectorsFromBehemoth.class);
-	
+
 	public static final String USAGE = "Similar to SparseVectorsFromSequenceFiles but gets the Tokens from a Behemoth corpus. "
-		+ "Converts a given set of sequence files into SparseVectors";
+			+ "Converts a given set of sequence files into SparseVectors";
 
 	private SparseVectorsFromBehemoth() {
 	}
 
 	public static void main(String[] args) throws Exception {
-		InputOutputCliProcessor cliProcessor = new InputOutputCliProcessor(
+		InputOutputReplaceCliProcessor cliProcessor = new InputOutputReplaceCliProcessor(
 				SparseVectorsFromBehemoth.class.getSimpleName(),
 				USAGE);
 
@@ -189,7 +190,9 @@ public final class SparseVectorsFromBehemoth {
 				logNormalize = true;
 			}
 
-			HadoopUtil.overwriteOutput(outputDir);
+			// overwriteOutput is called twice, which is probably a  mistake but 
+			// this was done in the original version prior to simplified CLI processing
+			HadoopUtil.overwriteOutput(outputDir); 
 			Path tokenizedPath = new Path(outputDir,
 					DocumentProcessor.TOKENIZED_DOCUMENT_OUTPUT_FOLDER);
 
@@ -218,6 +221,7 @@ public final class SparseVectorsFromBehemoth {
 						logNormalize, sequentialAccessOutput, namedVectors,
 						reduceTasks);
 			}
+			cliProcessor.replaceInputFile(conf);
 		} catch (ParseArgumentException ex) {
 			System.err.println("Could not parse " + ex.getOption()
 					+ " with value " + ex.getValue());

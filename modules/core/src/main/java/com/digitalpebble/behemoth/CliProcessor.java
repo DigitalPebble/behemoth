@@ -52,6 +52,16 @@ public class CliProcessor {
 			throw e;
 		}
 	}
+	
+	/**
+	 * Get the list of required options
+	 * 
+	 * @return The required options.
+	 */
+	List<String> getRequiredOptions() {
+		return new ArrayList<String>(
+				options.getRequiredOptions());
+	}
 
 	/**
 	 * Print the usage information on this command to System.out.
@@ -60,8 +70,7 @@ public class CliProcessor {
 		System.out.println(WordUtils.wrap(name + ": " + description, 80));
 		StringBuilder use = new StringBuilder();
 		use.append(name);
-		List<String> requiredOptions = new ArrayList<String>(
-				options.getRequiredOptions());
+		List<String> requiredOptions = getRequiredOptions();
 		for (String required : requiredOptions) {
 			use.append(" -" + required + " <"
 					+ options.getOption(required).getLongOpt() + ">");

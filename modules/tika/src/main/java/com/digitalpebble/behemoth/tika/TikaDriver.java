@@ -36,6 +36,7 @@ import org.slf4j.LoggerFactory;
 import com.digitalpebble.behemoth.BehemothConfiguration;
 import com.digitalpebble.behemoth.BehemothDocument;
 import com.digitalpebble.behemoth.InputOutputCliProcessor;
+import com.digitalpebble.behemoth.InputOutputReplaceCliProcessor;
 
 public class TikaDriver extends Configured implements Tool, TikaConstants {
 	private transient static Logger log = LoggerFactory
@@ -60,7 +61,7 @@ public class TikaDriver extends Configured implements Tool, TikaConstants {
 
 		final FileSystem fs = FileSystem.get(getConf());
 
-		InputOutputCliProcessor cliProcessor = new InputOutputCliProcessor(
+		InputOutputReplaceCliProcessor cliProcessor = new InputOutputReplaceCliProcessor(
 				TikaDriver.class.getSimpleName(), USAGE);
 		String tikaOpt = cliProcessor
 				.addOption(
@@ -112,6 +113,7 @@ public class TikaDriver extends Configured implements Tool, TikaConstants {
 
 		try {
 			JobClient.runJob(job);
+			cliProcessor.replaceInputFile(getConf());
 		} catch (Exception e) {
 			e.printStackTrace();
 			fs.delete(outputPath, true);
