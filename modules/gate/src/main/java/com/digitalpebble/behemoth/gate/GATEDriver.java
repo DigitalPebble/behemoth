@@ -119,7 +119,6 @@ public class GATEDriver extends Configured implements Tool {
             e.printStackTrace();
             fs.delete(outputPath, true);
         } finally {
-            DistributedCache.purgeCache(job);
         }
 
         return 0;
