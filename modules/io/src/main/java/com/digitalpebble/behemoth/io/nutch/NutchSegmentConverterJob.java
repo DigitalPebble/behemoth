@@ -38,7 +38,7 @@ import org.slf4j.LoggerFactory;
 
 import com.digitalpebble.behemoth.BehemothConfiguration;
 import com.digitalpebble.behemoth.BehemothDocument;
-import com.digitalpebble.behemoth.InputOutputCliProcessor;
+import com.digitalpebble.behemoth.CliProcessor;
 
 /**
  * Converts a Nutch segment into a Behemoth datastructure. The binary data can
@@ -99,9 +99,12 @@ public class NutchSegmentConverterJob extends Configured implements Tool {
     }
 
     public int run(String[] args) throws Exception {
-		InputOutputCliProcessor cliProcessor = new InputOutputCliProcessor(
-				NutchSegmentConverterJob.class.getSimpleName(),
-				USAGE);
+		CliProcessor cliProcessor = new CliProcessor(
+				NutchSegmentConverterJob.class.getSimpleName(), USAGE);
+		String inputOpt = cliProcessor.addRequiredOption("i", "input",
+				"Input directory on local file system", true);
+		String outputOpt = cliProcessor.addRequiredOption("o", "output",
+				"Output directory on HDFS", true);
 
 		try {
 			cliProcessor.parse(args);
@@ -109,8 +112,8 @@ public class NutchSegmentConverterJob extends Configured implements Tool {
 			return -1;
 		}
 
-		Path segment = new Path(cliProcessor.getInputValue());
-		Path output = new Path(cliProcessor.getOutputValue());
+		Path segment = new Path(cliProcessor.getOptionValue(inputOpt));
+		Path output = new Path(cliProcessor.getOptionValue(outputOpt));
 		convert(segment, output);
 		return 0;
     }
