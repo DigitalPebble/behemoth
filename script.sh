@@ -35,7 +35,8 @@ ${HADOOP} fs -libjars $behe_home/modules/core/build/behemoth-core.job -text ${TE
 # processing a web archive
 ${HADOOP} fs -copyFromLocal $behe_home/modules/io/src/test/data/ClueWeb09_English_Sample.warc ${TESTDIR}/ClueWeb09.warc
 ${HADOOP} jar $behe_home/modules/io/build/behemoth-io.job com.digitalpebble.behemoth.io.warc.WARCConverterJob -conf ${behe_home}/modules/core/conf/behemoth-site.xml -i ${TESTDIR}/ClueWeb09.warc -o ${TESTDIR}/ClueWeb09
-${HADOOP} jar $behe_home/modules/gate/build/behemoth-gate.job com.digitalpebble.behemoth.gate.GATEDriver -conf ${behe_home}/modules/core/conf/behemoth-site.xml -i ${TESTDIR}/ClueWeb09 -o ${TESTDIR}/ClueWeb09Annie -g ${TESTDIR}/ANNIE.zip
+${HADOOP} jar ${behe_home}/modules/tika/build/behemoth-tika.job com.digitalpebble.behemoth.tika.TikaDriver -i ${TESTDIR}/ClueWeb09 -o ${TESTDIR}/ClueWeb09Tika
+${HADOOP} jar $behe_home/modules/gate/build/behemoth-gate.job com.digitalpebble.behemoth.gate.GATEDriver -conf ${behe_home}/modules/core/conf/behemoth-site.xml -i ${TESTDIR}/ClueWeb09Tika -o ${TESTDIR}/ClueWeb09Annie -g ${TESTDIR}/ANNIE.zip
 
 # corpus reader (useful for older version of Hadoop e.g. 0.18.x)
 ${HADOOP} jar ${behe_home}/modules/core/build/behemoth-core.job com.digitalpebble.behemoth.util.CorpusReader -i ${TESTDIR}/ClueWeb09Annie
@@ -47,4 +48,11 @@ ${HADOOP} jar ${behe_home}/modules/core/build/behemoth-core.job com.digitalpebbl
 # process dataset with UIMA
 ${HADOOP} fs -copyFromLocal ${behe_home}/modules/uima/src/test/data/WhitespaceTokenizer.pear ${TESTDIR}/WhitespaceTokenizer.pear
 ${HADOOP} jar ${behe_home}/modules/uima/build/behemoth-uima.job com.digitalpebble.behemoth.uima.UIMADriver -conf ${behe_home}/modules/core/conf/behemoth-site.xml -i ${TESTDIR}/textCorpusProcessedWithTika -o ${TESTDIR}/textcorpusUIMA -p ${TESTDIR}/WhitespaceTokenizer.pear
+
+# processing a nutch segment
+${HADOOP} jar $behe_home/modules/io/build/behemoth-io.job com.digitalpebble.behemoth.io.nutch.NutchSegmentConverterJob -conf ${behe_home}/modules/core/conf/behemoth-site.xml -i $behe_home/modules/io/src/test/data/20110602184218 -o ${TESTDIR}/nutchIngest
+${HADOOP} jar ${behe_home}/modules/tika/build/behemoth-tika.job com.digitalpebble.behemoth.tika.TikaDriver -i ${TESTDIR}/nutchIngest -o ${TESTDIR}/nutchIngestTika
+
+# run corpus reader over output
+${HADOOP} jar ${behe_home}/modules/core/build/behemoth-core.job com.digitalpebble.behemoth.util.CorpusReader -i ${TESTDIR}/nutchIngestTika
 
