@@ -30,7 +30,7 @@ import org.apache.hadoop.util.ToolRunner;
 
 import com.digitalpebble.behemoth.BehemothConfiguration;
 import com.digitalpebble.behemoth.BehemothDocument;
-import com.digitalpebble.behemoth.CliProcessor;
+import com.digitalpebble.behemoth.cli.CliProcessor;
 
 /**
  * Utility class used to read the content of a Behemoth SequenceFile.
@@ -38,6 +38,9 @@ import com.digitalpebble.behemoth.CliProcessor;
 public class CorpusReader extends Configured implements Tool {
 
 	public final static String USAGE = "Read a Behemoth Corpus on HDFS and output to System.out";
+	
+	public CorpusReader() {
+	}
 	
     public static void main(String[] args) throws Exception {
         int res = ToolRunner.run(BehemothConfiguration.create(),
@@ -47,8 +50,7 @@ public class CorpusReader extends Configured implements Tool {
 
     public int run(String[] args) throws Exception {
         
-		CliProcessor cliProcessor = new CliProcessor(CorpusReader.class.getSimpleName(),
-				USAGE);
+		CliProcessor cliProcessor = new CliProcessor(CorpusReader.class.getSimpleName(), USAGE);
 		String inputOpt = cliProcessor.addRequiredOption("i", "input",
 				"Input directory on HDFS", true);
 		String binaryOpt = cliProcessor.addOption("b",

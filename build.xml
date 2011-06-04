@@ -51,15 +51,18 @@
          
   <target name="buildlist" depends="init-ivy"> 
     <ivy:buildlist reference="build-path">
-      <fileset dir="modules" includes="**/build.xml"/>
+    	<fileset dir="modules"> 
+    		<include name="**/build.xml"/>
+      	</fileset>
     </ivy:buildlist>
+  	<echo message="Ivy calculated build order as ${ivy.sorted.modules}" />
   </target>
   
   <target name="publish-modules" depends="buildlist" 
   			description="compile, jar and publish all modules in the right order">
     <subant target="publish" buildpathref="build-path" />
   </target>
-
+	
   <target name="test-modules" depends="buildlist" 
   			description="compile, jar and test all modules in the right order">
     <subant target="test" buildpathref="build-path" />
@@ -73,11 +76,15 @@
   			description="clean-full : clean ivy cache and all modules">
     <ivy:cleancache />
   </target>
-
-  <target name="report" depends="init-ivy,buildlist">
-    <subant target="report" buildpathref="build-path" />
+	
+  <target name="jobs" depends="publish-modules"
+	        description="Create job files for each module">
+	<subant target="job" buildpathref="build-path" />
   </target>
 
-  
+  <target name="report" depends="init-ivy,buildlist"
+  		description="Create Apache Ivy dependency report">
+    <subant target="report" buildpathref="build-path" />
+  </target>
   
 </project>

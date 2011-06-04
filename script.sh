@@ -1,4 +1,4 @@
-# example of commands to run from Hadoop
+# Simple test script runs various Behemoth jobs at the command line
 
 export behe_home=${PWD}
 echo "Behemoth home is ${behe_home}"
@@ -10,49 +10,84 @@ echo "HADOOP_HOME is not set - please configure to run script"
 exit
 fi
 
-export HADOOP=bin/hadoop
 export TESTDIR=test
+export BEHEMOTH_JOB=${behe_home}/modules/cli/build/behemoth-cli.job
+export HADOOP=bin/hadoop
+export RUN_BEHEMOTH="${HADOOP} jar ${BEHEMOTH_JOB}"
 
 cd $HADOOP_HOME
+
+echo "Deleting test directory on HDFS"
+
 ${HADOOP} fs -rmr ${TESTDIR}
 
-# load corpus into HDFS
-${HADOOP} jar ${behe_home}/modules/core/build/behemoth-core.job com.digitalpebble.behemoth.util.CorpusGenerator -i ${behe_home}/modules/gate/src/test/data/docs/ -o ${TESTDIR}/textcorpus
+echo "Converting corpus into Behemoth Documents and storing on HDFS"
 
-# have a quick look at the content
-${HADOOP} fs -libjars ${behe_home}/modules/core/build/behemoth-core.job -text ${TESTDIR}/textcorpus
+${RUN_BEHEMOTH} CorpusGenerator -i ${behe_home}/modules/gate/src/test/data/docs/ -o ${TESTDIR}/textcorpus
 
-# need to call tika before GATE
-${HADOOP} jar ${behe_home}/modules/tika/build/behemoth-tika.job com.digitalpebble.behemoth.tika.TikaDriver -i ${TESTDIR}/textcorpus -o ${TESTDIR}/textCorpusProcessedWithTika
+echo "Printing contents of corpus"
 
-# process dataset with GATE
+${HADOOP} fs -libjars ${BEHEMOTH_JOB} -text ${TESTDIR}/textcorpus
+
+echo "Parsing corpus with Tika"
+
+${RUN_BEHEMOTH} TikaDriver -i ${TESTDIR}/textcorpus -r
+
+echo "Copying GATE application to HDFS"
+
 ${HADOOP} fs -copyFromLocal ${behe_home}/modules/gate/src/test/data/ANNIE.zip ${TESTDIR}/ANNIE.zip
-${HADOOP} jar ${behe_home}/modules/gate/build/behemoth-gate.job com.digitalpebble.behemoth.gate.GATEDriver -conf ${behe_home}/modules/core/conf/behemoth-site.xml -i ${TESTDIR}/textCorpusProcessedWithTika -o ${TESTDIR}/textcorpusANNIE -g ${TESTDIR}/ANNIE.zip
 
-# have a look at the seqfile after processing
-${HADOOP} fs -libjars $behe_home/modules/core/build/behemoth-core.job -text ${TESTDIR}/textcorpusANNIE/part-*
+echo "Processing corpus with GATE"
 
-# processing a web archive
+${RUN_BEHEMOTH} GATEDriver -conf ${behe_home}/modules/core/conf/behemoth-site.xml -i ${TESTDIR}/textcorpus -o ${TESTDIR}/textcorpusGATE -g ${TESTDIR}/ANNIE.zip
+
+echo "Examining output of GATE job"
+
+${HADOOP} fs -libjars ${BEHEMOTH_JOB} -text ${TESTDIR}/textcorpusGATE/part-*
+
+echo "Copying Web archive file to HDFS"
+
 ${HADOOP} fs -copyFromLocal $behe_home/modules/io/src/test/data/ClueWeb09_English_Sample.warc ${TESTDIR}/ClueWeb09.warc
-${HADOOP} jar $behe_home/modules/io/build/behemoth-io.job com.digitalpebble.behemoth.io.warc.WARCConverterJob -conf ${behe_home}/modules/core/conf/behemoth-site.xml -i ${TESTDIR}/ClueWeb09.warc -o ${TESTDIR}/ClueWeb09
-${HADOOP} jar ${behe_home}/modules/tika/build/behemoth-tika.job com.digitalpebble.behemoth.tika.TikaDriver -i ${TESTDIR}/ClueWeb09 -o ${TESTDIR}/ClueWeb09Tika
-${HADOOP} jar $behe_home/modules/gate/build/behemoth-gate.job com.digitalpebble.behemoth.gate.GATEDriver -conf ${behe_home}/modules/core/conf/behemoth-site.xml -i ${TESTDIR}/ClueWeb09Tika -o ${TESTDIR}/ClueWeb09Annie -g ${TESTDIR}/ANNIE.zip
 
-# corpus reader (useful for older version of Hadoop e.g. 0.18.x)
-${HADOOP} jar ${behe_home}/modules/core/build/behemoth-core.job com.digitalpebble.behemoth.util.CorpusReader -i ${TESTDIR}/ClueWeb09Annie
+echo "Ingesting a Web Archive as Behemoth Documents"
+
+${RUN_BEHEMOTH} WARCConverterJob -conf ${behe_home}/modules/core/conf/behemoth-site.xml -i ${TESTDIR}/ClueWeb09.warc -o ${TESTDIR}/ClueWeb09
+
+echo "Parsing web archive data with Tika"
+
+${RUN_BEHEMOTH} TikaDriver -i ${TESTDIR}/ClueWeb09 -r
+
+echo "Examining output of Web Archive"
+
+${RUN_BEHEMOTH} CorpusReader -i ${TESTDIR}/ClueWeb09
 
 # use of SOLR
 # commented out because SOLR server not running at 69.89.5.5
 #${HADOOP} jar ${behe_home}/modules/solr/build/behemoth-solr.job com.digitalpebble.behemoth.solr.SOLRIndexerJob -i ${TESTDIR}/ClueWeb09Annie -l http://69.89.5.5:8080/solr
 
-# process dataset with UIMA
+echo "Copy UIMA application to HDFS"
+
 ${HADOOP} fs -copyFromLocal ${behe_home}/modules/uima/src/test/data/WhitespaceTokenizer.pear ${TESTDIR}/WhitespaceTokenizer.pear
-${HADOOP} jar ${behe_home}/modules/uima/build/behemoth-uima.job com.digitalpebble.behemoth.uima.UIMADriver -conf ${behe_home}/modules/core/conf/behemoth-site.xml -i ${TESTDIR}/textCorpusProcessedWithTika -o ${TESTDIR}/textcorpusUIMA -p ${TESTDIR}/WhitespaceTokenizer.pear
 
-# processing a nutch segment
-${HADOOP} jar $behe_home/modules/io/build/behemoth-io.job com.digitalpebble.behemoth.io.nutch.NutchSegmentConverterJob -conf ${behe_home}/modules/core/conf/behemoth-site.xml -i $behe_home/modules/io/src/test/data/20110602184218 -o ${TESTDIR}/nutchIngest
-${HADOOP} jar ${behe_home}/modules/tika/build/behemoth-tika.job com.digitalpebble.behemoth.tika.TikaDriver -i ${TESTDIR}/nutchIngest -o ${TESTDIR}/nutchIngestTika
+echo "Processing dataset with UIMA"
 
-# run corpus reader over output
-${HADOOP} jar ${behe_home}/modules/core/build/behemoth-core.job com.digitalpebble.behemoth.util.CorpusReader -i ${TESTDIR}/nutchIngestTika
+${RUN_BEHEMOTH} UIMADriver -conf ${behe_home}/modules/core/conf/behemoth-site.xml -i ${TESTDIR}/textcorpus -o ${TESTDIR}/textcorpusUIMA -p ${TESTDIR}/WhitespaceTokenizer.pear
+
+echo "Copying a Nutch segment to HDFS"
+
+${HADOOP} fs -copyFromLocal $behe_home/modules/io/src/test/data/20110602184218 ${TESTDIR}/nutch20110602184218
+
+echo "Ingesting a Nutch segment as Behemoth Documents"
+
+${RUN_BEHEMOTH} NutchSegmentConverterJob -conf ${behe_home}/modules/core/conf/behemoth-site.xml -i ${TESTDIR}/nutch20110602184218 -o ${TESTDIR}/nutchIngest
+
+echo "Parsing the Nutch segment using Tika"
+
+${RUN_BEHEMOTH} TikaDriver -i ${TESTDIR}/nutchIngest -r
+
+echo "Examining output of Nutch segment"
+
+${RUN_BEHEMOTH} CorpusReader -i ${TESTDIR}/nutchIngest
+
+echo "Tests completed"
 

@@ -24,7 +24,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
-import org.apache.hadoop.filecache.DistributedCache;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
@@ -39,7 +38,7 @@ import org.apache.hadoop.util.ToolRunner;
 
 import com.digitalpebble.behemoth.BehemothConfiguration;
 import com.digitalpebble.behemoth.BehemothDocument;
-import com.digitalpebble.behemoth.CliProcessor;
+import com.digitalpebble.behemoth.cli.CliProcessor;
 
 /**
  * Sends annotated documents to SOLR for indexing
@@ -48,7 +47,7 @@ import com.digitalpebble.behemoth.CliProcessor;
 public class SOLRIndexerJob extends Configured implements Tool {
     private static final Log LOG = LogFactory.getLog(SOLRIndexerJob.class);
 
-    public static final String USAGE = "Sends annotated documents to SOLR for indexing";
+    public final static String USAGE = "Sends annotated documents to SOLR for indexing";
     
     public SOLRIndexerJob() {
     }

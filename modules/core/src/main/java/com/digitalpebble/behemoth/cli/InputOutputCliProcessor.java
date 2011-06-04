@@ -1,4 +1,5 @@
-package com.digitalpebble.behemoth;
+package com.digitalpebble.behemoth.cli;
+
 
 /**
  * A command line processor that includes input and output options intended to
@@ -13,11 +14,11 @@ public class InputOutputCliProcessor extends CliProcessor {
 	/**
 	 * Constructor.
 	 * 
-	 * @param name The command name.
-	 * @param description The command description.
+	 * @param name The task name.
+	 * @param usage The task description.
 	 */
-	public InputOutputCliProcessor(String name, String description) {
-		super(name, description);
+	public InputOutputCliProcessor(String name, String usage) {
+		super(name, usage);
 		inputOpt = addRequiredOption("i", "input", "Input path on HDFS", true);
 		outputOpt = addRequiredOption("o", "output",
 				"Output directory on HDFS", true);

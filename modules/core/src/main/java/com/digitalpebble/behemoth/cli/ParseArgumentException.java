@@ -1,4 +1,4 @@
-package com.digitalpebble.behemoth;
+package com.digitalpebble.behemoth.cli;
 
 import org.apache.commons.cli.ParseException;
 

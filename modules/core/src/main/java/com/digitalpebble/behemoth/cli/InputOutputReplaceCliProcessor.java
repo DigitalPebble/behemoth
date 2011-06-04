@@ -1,19 +1,18 @@
-package com.digitalpebble.behemoth;
+package com.digitalpebble.behemoth.cli;
 
 import java.io.IOException;
-import java.util.List;
 
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.GnuParser;
+import org.apache.commons.cli.Option;
+import org.apache.commons.cli.OptionGroup;
 import org.apache.commons.cli.ParseException;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.SequenceFile;
-import org.apache.hadoop.io.Text;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 
 /**
  * A command line processor that includes input and output options intended to
@@ -28,28 +27,29 @@ public class InputOutputReplaceCliProcessor extends CliProcessor {
 	String outputOpt;
 
 	String replaceOpt;
+	
+	OptionGroup group = new OptionGroup();
 
 	/**
 	 * Constructor.
 	 * 
-	 * @param name The command name.
-	 * @param description The command description.
+	 * @param name The task name.
+	 * @param usage The task description.
 	 */
-	public InputOutputReplaceCliProcessor(String name, String description) {
-		super(name, description);
+	public InputOutputReplaceCliProcessor(String name, String usage) {
+		super(name, usage);
 		inputOpt = addRequiredOption("i", "input", "Input path on HDFS", true);
-		outputOpt = addOption("o", "output", "Output directory on HDFS", true);
-		replaceOpt = addOption("r", "replace",
-				"Replace input file with output", false);
+		outputOpt = addGroupOpt("o", "output", true, "Output directory on HDFS");
+		replaceOpt = addGroupOpt("r", "replace", false, "Replace input file with output");
+		group.setRequired(true);
+		options.addOptionGroup(group);
 	}
-
-	@Override
-	List<String> getRequiredOptions() {
-		// either output or replace are required.
-		List<String> requiredOptions = super.getRequiredOptions();
-		requiredOptions.add(outputOpt);
-		requiredOptions.add(replaceOpt);
-		return requiredOptions;
+	
+	private String addGroupOpt(String shortname, String longname, boolean hasarg, String description) {
+		Option replaceOpt = new Option(shortname, longname, hasarg, description);
+		replaceOpt.setArgName(longname);
+		group.addOption(replaceOpt);
+		return replaceOpt.getOpt();
 	}
 
 	@Override
@@ -60,11 +60,6 @@ public class InputOutputReplaceCliProcessor extends CliProcessor {
 		} catch (ParseException e) {
 			showUsage();
 			throw e;
-		}
-		if (!cli.hasOption(outputOpt) && !cli.hasOption(replaceOpt)) {
-			showUsage();
-			throw new ParseException(
-					"Missing either output path or replace option");
 		}
 	}
 

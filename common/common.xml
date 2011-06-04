@@ -109,7 +109,7 @@
          ================================= -->
     <target name="compile" depends="resolve" description="--> compile the project">
         <mkdir dir="${classes.dir}" />
-        <javac srcdir="${src.dir}" destdir="${classes.dir}" classpathref="lib.path.id" debug="true" />
+        <javac srcdir="${src.dir}" destdir="${classes.dir}" classpathref="lib.path.id" debug="true" includeantruntime="false"/>
     </target>
     
     <!-- ================================= 
@@ -206,11 +206,19 @@
                   excludes="*.properties"/>
         </jar>
     </target>
+	
+	<target name="copyclasses" depends="clean-build" description="--> copy the classes from the modules to the central build directory">
+	    <copy todir="../../build/classes">
+	      <fileset dir="${classes.dir}">
+	      	<exclude name="*.properties"/>
+	      </fileset>
+	    </copy>
+	</target>
 
     <!-- ================================= 
           target: publish              
          ================================= -->
-    <target name="publish" depends="clean-build, jar, job" description="--> publish this project in the ivy repository">
+    <target name="publish" depends="clean-build, jar, copyclasses" description="--> publish this project in the ivy repository">
     	<ivy:publish artifactspattern="${build.dir}/[artifact].[ext]" 
     			           resolver="shared"
     			           pubrevision="${version}" 
@@ -222,7 +230,7 @@
     <!-- ================================= 
           target: publish-local              
          ================================= -->
-    <target name="publish-local" depends="local-version, jar, job" description="--> publish this project in the local ivy repository">
+    <target name="publish-local" depends="local-version, jar" description="--> publish this project in the local ivy repository">
     	<ivy:publish artifactspattern="${build.dir}/[artifact].[ext]" 
     			        resolver="local"
     			        pubrevision="${version}"

@@ -39,12 +39,12 @@ import org.slf4j.LoggerFactory;
 
 import com.digitalpebble.behemoth.BehemothConfiguration;
 import com.digitalpebble.behemoth.BehemothDocument;
-import com.digitalpebble.behemoth.InputOutputReplaceCliProcessor;
+import com.digitalpebble.behemoth.cli.InputOutputReplaceCliProcessor;
 
 public class GATEDriver extends Configured implements Tool {
     private static final Logger LOG = LoggerFactory.getLogger(GATEDriver.class);
 
-    public static final String USAGE = "Parse a Behemoth corpus with GATE";
+    public final static String USAGE = "Parse a Behemoth corpus with GATE";
     
     public GATEDriver() {
         super(null);

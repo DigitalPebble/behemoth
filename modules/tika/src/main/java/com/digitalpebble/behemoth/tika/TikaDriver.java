@@ -35,14 +35,14 @@ import org.slf4j.LoggerFactory;
 
 import com.digitalpebble.behemoth.BehemothConfiguration;
 import com.digitalpebble.behemoth.BehemothDocument;
-import com.digitalpebble.behemoth.InputOutputCliProcessor;
-import com.digitalpebble.behemoth.InputOutputReplaceCliProcessor;
+import com.digitalpebble.behemoth.cli.InputOutputReplaceCliProcessor;
 
 public class TikaDriver extends Configured implements Tool, TikaConstants {
 	private transient static Logger log = LoggerFactory
 			.getLogger(TikaDriver.class);
+	
 	public final static String USAGE = "Parse a Behemoth corpus with Tika";
-
+	
 	public TikaDriver() {
 		super(null);
 	}

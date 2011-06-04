@@ -25,14 +25,16 @@ import java.io.IOException;
 
 import org.apache.commons.cli.ParseException;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IOUtils;
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.Text;
+import org.apache.hadoop.util.Tool;
 
 import com.digitalpebble.behemoth.BehemothDocument;
-import com.digitalpebble.behemoth.CliProcessor;
+import com.digitalpebble.behemoth.cli.CliProcessor;
 
 /**
  * Generates a SequenceFile containing BehemothDocuments given a local
@@ -40,16 +42,22 @@ import com.digitalpebble.behemoth.CliProcessor;
  * of MIME-type and text extraction can be done later using the TikaProcessor.
  **/
 
-public class CorpusGenerator {
+public class CorpusGenerator extends Configured implements Tool {
 
 	public final static String USAGE = "Generate a Behemoth corpus on HDFS from a local directory";
+
+	public CorpusGenerator() {
+	}
 	
-    public static void main(String argv[]) throws Exception {
+	public static void main(String argv[]) throws Exception {
+		new CorpusGenerator().run(argv);
+	}
+
+	public int run(String argv[]) throws Exception {
 
         // Populate a SequenceFile with the content of a local directory
         
-		CliProcessor cliProcessor = new CliProcessor(CorpusGenerator.class.getSimpleName(),
-				USAGE);
+		CliProcessor cliProcessor = new CliProcessor(CorpusGenerator.class.getSimpleName(), USAGE);
 		String inputOpt = cliProcessor.addRequiredOption("i", "input",
 				"Input directory on local file system", true);
 		String outputOpt = cliProcessor.addRequiredOption("o", "output",
@@ -60,7 +68,7 @@ public class CorpusGenerator {
 		try {
 			cliProcessor.parse(argv);
 		} catch (ParseException me) {
-			return;
+			return -1;
 		}
         
         Configuration conf = new Configuration();
@@ -84,7 +92,9 @@ public class CorpusGenerator {
                     value);
             // iterate on the files in the source dir
             processFiles(inputDir, recurse, pff);
-
+            return 0;
+        } catch (Exception e) {
+        	throw e;
         } finally {
             IOUtils.closeStream(writer);
         }

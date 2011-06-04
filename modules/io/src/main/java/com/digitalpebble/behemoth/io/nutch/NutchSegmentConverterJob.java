@@ -38,7 +38,7 @@ import org.slf4j.LoggerFactory;
 
 import com.digitalpebble.behemoth.BehemothConfiguration;
 import com.digitalpebble.behemoth.BehemothDocument;
-import com.digitalpebble.behemoth.InputOutputCliProcessor;
+import com.digitalpebble.behemoth.cli.InputOutputCliProcessor;
 
 /**
  * Converts a Nutch segment into a Behemoth datastructure. The binary data can
@@ -50,7 +50,7 @@ public class NutchSegmentConverterJob extends Configured implements Tool {
     public static final Logger LOG = LoggerFactory
             .getLogger(NutchSegmentConverterJob.class);
 
-    public static final String USAGE = "Parse a Behemoth corpus with GATE";
+    public final static String USAGE = "Parse a Behemoth corpus with GATE";
     
     public NutchSegmentConverterJob() {
         this(null);
@@ -100,8 +100,7 @@ public class NutchSegmentConverterJob extends Configured implements Tool {
 
     public int run(String[] args) throws Exception {
 		InputOutputCliProcessor cliProcessor = new InputOutputCliProcessor(
-				NutchSegmentConverterJob.class.getSimpleName(),
-				USAGE);
+				NutchSegmentConverterJob.class.getSimpleName(), USAGE);
 
 		try {
 			cliProcessor.parse(args);

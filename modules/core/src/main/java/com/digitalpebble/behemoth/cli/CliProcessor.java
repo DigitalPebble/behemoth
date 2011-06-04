@@ -1,7 +1,4 @@
-package com.digitalpebble.behemoth;
-
-import java.util.ArrayList;
-import java.util.List;
+package com.digitalpebble.behemoth.cli;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -11,6 +8,7 @@ import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.lang.WordUtils;
+
 
 /**
  * A basic standardised command line processor, based on Apache Commons CLI.
@@ -24,16 +22,18 @@ public class CliProcessor {
 	String description;
 
 	CommandLine cli = null;
+	
+	HelpFormatter helpFormatter = new HelpFormatter();
 
 	/**
 	 * Constructor.
 	 * 
-	 * @param name The command name.
-	 * @param description The command description.
+	 * @param name The task name.
+	 * @param usage The task description.
 	 */
-	public CliProcessor(String name, String description) {
+	public CliProcessor(String name, String usage) {
 		this.name = name;
-		this.description = description;
+		this.description = usage;
 	}
 
 	/**
@@ -52,42 +52,13 @@ public class CliProcessor {
 			throw e;
 		}
 	}
-	
-	/**
-	 * Get the list of required options
-	 * 
-	 * @return The required options.
-	 */
-	List<String> getRequiredOptions() {
-		return new ArrayList<String>(
-				options.getRequiredOptions());
-	}
-
+			
 	/**
 	 * Print the usage information on this command to System.out.
 	 */
 	public void showUsage() {
 		System.out.println(WordUtils.wrap(name + ": " + description, 80));
-		StringBuilder use = new StringBuilder();
-		use.append(name);
-		List<String> requiredOptions = getRequiredOptions();
-		for (String required : requiredOptions) {
-			use.append(" -" + required + " <"
-					+ options.getOption(required).getLongOpt() + ">");
-		}
-		if (options.getOptions().size() > requiredOptions.size()) {
-			use.append(" [");
-			List<Option> optionList = new ArrayList<Option>(
-					options.getOptions());
-			for (Option option : optionList) {
-				if (!requiredOptions.contains(option.getOpt())) {
-					use.append(" -" + option.getOpt() + " <"
-							+ option.getLongOpt() + ">");
-				}
-			}
-			use.append(" ]");
-		}
-		new HelpFormatter().printHelp(use.toString(), options);
+		helpFormatter.printHelp(name, options, true);
 	}
 
 	/**

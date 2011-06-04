@@ -42,18 +42,18 @@ import org.slf4j.LoggerFactory;
 
 import com.digitalpebble.behemoth.BehemothConfiguration;
 import com.digitalpebble.behemoth.BehemothDocument;
-import com.digitalpebble.behemoth.InputOutputCliProcessor;
+import com.digitalpebble.behemoth.cli.InputOutputCliProcessor;
 
 /**
  * Converts a WARC archive into a Behemoth datastructure for further processing
  */
-public class WARCConverterJob extends Configured implements Tool,
+public class WARCConverterJob extends Configured implements Tool, 
         Mapper<LongWritable, WritableWarcRecord, Text, BehemothDocument> {
 
     public static final Logger LOG = LoggerFactory
             .getLogger(WARCConverterJob.class);
 
-    public static final String USAGE = "Convert a WARC Web Archive into a Behemoth Corpus";
+    public final static String USAGE = "Convert a WARC Web Archive into a Behemoth Corpus";
     
     public WARCConverterJob() {
         this(null);
@@ -141,8 +141,7 @@ public class WARCConverterJob extends Configured implements Tool,
 
 	public int run(String[] args) throws Exception {
 		InputOutputCliProcessor cliProcessor = new InputOutputCliProcessor(
-				WARCConverterJob.class.getSimpleName(),
-				USAGE);
+				WARCConverterJob.class.getSimpleName(), USAGE);
 		try {
 			cliProcessor.parse(args);
 		} catch (ParseException me) {

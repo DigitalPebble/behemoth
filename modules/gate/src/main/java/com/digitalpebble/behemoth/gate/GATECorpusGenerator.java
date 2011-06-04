@@ -36,7 +36,7 @@ import org.apache.hadoop.util.ToolRunner;
 
 import com.digitalpebble.behemoth.BehemothConfiguration;
 import com.digitalpebble.behemoth.BehemothDocument;
-import com.digitalpebble.behemoth.InputOutputCliProcessor;
+import com.digitalpebble.behemoth.cli.InputOutputCliProcessor;
 
 /**
  * Converts a Behemoth corpus into a XML corpus for GATE. This is used mostly
@@ -52,16 +52,19 @@ public class GATECorpusGenerator extends Configured implements Tool {
     }
 
     public static void main(String[] args) throws Exception {
+    	try {
         int res = ToolRunner.run(BehemothConfiguration.create(),
                 new GATECorpusGenerator(), args);
         System.exit(res);
+    	} catch (Exception e) {
+    		e.printStackTrace();
+    	}
     }
 
 	public int run(String[] args) throws Exception {
 
 		InputOutputCliProcessor cliProcessor = new InputOutputCliProcessor(
-				GATECorpusGenerator.class.getName(),
-				USAGE);
+				GATECorpusGenerator.class.getSimpleName(), USAGE);
 
 		try {
 			cliProcessor.parse(args);

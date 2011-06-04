@@ -39,15 +39,14 @@ import org.slf4j.LoggerFactory;
 
 import com.digitalpebble.behemoth.BehemothConfiguration;
 import com.digitalpebble.behemoth.BehemothDocument;
-import com.digitalpebble.behemoth.InputOutputCliProcessor;
-import com.digitalpebble.behemoth.InputOutputReplaceCliProcessor;
+import com.digitalpebble.behemoth.cli.InputOutputReplaceCliProcessor;
 
 public class UIMADriver extends Configured implements Tool {
 
     private static final Logger LOG = LoggerFactory.getLogger(UIMADriver.class);
     
-    public static final String USAGE = "Process a Behemoth corpus with UIMA";
-
+    public final static String USAGE = "Process a Behemoth corpus with UIMA";
+    
     public UIMADriver() {
         super(null);
     }

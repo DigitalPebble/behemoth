@@ -1,0 +1,50 @@
+<!--
+   Licensed to the Apache Software Foundation (ASF) under one
+   or more contributor license agreements.  See the NOTICE file
+   distributed with this work for additional information
+   regarding copyright ownership.  The ASF licenses this file
+   to you under the Apache License, Version 2.0 (the
+   "License"); you may not use this file except in compliance
+   with the License.  You may obtain a copy of the License at
+
+     http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing,
+   software distributed under the License is distributed on an
+   "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+   KIND, either express or implied.  See the License for the
+   specific language governing permissions and limitations
+   under the License.    
+-->
+<ivy-module version="1.0">
+    <info 
+        organisation="com.digitalpebble"
+        module="behemoth-cli"/>  
+    <configurations>
+        <conf name="job" description=".job file dependency"/>
+    	<conf name="test" description="Test dependency"/>
+    	<conf name="default" extends="job" description="Dependency required by users of .jar"/>
+    </configurations>       
+    <publications>
+      <artifact name="behemoth-cli" type="jar"/>
+    </publications>
+    <dependencies  defaultconf="*->*,!sources,!javadoc">
+      <dependency name="behemoth-core" rev="latest.integration" conf="job->default"/>
+      <dependency name="behemoth-gate" rev="latest.integration" conf="job->default">
+         <!-- we get a newer version of this from behemoth-solr -->
+         <exclude org="org.codehaus.woodstox"/>
+      </dependency>
+      <dependency name="behemoth-io" rev="latest.integration" conf="job->default"/>
+      <dependency name="behemoth-mahout" rev="latest.integration" conf="job->default">
+	 <!-- We are using version 1.2 , don't need both -->
+         <exclude org="org.apache.mahout.commons" name="commons-cli"/> 
+      </dependency>
+      <dependency name="behemoth-solr" rev="latest.integration" conf="job->default"/>
+      <dependency name="behemoth-tika" rev="latest.integration" conf="job->default">
+	 <!-- Otherwise we get two conflicting versions of bouncycastle -->
+     	 <exclude org="bouncycastle" name="bcprov-jdk14"/> 
+      	 <exclude org="bouncycastle" name="bcmail-jdk14"/> 
+      </dependency>
+      <dependency name="behemoth-uima" rev="latest.integration" conf="job->default"/>
+    </dependencies>
+</ivy-module>

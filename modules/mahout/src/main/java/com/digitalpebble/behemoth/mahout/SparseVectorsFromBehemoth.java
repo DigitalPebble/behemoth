@@ -19,7 +19,9 @@ package com.digitalpebble.behemoth.mahout;
 
 import org.apache.commons.cli.ParseException;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.util.Tool;
 import org.apache.mahout.common.HadoopUtil;
 import org.apache.mahout.vectorizer.DictionaryVectorizer;
 import org.apache.mahout.vectorizer.collocations.llr.LLRReducer;
@@ -28,29 +30,31 @@ import org.apache.mahout.vectorizer.tfidf.TFIDFConverter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.digitalpebble.behemoth.InputOutputCliProcessor;
-import com.digitalpebble.behemoth.InputOutputReplaceCliProcessor;
-import com.digitalpebble.behemoth.ParseArgumentException;
+import com.digitalpebble.behemoth.cli.InputOutputReplaceCliProcessor;
+import com.digitalpebble.behemoth.cli.ParseArgumentException;
 
 /**
  * Similar to SparseVectorsFromSequenceFiles but gets the Tokens from a Behemoth
  * corpus Converts a given set of sequence files into SparseVectors
  */
-public final class SparseVectorsFromBehemoth {
+public final class SparseVectorsFromBehemoth extends Configured implements Tool {
 
 	private static final Logger log = LoggerFactory
 			.getLogger(SparseVectorsFromBehemoth.class);
 
-	public static final String USAGE = "Similar to SparseVectorsFromSequenceFiles but gets the Tokens from a Behemoth corpus. "
+	public final static String USAGE = "Similar to SparseVectorsFromSequenceFiles but gets the Tokens from a Behemoth corpus. "
 			+ "Converts a given set of sequence files into SparseVectors";
-
-	private SparseVectorsFromBehemoth() {
+	
+	public SparseVectorsFromBehemoth() {
 	}
 
 	public static void main(String[] args) throws Exception {
+		new SparseVectorsFromBehemoth().run(args);
+	}
+		
+	public int run(String[] args) throws Exception {
 		InputOutputReplaceCliProcessor cliProcessor = new InputOutputReplaceCliProcessor(
-				SparseVectorsFromBehemoth.class.getSimpleName(),
-				USAGE);
+				SparseVectorsFromBehemoth.class.getSimpleName(), USAGE);
 
 		String typeNameOpt = cliProcessor.addRequiredOption("t", "typeToken",
 				"The annotation type for Tokens", true);
@@ -128,7 +132,7 @@ public final class SparseVectorsFromBehemoth {
 		try {
 			cliProcessor.parse(args);
 		} catch (ParseException e) {
-			return;
+			return -1;
 		}
 		
 		try{
@@ -222,10 +226,12 @@ public final class SparseVectorsFromBehemoth {
 						reduceTasks);
 			}
 			cliProcessor.replaceInputFile(conf);
+			return 0;
 		} catch (ParseArgumentException ex) {
 			System.err.println("Could not parse " + ex.getOption()
 					+ " with value " + ex.getValue());
 			cliProcessor.showUsage();
+			return -1;
 		}
 	}
 }
