@@ -22,6 +22,7 @@ import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.Enumeration;
 
 import org.apache.commons.cli.ParseException;
 import org.apache.hadoop.conf.Configuration;
@@ -35,6 +36,7 @@ import org.apache.hadoop.util.Tool;
 
 import com.digitalpebble.behemoth.BehemothDocument;
 import com.digitalpebble.behemoth.cli.CliProcessor;
+import com.digitalpebble.behemoth.util.archive.ArchiveReader;
 
 /**
  * Generates a SequenceFile containing BehemothDocuments given a local
@@ -88,11 +90,31 @@ public class CorpusGenerator extends Configured implements Tool {
         try {
             writer = SequenceFile.createWriter(fs, conf, output,
                     key.getClass(), value.getClass());
-            PerformanceFileFilter pff = new PerformanceFileFilter(writer, key,
-                    value);
-            // iterate on the files in the source dir
-            processFiles(inputDir, recurse, pff);
-            return 0;
+            if (inputDir.isFile()) {
+            	Enumeration<BehemothDocument> documents;
+            	try {
+            		documents = new ArchiveReader(inputDir);
+            	} catch (IOException ie) {
+            		// maybe it is not an archive - try normal processing
+    				PerformanceFileFilter pff = new PerformanceFileFilter(writer,
+    						key, value);
+    				// iterate on the files in the source dir
+    				processFiles(inputDir, recurse, pff);
+    				return 0;
+            	}
+            	while (documents.hasMoreElements()) {
+            		value = documents.nextElement();
+            		key.set(value.getUrl());
+            		writer.append(key,value);
+            	}
+            	return 0;
+            } else {
+				PerformanceFileFilter pff = new PerformanceFileFilter(writer,
+						key, value);
+				// iterate on the files in the source dir
+				processFiles(inputDir, recurse, pff);
+				return 0;
+			}
         } catch (Exception e) {
         	throw e;
         } finally {
@@ -100,7 +122,7 @@ public class CorpusGenerator extends Configured implements Tool {
         }
 
     }
-
+	
     private static void processFiles(File inputDir, boolean recurse,
             PerformanceFileFilter pff) {
         for (File file : inputDir.listFiles(pff)) {
