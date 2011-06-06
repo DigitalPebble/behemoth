@@ -59,6 +59,11 @@
 		<echo message="Ivy calculated build order as ${ivy.sorted.modules}" />
 	</target>
 
+	<target name="build" depends="buildlist" 
+  			description="Incremental build. Much faster than publish-modules if you do not need to publish to repository.">
+		<subant target="publish-local" buildpathref="build-path" />
+	</target>
+	
 	<target name="publish-modules" depends="buildlist" 
   			description="compile, jar and publish all modules in the right order">
 		<subant target="publish" buildpathref="build-path" />
