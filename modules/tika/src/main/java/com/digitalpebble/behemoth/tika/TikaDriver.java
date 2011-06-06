@@ -22,12 +22,11 @@ import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
-import org.apache.hadoop.mapred.FileInputFormat;
-import org.apache.hadoop.mapred.FileOutputFormat;
-import org.apache.hadoop.mapred.JobClient;
-import org.apache.hadoop.mapred.JobConf;
-import org.apache.hadoop.mapred.SequenceFileInputFormat;
-import org.apache.hadoop.mapred.SequenceFileOutputFormat;
+import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
+import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
+import org.apache.hadoop.mapreduce.Job;
+import org.apache.hadoop.mapreduce.lib.input.SequenceFileInputFormat;
+import org.apache.hadoop.mapreduce.lib.output.SequenceFileOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 import org.slf4j.Logger;
@@ -81,23 +80,23 @@ public class TikaDriver extends Configured implements Tool, TikaConstants {
 		Path inputPath = new Path(cliProcessor.getInputValue());
 		Path outputPath = new Path(cliProcessor.getOutputValue());
 
-		JobConf job = new JobConf(getConf());
+		Job job = new Job(getConf());
 		job.setJarByClass(this.getClass());
 
 		String handlerName = cliProcessor.getOptionValue(tikaOpt);
 		if (handlerName != null) {
-			job.set(TIKA_PROCESSOR_KEY, handlerName);
+			job.getConfiguration().set(TIKA_PROCESSOR_KEY, handlerName);
 		}
 
 		String mimeType = cliProcessor.getOptionValue(mimeOpt);
 		if (mimeType != null) {
-			job.set(TikaConstants.TIKA_MIME_TYPE_KEY, mimeType);
+			job.getConfiguration().set(TikaConstants.TIKA_MIME_TYPE_KEY, mimeType);
 		}
 
 		job.setJobName("Processing with Tika");
 
-		job.setInputFormat(SequenceFileInputFormat.class);
-		job.setOutputFormat(SequenceFileOutputFormat.class);
+		job.setInputFormatClass(SequenceFileInputFormat.class);
+		job.setOutputFormatClass(SequenceFileOutputFormat.class);
 
 		job.setMapOutputKeyClass(Text.class);
 		job.setMapOutputValueClass(BehemothDocument.class);
@@ -112,7 +111,7 @@ public class TikaDriver extends Configured implements Tool, TikaConstants {
 		FileOutputFormat.setOutputPath(job, outputPath);
 
 		try {
-			JobClient.runJob(job);
+		        job.waitForCompletion(true);
 			cliProcessor.replaceInputFile(getConf());
 		} catch (Exception e) {
 			e.printStackTrace();

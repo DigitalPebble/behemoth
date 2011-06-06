@@ -26,12 +26,11 @@ import org.apache.hadoop.filecache.DistributedCache;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
-import org.apache.hadoop.mapred.FileInputFormat;
-import org.apache.hadoop.mapred.FileOutputFormat;
-import org.apache.hadoop.mapred.JobClient;
-import org.apache.hadoop.mapred.JobConf;
-import org.apache.hadoop.mapred.SequenceFileInputFormat;
-import org.apache.hadoop.mapred.SequenceFileOutputFormat;
+import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
+import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
+import org.apache.hadoop.mapreduce.Job;
+import org.apache.hadoop.mapreduce.lib.input.SequenceFileInputFormat;
+import org.apache.hadoop.mapreduce.lib.output.SequenceFileOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 import org.slf4j.Logger;
@@ -88,12 +87,13 @@ public class UIMADriver extends Configured implements Tool {
             return -1;
         }
 
-        JobConf job = new JobConf(getConf());
+        Configuration conf = getConf();
+        Job job = new Job(conf);
         job.setJarByClass(this.getClass());
         job.setJobName("Processing with UIMA application : " + pearPath);
 
-        job.setInputFormat(SequenceFileInputFormat.class);
-        job.setOutputFormat(SequenceFileOutputFormat.class);
+        job.setInputFormatClass(SequenceFileInputFormat.class);
+        job.setOutputFormatClass(SequenceFileOutputFormat.class);
 
         job.setMapOutputKeyClass(Text.class);
         job.setMapOutputValueClass(BehemothDocument.class);
@@ -108,12 +108,12 @@ public class UIMADriver extends Configured implements Tool {
         FileOutputFormat.setOutputPath(job, outputPath);
 
         // push the UIMA pear onto the DistributedCache
-        DistributedCache.addCacheFile(new URI(pearPath), job);
+        DistributedCache.addCacheFile(new URI(pearPath), job.getConfiguration());
 
-        job.set("uima.pear.path", pearPath);
+        job.getConfiguration().set("uima.pear.path", pearPath);
 
         try {
-            JobClient.runJob(job);
+            job.waitForCompletion(true);
             cliProcessor.replaceInputFile(getConf());
         } catch (Exception e) {
             e.printStackTrace();

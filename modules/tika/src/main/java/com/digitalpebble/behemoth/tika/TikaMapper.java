@@ -16,17 +16,15 @@
  */
 package com.digitalpebble.behemoth.tika;
 
-import com.digitalpebble.behemoth.BehemothDocument;
+import java.io.IOException;
+
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
-import org.apache.hadoop.mapred.JobConf;
-import org.apache.hadoop.mapred.MapReduceBase;
-import org.apache.hadoop.mapred.Mapper;
-import org.apache.hadoop.mapred.OutputCollector;
-import org.apache.hadoop.mapred.Reporter;
+import org.apache.hadoop.mapreduce.Mapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
+import com.digitalpebble.behemoth.BehemothDocument;
 
 /**
  * Uses a {@link com.digitalpebble.behemoth.tika.TikaProcessor} to extract text
@@ -35,7 +33,7 @@ import java.io.IOException;
  * qualified class name. The implementation must extend TikaProcessor and it
  * must have a zero arg. constructor.
  */
-public class TikaMapper extends MapReduceBase implements
+public class TikaMapper extends
         Mapper<Text, BehemothDocument, Text, BehemothDocument> {
     private static final Logger LOG = LoggerFactory.getLogger(TikaMapper.class);
 
@@ -43,23 +41,25 @@ public class TikaMapper extends MapReduceBase implements
 
     @Override
     public void map(Text text, BehemothDocument inputDoc,
-            OutputCollector<Text, BehemothDocument> outputCollector,
-            Reporter reporter) throws IOException {
+            Mapper<Text, BehemothDocument, Text, BehemothDocument>.Context context)
+            throws IOException, InterruptedException {
 
-        BehemothDocument[] documents = processor.process(inputDoc, reporter);
+        BehemothDocument[] documents = processor.process(inputDoc, context);
         if (documents != null) {
             for (int i = 0; i < documents.length; i++) {
-                outputCollector.collect(text, documents[i]);
+               context.write(text, documents[i]);
             }
         }
     }
 
     @Override
-    public void configure(JobConf job) {
+    public void setup(Mapper<Text, BehemothDocument, Text, BehemothDocument>.Context context) 
+    throws InterruptedException, IOException {
 
-        String handlerName = job.get("tika.processor");
+        Configuration config = context.getConfiguration();
+        String handlerName = config.get("tika.processor");
         if (handlerName != null) {
-            Class handlerClass = job.getClass(handlerName, TikaProcessor.class);
+            Class<?> handlerClass = config.getClass(handlerName, TikaProcessor.class);
             try {
                 processor = (TikaProcessor) handlerClass.newInstance();
 
@@ -74,6 +74,6 @@ public class TikaMapper extends MapReduceBase implements
         } else {
             processor = new TikaProcessor();
         }
-        processor.setConf(job);
+        processor.setConf(config);
     }
 }
