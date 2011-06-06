@@ -4,7 +4,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.commons.cli.ParseException;
-import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 
@@ -21,9 +20,10 @@ import com.digitalpebble.behemoth.util.CorpusGenerator;
 import com.digitalpebble.behemoth.util.CorpusReader;
 
 /**
- * Provides a simplified command line interface to Behemoth so it is possible to 
- * call a task directly rather than have to type the qualified package name.
- * Also provides unified help for the different tasks. 
+ * A simplified command line interface to Behemoth. 
+ * It supports calling a task directly rather than have to 
+ * type the qualified package name and provides unified help 
+ * for the different tasks. 
  */
 public class Behemoth {
 
@@ -33,6 +33,7 @@ public class Behemoth {
 
 	private ActionCliProcessor cli;
 
+	/** Constructor. */
 	public Behemoth() {
 	}
 

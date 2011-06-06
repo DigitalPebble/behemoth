@@ -9,7 +9,8 @@ import org.apache.commons.cli.ParseException;
 import org.apache.commons.lang.WordUtils;
 
 /**
- * Cli processor used by Behemoth simplified command line interface.  
+ * Command line processor that supports a list
+ * of actions of a list of modules.  
  */
 public class ActionCliProcessor extends CliProcessor {
 	

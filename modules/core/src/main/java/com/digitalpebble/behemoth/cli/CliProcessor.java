@@ -11,7 +11,7 @@ import org.apache.commons.lang.WordUtils;
 
 
 /**
- * A basic standardised command line processor, based on Apache Commons CLI.
+ * A basic command line interface using Apache Commons CLI.
  */
 public class CliProcessor {
 

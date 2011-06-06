@@ -16,64 +16,67 @@ import com.digitalpebble.behemoth.BehemothDocument;
  */
 class TarReader implements Enumeration<BehemothDocument> {
 
-	TarEntry nextEntry = null;
+    TarEntry nextEntry = null;
 
-	TarInputStream inputStream = null;
+    TarInputStream inputStream = null;
 
-	/**
-	 * Constructor.
-	 * 
-	 * @param file The tar file.
-	 * @throws IOException Thrown if the file cannot be opened.
-	 */
-	TarReader(File file) throws IOException {
-		if (file.exists()) {
-			inputStream = new TarInputStream(new FileInputStream(file));
-		} else {
-			throw new IOException("File " + file.getName() + " does not exist");
-		}
-	}
+    /**
+     * Constructor.
+     * 
+     * @param file
+     *            The tar file.
+     * @throws IOException
+     *             Thrown if the file cannot be opened.
+     */
+    TarReader(File file) throws IOException {
+        if (file.exists()) {
+            inputStream = new TarInputStream(new FileInputStream(file));
+        } else {
+            throw new IOException("File " + file.getName() + " does not exist");
+        }
+    }
 
-	/**
-	 * Constructor.
-	 */
-	TarReader() {
-	}
+    /**
+     * Constructor.
+     */
+    TarReader() {
+    }
 
-	@Override
-	public boolean hasMoreElements() {
-		try {
-			if (nextEntry == null) {
-				do {
-					nextEntry = inputStream.getNextEntry();
-					if (nextEntry == null) {
-						return false;
-					}
-				} while (nextEntry.isDirectory());
-				return true;
-			} else {
-				return true;
-			}
-		} catch (IOException ie) {
-			IOUtils.closeQuietly(inputStream);
-			return false;
-		}
-	}
+    @Override
+    public boolean hasMoreElements() {
+        try {
+            if (nextEntry == null) {
+                do {
+                    nextEntry = inputStream.getNextEntry();
+                    if (nextEntry == null) {
+                        return false;
+                    }
+                } while (nextEntry.isDirectory());
+                return true;
+            } else {
+                return true;
+            }
+        } catch (IOException ie) {
+            IOUtils.closeQuietly(inputStream);
+            return false;
+        }
+    }
 
-	@Override
-	public BehemothDocument nextElement() {
-		if (nextEntry == null) {
-			if (!hasMoreElements())
-				return null;
-		}
-		TarEntry entry = nextEntry;
-		nextEntry = null;
-		String URI = entry.getName();
-		try {
-			return DocumentReader.readDocument(inputStream, (int) entry.getSize(), URI);
-		} catch (IOException ie) {
-			IOUtils.closeQuietly(inputStream);
-			return null;
-		}
-	}
+    @Override
+    public BehemothDocument nextElement() {
+        if (nextEntry == null) {
+            if (!hasMoreElements())
+                return null;
+        }
+        TarEntry entry = nextEntry;
+        nextEntry = null;
+        String URI = entry.getName();
+        try {
+            return DocumentReader.readDocument(inputStream,
+                    (int) entry.getSize(), URI);
+        } catch (IOException ie) {
+            IOUtils.closeQuietly(inputStream);
+            return null;
+        }
+    }
 }

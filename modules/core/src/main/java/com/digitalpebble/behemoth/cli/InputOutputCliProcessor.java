@@ -2,8 +2,8 @@ package com.digitalpebble.behemoth.cli;
 
 
 /**
- * A command line processor that includes input and output options intended to
- * be used for paths on HDFS.
+ * A command line interface that provides input and output options 
+ * for paths on HDFS.
  */
 public class InputOutputCliProcessor extends CliProcessor {
 

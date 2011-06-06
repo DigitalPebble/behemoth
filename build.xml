@@ -19,72 +19,93 @@
 <project name="behemoth" default="publish-modules"
          xmlns:ivy="antlib:org.apache.ivy.ant">
 
-    <property name="build.dir" value="build" />
-    <property name="src.dir" value="src" />
-    
-    <property name="ivy.install.version" value="2.1.0" />
-    <condition property="ivy.home" value="${env.IVY_HOME}">
-      <isset property="env.IVY_HOME" />
-    </condition>
-    <property name="ivy.home" value="${user.home}/.ant" />
-    <property name="ivy.jar.dir" value="${ivy.home}/lib" />
-    <property name="ivy.jar.file" value="${ivy.jar.dir}/ivy.jar" />
+	<property file="build.properties"/>
+	<property name="build.dir" value="build" />
+	<property name="src.dir" value="src" />
 
-    <target name="download-ivy" unless="offline">
-        <mkdir dir="${ivy.jar.dir}"/>
-        <!-- download Ivy from web site so that it can be used even without any special installation -->
-        <get src="http://repo2.maven.org/maven2/org/apache/ivy/ivy/${ivy.install.version}/ivy-${ivy.install.version}.jar" 
+	<property name="ivy.install.version" value="2.1.0" />
+	<condition property="ivy.home" value="${env.IVY_HOME}">
+		<isset property="env.IVY_HOME" />
+	</condition>
+	<property name="ivy.home" value="${user.home}/.ant" />
+	<property name="ivy.jar.dir" value="${ivy.home}/lib" />
+	<property name="ivy.jar.file" value="${ivy.jar.dir}/ivy.jar" />
+
+	<target name="download-ivy" unless="offline">
+		<mkdir dir="${ivy.jar.dir}"/>
+		<!-- download Ivy from web site so that it can be used even without any special installation -->
+		<get src="http://repo2.maven.org/maven2/org/apache/ivy/ivy/${ivy.install.version}/ivy-${ivy.install.version}.jar" 
              dest="${ivy.jar.file}" usetimestamp="true"/>
-    </target>
+	</target>
 
-    <target name="init-ivy" depends="download-ivy">
-      <!-- try to load ivy here from ivy home, in case the user has not already dropped
+	<target name="init-ivy" depends="download-ivy">
+		<!-- try to load ivy here from ivy home, in case the user has not already dropped
               it into ant's lib dir (note that the latter copy will always take precedence).
               We will not fail as long as local lib dir exists (it may be empty) and
               ivy is in at least one of ant's lib dir or the local lib dir. -->
-        <path id="ivy.lib.path">
-            <fileset dir="${ivy.jar.dir}" includes="*.jar"/>
-        </path>
-        <taskdef resource="org/apache/ivy/ant/antlib.xml"
+		<path id="ivy.lib.path">
+			<fileset dir="${ivy.jar.dir}" includes="*.jar"/>
+		</path>
+		<taskdef resource="org/apache/ivy/ant/antlib.xml"
                  uri="antlib:org.apache.ivy.ant" classpathref="ivy.lib.path"/>
-    </target>    
-         
-  <target name="buildlist" depends="init-ivy"> 
-    <ivy:buildlist reference="build-path">
-    	<fileset dir="modules"> 
-    		<include name="**/build.xml"/>
-      	</fileset>
-    </ivy:buildlist>
-  	<echo message="Ivy calculated build order as ${ivy.sorted.modules}" />
-  </target>
-  
-  <target name="publish-modules" depends="buildlist" 
+	</target>
+
+	<target name="buildlist" depends="init-ivy">
+		<ivy:buildlist reference="build-path">
+			<fileset dir="modules">
+				<include name="**/build.xml"/>
+			</fileset>
+		</ivy:buildlist>
+		<echo message="Ivy calculated build order as ${ivy.sorted.modules}" />
+	</target>
+
+	<target name="publish-modules" depends="buildlist" 
   			description="compile, jar and publish all modules in the right order">
-    <subant target="publish" buildpathref="build-path" />
-  </target>
-	
-  <target name="test-modules" depends="buildlist" 
+		<subant target="publish" buildpathref="build-path" />
+	</target>
+
+	<target name="test-modules" depends="buildlist" 
   			description="compile, jar and test all modules in the right order">
-    <subant target="test" buildpathref="build-path" />
-  </target>
+		<subant target="test" buildpathref="build-path" />
+	</target>
 
-  <target name="clean-modules" depends="buildlist" description="clean all modules">
-    <subant target="clean" buildpathref="build-path" />
-  </target>
-  
-  <target name="clean-full" depends="clean-modules, init-ivy" 
+	<target name="clean-modules" depends="buildlist" description="clean all modules">
+		<subant target="clean" buildpathref="build-path" />
+	</target>
+
+	<target name="clean-full" depends="clean-modules, init-ivy" 
   			description="clean-full : clean ivy cache and all modules">
-    <ivy:cleancache />
-  </target>
-	
-  <target name="jobs" depends="publish-modules"
-	        description="Create job files for each module">
-	<subant target="job" buildpathref="build-path" />
-  </target>
+		<ivy:cleancache />
+	</target>
 
-  <target name="report" depends="init-ivy,buildlist"
+	<target name="jobs" depends="publish-modules"
+	        description="Create job files for each module">
+		<subant target="job" buildpathref="build-path" />
+	</target>
+
+	<target name="report" depends="buildlist"
   		description="Create Apache Ivy dependency report">
-    <subant target="report" buildpathref="build-path" />
-  </target>
-  
+		<subant target="report" buildpathref="build-path" />
+	</target>
+
+	<!-- ================================================================== -->
+	<!-- target: documentation                                              -->
+	<!-- ================================================================== -->
+	<target name="javadoc" depends="publish-modules"
+		description="Process Javadoc for project.">
+		<mkdir dir="${build.javadoc}"/>
+		<javadoc
+	      destdir="${build.javadoc}"
+	      >
+        	<fileset dir="${basedir}" defaultexcludes="yes" >
+   				<include name="**/**/src/main/java/**"/>
+		    </fileset>
+			<classpath>
+				<fileset dir="modules/cli/lib/job_dependencies" >
+					<include name="**/*.jar"/>
+				</fileset>
+			</classpath>
+		</javadoc>
+	</target>
+
 </project>
