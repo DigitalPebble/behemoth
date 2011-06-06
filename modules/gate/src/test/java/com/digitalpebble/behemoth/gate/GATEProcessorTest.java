@@ -97,9 +97,9 @@ public class GATEProcessorTest extends TestCase {
             rootDir = new File(tempDir, zipname);
             rootDir.mkdir();
 
-            Enumeration e = zipfile.entries();
+            Enumeration<? extends ZipEntry> e = zipfile.entries();
             while (e.hasMoreElements()) {
-                entry = (ZipEntry) e.nextElement();
+                entry = e.nextElement();
                 is = new BufferedInputStream(zipfile.getInputStream(entry));
                 int count;
                 byte data[] = new byte[BUFFER];
