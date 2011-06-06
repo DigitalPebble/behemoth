@@ -27,10 +27,28 @@
 	<!-- ================================= 
           target: publish              
          ================================= -->
-	<target name="publish" depends="clean-build, jar, copyclasses, job" description="--> publish this project in the ivy repository">
-		<ivy:publish artifactspattern="${build.dir}/[artifact].[ext]" resolver="shared" pubrevision="${version}" status="release" />
+	<target name="publish-local" depends="local-version, jar, copyclasses, job" description="--> publish this project in the ivy repository">
+		<ivy:publish artifactspattern="${build.dir}/[artifact].[ext]" resolver="local" pubrevision="${version}" status="release" forcedeliver="true"/>
 		<echo message="project ${ant.project.name} released with version ${version}" />
 	</target>
+	
+	<target name="publish" depends="clean-build, jar, copyclasses, job" description="--> publish this project in the ivy repository">
+			<ivy:publish artifactspattern="${build.dir}/[artifact].[ext]" resolver="shared" pubrevision="${version}" status="release" />
+			<echo message="project ${ant.project.name} released with version ${version}" />
+		</target>
+	
+    <!-- ================================= 
+          target: jar              
+         ================================= -->
+    <target name="jar" depends="version, compile, copyclasses" description="--> make a jar file for this project" unless="module.uptodate">
+        <jar destfile="${jar.file}">
+            <fileset dir="${classes.dir}" />
+            <manifest>
+                <attribute name="Built-By" value="${user.name}"/>
+                <attribute name="Build-Version" value="${version}" />
+            </manifest>
+        </jar>
+    </target>
 
 </project>
 
