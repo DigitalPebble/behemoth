@@ -44,6 +44,7 @@ import org.apache.uima.cas.FSIterator;
 import org.apache.uima.cas.Feature;
 import org.apache.uima.cas.Type;
 import org.apache.uima.cas.impl.AnnotationImpl;
+import org.apache.uima.cas.text.AnnotationFS;
 import org.apache.uima.pear.tools.PackageBrowser;
 import org.apache.uima.pear.tools.PackageInstaller;
 import org.apache.uima.resource.ResourceSpecifier;
@@ -212,7 +213,7 @@ public class UIMAMapper extends MapReduceBase implements
             uimatypes.add(aType);
         }
 
-        FSIterator annotIterator = cas.getAnnotationIndex().iterator();
+        FSIterator<AnnotationFS> annotIterator = cas.getAnnotationIndex().iterator();
 
         while (annotIterator.hasNext()) {
             Object annotObject = annotIterator.next();
