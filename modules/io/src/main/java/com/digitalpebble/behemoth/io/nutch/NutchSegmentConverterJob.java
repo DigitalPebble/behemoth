@@ -69,7 +69,7 @@ public class NutchSegmentConverterJob extends Configured implements Tool {
 
         FileInputFormat.addInputPath(job, new Path(nutchsegment,
                 Content.DIR_NAME));
-        conf.set(Nutch.SEGMENT_NAME_KEY, nutchsegment.getName());
+        job.getConfiguration().set(Nutch.SEGMENT_NAME_KEY, nutchsegment.getName());
         job.setInputFormatClass(SequenceFileInputFormat.class);
         job.setMapperClass(NutchSegmentConverterMapper.class);
 
@@ -99,19 +99,18 @@ public class NutchSegmentConverterJob extends Configured implements Tool {
     }
 
     public int run(String[] args) throws Exception {
-		InputOutputCliProcessor cliProcessor = new InputOutputCliProcessor(
-				NutchSegmentConverterJob.class.getSimpleName(), USAGE);
+        InputOutputCliProcessor cliProcessor = new InputOutputCliProcessor(
+                NutchSegmentConverterJob.class.getSimpleName(), USAGE);
 
-		try {
-			cliProcessor.parse(args);
-		} catch (ParseException me) {
-			return -1;
-		}
+        try {
+            cliProcessor.parse(args);
+        } catch (ParseException me) {
+            return -1;
+        }
 
-		Path segment = new Path(cliProcessor.getInputValue());
-		Path output = new Path(cliProcessor.getOutputValue());
-		convert(segment, output);
-		return 0;
+        Path segment = new Path(cliProcessor.getInputValue());
+        Path output = new Path(cliProcessor.getOutputValue());
+        convert(segment, output);
+        return 0;
     }
-
 }
