@@ -86,7 +86,7 @@
     <!-- ================================= 
           target: resolve              
          ================================= -->
-	<target name="check.retrieve.necessary" description="Only retrieve jars with Ivy if necessary to speed up builds"
+	<target name="check.retrieve.necessary" description="Only retrieve jars with Ivy if necessary"
 		unless="module.uptodate">
 		<ivy:resolve file="${ivy.file}" transitive="true"/>
 		<uptodate property="libs.uptodate">
@@ -253,21 +253,17 @@
 		<echo message="${libs.uptodate}"/>
 	</target>
 	
-	<target name="do.publish.local" depends="local-version, jar" description="--> publish this project in the local ivy repository"
+    <target name="publish-local" depends="check.if.module.build.necessary, local-version, jar" description="--> publish this project in the local ivy repository"
 		unless="module.uptodate">
-		<echo message="Publishing, module not up to date"/>
-		<ivy:publish artifactspattern="${build.dir}/[artifact].[ext]" 
-	        resolver="local"
-	        pubrevision="${version}"
-	        pubdate="${now}"
-	        status="integration"
-			forcedeliver="true"
-		/>
-		<echo message="project ${ant.project.name} published locally with version ${version}" />
-	</target>
-	
-    <target name="publish-local" depends="check.if.module.build.necessary, do.publish.local" description="--> publish this project in the local ivy repository"
-		unless="module.uptodate">
+    	<echo message="Publishing, module not up to date"/>
+    	<ivy:publish artifactspattern="${build.dir}/[artifact].[ext]" 
+    		        resolver="local"
+    		        pubrevision="${version}"
+    		        pubdate="${now}"
+    		        status="integration"
+    				forcedeliver="true"
+    	/>
+    	<echo message="project ${ant.project.name} published locally with version ${version}" />
 	</target>
 
 	<!-- ================================= 
