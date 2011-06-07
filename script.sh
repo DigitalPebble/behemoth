@@ -63,7 +63,7 @@ ${RUN_BEHEMOTH} CorpusReader -i ${TESTDIR}/ClueWeb09
 
 # use of SOLR
 # commented out because SOLR server not running at 69.89.5.5
-#${HADOOP} jar ${behe_home}/modules/solr/build/behemoth-solr.job com.digitalpebble.behemoth.solr.SOLRIndexerJob -i ${TESTDIR}/ClueWeb09Annie -l http://69.89.5.5:8080/solr
+#${RUN_BEHEMOTH} SOLRIndexerJob -i ${TESTDIR}/ClueWeb09 -l http://localhost:8983/solr
 
 echo "Copy UIMA application to HDFS"
 
