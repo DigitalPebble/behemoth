@@ -65,17 +65,18 @@ public class SOLRIndexerJob extends Configured implements Tool {
 
         final FileSystem fs = FileSystem.get(getConf());
         
-		CliProcessor cliProcessor = new CliProcessor(SOLRIndexerJob.class.getSimpleName(), USAGE);
-		String inputOpt = cliProcessor.addRequiredOption("i", "input",
-				"Input directory on HDFS", true);
-		String solrOpt = cliProcessor.addRequiredOption("l", "solr",
-				"SOLR URL", true);
+        CliProcessor cliProcessor = new CliProcessor(
+                SOLRIndexerJob.class.getSimpleName(), USAGE);
+        String inputOpt = cliProcessor.addRequiredOption("i", "input",
+                "Input directory on HDFS", true);
+        String solrOpt = cliProcessor.addRequiredOption("l", "solr",
+                "SOLR URL", true);
 
-		try {
-			cliProcessor.parse(args);
-		} catch (MissingOptionException me) {
-			return -1;
-		}
+        try {
+            cliProcessor.parse(args);
+        } catch (MissingOptionException me) {
+            return -1;
+        }
 
         Path inputPath = new Path(cliProcessor.getOptionValue(inputOpt));
         String solrURL = cliProcessor.getOptionValue(solrOpt);
@@ -102,7 +103,7 @@ public class SOLRIndexerJob extends Configured implements Tool {
                 + new Random().nextInt());
         FileOutputFormat.setOutputPath(job, tmp);
 
-        conf.set("solr.server.url", solrURL);
+        job.getConfiguration().set("solr.server.url", solrURL);
 
         try {
             job.waitForCompletion(true);
