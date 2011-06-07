@@ -1,0 +1,81 @@
+Changes in butlermh/behemoth
+
+1. USING THE NEW HADOOP API
+
+This version Uses new Hadoop API, with the exception of io/warc, because WarcFileRecordReader uses MultiFileSplits / InputSplit. 
+
+Explantion: in the new Hadoop API, there are two versions of InputSplit - an interface (old API) and a class (new API). There is also a replacement for MultiFileSplit, CombineFileSplit. This still implements InputSplit (the interface) rather than inherit from the class. So changing from MultiFileSplit / InputSplit (Interface) to CombineFileSplit / InputSplit (class) does not work. The 
+
+In the end, it was possible to get the DistributedCache to work. There's a trick ... 
+
+you replace
+
+ JobConf job = new JobConf(getConf());
+
+with
+
+ Configuration conf = getConf();
+ Job job = new Job(conf);
+
+but then when you set a property
+
+ job.set("solr.server.url", solrURL);
+
+you have to do it like this
+
+ job.getConfiguration().set("solr.server.url", solrURL);
+
+rather than just this
+
+ conf.set("solr.server.url", solrURL);
+
+Also there is more security around the DistributedCache in the new API, so instead of allowing UIMA to verify and rewrite files in the cache, it is necessary to do this elsewhere.
+
+2. USING COMPRESSED ARCHIVES WITH CorpusReader
+
+It is now possible to read in .tar, .tgz, .tar.bz2 or .zip files with CorpusReader. For the Enron corpus, this takes the ingest time down from 33 minutes to under 4 minutes. 
+
+Note this had the limitation that you can only read one archive file in at a time. This was deliberate - otherwise if you are reading in a directory of files, it would be checking the filetype of each one. I decided against this, it might make ingest of lots of files even slower. 
+
+3. CHANGES TO IVY
+
+The new version excludes unnecessary jars e.g. transitive dependencies of Hadoop, and also uses configurations to distinguish between test dependencies and job dependencies.
+
+4. UNIFIED COMMAND LINE
+
+Command line inputs are now processed using Apache CLI 1.2. Calling any task with no arguments prints help. 
+
+5. BUILDING UNIFIED .JOB FILE FOR WHOLE PROJECT
+
+I have added some code to build an additional .job file that contains all dependencies. I noticed calling hadoop fs -text from the command line that WriteableName's class loader fails if the serialization class is in a jar within a jar - for example in the GATE job file. This is a class loading problem with Hadoop. To avoid this, in this .job I include all of Behemoth as class files rather than as .jar files. 
+
+This .job also has a simplified command line interface so you don't have to specify the package name to call the task. Here are some example
+
+  ./hadoop jar ../behemoth-cli.job 
+
+prints help on all available actions (modules) and
+
+  ./hadoop jar ../behemoth-cli.job  --help
+
+prints comprehensive help on each action including arguments. Then to call a specific action
+
+  ./hadoop jar ../behemoth-cli.job CorpusGenerator -i /localPath/corpus -o /data/behemothcorpus
+
+I have updated the tutorial in my copy of behemoth to reflect this - see:
+
+https://github.com/butlermh/behemoth/wiki/tutorial
+
+This has been done in such a way that the previous module job files can still be built, and called in the same way (with the new command line arguments) if preferred. 
+
+6. INCREMENTAL BUILD
+
+Ivy has a limitation that to call ivy publish on the shared repository, you have to start from a clean build of the ivy dependencies. As the behemoth build file was calling this task, this meant it was doing a clean build every time, making building slow (about 2 minutes on my machine). To avoid this, I added a new target, build, that only calls ivy publish on the local repository. This means clean building is not necessary. I also used ant uptodate to add conditionals so that ivy retrieval is only done if the lib directory is empty or ivy.xml has changed, and each module (with the exception of the main module) is only rebuilt if a dependency changes. These new incremental builds often complete in 16 to 20 seconds. 
+
+I also added targets to build an Ivy dependency report and to build javadocs. 
+
+However the existing public build targets are unchanged.
+
+7. TESTING
+
+I have tested all the modules using integration tests in script.sh, to confirm these changes have not introduced any errors. 
+
