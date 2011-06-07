@@ -1,5 +1,15 @@
 Changes in butlermh/behemoth
 
+SUMMARY
+
+1. Switched to using the new Hadoop API
+2. CorpusReader can process compressed archives for improved ingest times
+3. Ivy supports use of configurations / does not include unnecessary jars
+4. Switched to using Apache CLI 1.2 for command line options
+5. Supports building a single unified .job for whole project with unified command line and help, as well as separate .job files as before.
+6. Support for incremental build in Ant / IVY
+7. Testing
+
 1. USING THE NEW HADOOP API
 
 This version Uses new Hadoop API, with the exception of io/warc, because WarcFileRecordReader uses MultiFileSplits / InputSplit. 
