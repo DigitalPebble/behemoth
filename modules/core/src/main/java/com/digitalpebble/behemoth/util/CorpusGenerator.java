@@ -22,15 +22,21 @@ import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.Enumeration;
 
+import org.apache.commons.cli.ParseException;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IOUtils;
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.Text;
+import org.apache.hadoop.util.Tool;
 
 import com.digitalpebble.behemoth.BehemothDocument;
+import com.digitalpebble.behemoth.cli.CliProcessor;
+import com.digitalpebble.behemoth.util.archive.ArchiveReader;
 
 /**
  * Generates a SequenceFile containing BehemothDocuments given a local
@@ -38,31 +44,44 @@ import com.digitalpebble.behemoth.BehemothDocument;
  * of MIME-type and text extraction can be done later using the TikaProcessor.
  **/
 
-public class CorpusGenerator {
+public class CorpusGenerator extends Configured implements Tool {
 
-    public static void main(String argv[]) throws Exception {
+	public final static String USAGE = "Generate a Behemoth corpus on HDFS from a local directory";
+
+	public CorpusGenerator() {
+	}
+	
+	public static void main(String argv[]) throws Exception {
+		new CorpusGenerator().run(argv);
+	}
+
+	public int run(String argv[]) throws Exception {
 
         // Populate a SequenceFile with the content of a local directory
+        
+		CliProcessor cliProcessor = new CliProcessor(CorpusGenerator.class.getSimpleName(), USAGE);
+		String inputOpt = cliProcessor.addRequiredOption("i", "input",
+				"Input directory on local file system", true);
+		String outputOpt = cliProcessor.addRequiredOption("o", "output",
+				"Output directory on HDFS", true);
+		String recurseOpt = cliProcessor.addOption("s", "recurse",
+				"Recurse through input directories", false);
 
-        String usage = "Content localdir outputDFSDir [--recurse]";
-
-        if (argv.length < 2) {
-            System.out.println("usage:" + usage);
-            return;
-        }
-
+		try {
+			cliProcessor.parse(argv);
+		} catch (ParseException me) {
+			return -1;
+		}
+        
         Configuration conf = new Configuration();
         FileSystem fs = FileSystem.get(conf);
 
-        File inputDir = new File(argv[0]);
+        File inputDir = new File(cliProcessor.getOptionValue(inputOpt));
 
-        Path output = new Path(argv[1]);
+        Path output = new Path(cliProcessor.getOptionValue(outputOpt));
 
-        boolean recurse = false;
-        if (argv.length > 2 && argv[2].equals("--recurse")) {
-            recurse = true;
-        }
-
+        boolean recurse = cliProcessor.hasOption(recurseOpt);
+        
         // read from input path
         // create new Content object and add it to the SequenceFile
         Text key = new Text();
@@ -71,17 +90,39 @@ public class CorpusGenerator {
         try {
             writer = SequenceFile.createWriter(fs, conf, output,
                     key.getClass(), value.getClass());
-            PerformanceFileFilter pff = new PerformanceFileFilter(writer, key,
-                    value);
-            // iterate on the files in the source dir
-            processFiles(inputDir, recurse, pff);
-
+            if (inputDir.isFile()) {
+            	Enumeration<BehemothDocument> documents;
+            	try {
+            		documents = new ArchiveReader(inputDir);
+            	} catch (IOException ie) {
+            		// maybe it is not an archive - try normal processing
+    				PerformanceFileFilter pff = new PerformanceFileFilter(writer,
+    						key, value);
+    				// iterate on the files in the source dir
+    				processFiles(inputDir, recurse, pff);
+    				return 0;
+            	}
+            	while (documents.hasMoreElements()) {
+            		value = documents.nextElement();
+            		key.set(value.getUrl());
+            		writer.append(key,value);
+            	}
+            	return 0;
+            } else {
+				PerformanceFileFilter pff = new PerformanceFileFilter(writer,
+						key, value);
+				// iterate on the files in the source dir
+				processFiles(inputDir, recurse, pff);
+				return 0;
+			}
+        } catch (Exception e) {
+        	throw e;
         } finally {
             IOUtils.closeStream(writer);
         }
 
     }
-
+	
     private static void processFiles(File inputDir, boolean recurse,
             PerformanceFileFilter pff) {
         for (File file : inputDir.listFiles(pff)) {

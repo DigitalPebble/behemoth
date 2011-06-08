@@ -59,7 +59,7 @@
     </target>    
 
     <path id="lib.path.id">
-        <fileset dir="${lib.dir}" />
+        <fileset dir="${job.lib.dir}" />
     </path>
 
 
@@ -68,6 +68,7 @@
     <pathelement location="${test.classes.dir}" />
     <pathelement location="${classes.dir}"/>
     <pathelement location="${basedir}/src/test/conf"/>
+  	<fileset dir="${test.lib.dir}"/>
     <path refid="lib.path.id"/>
   </path>
 
@@ -85,14 +86,25 @@
     <!-- ================================= 
           target: resolve              
          ================================= -->
-    <target name="resolve" depends="clean-lib, load-ivy" description="--> resolve and retrieve dependencies with ivy">
-        <mkdir dir="${lib.dir}"/> <!-- not usually necessary, ivy creates the directory IF there are dependencies -->
-    	
-    	<!-- the call to resolve is not mandatory, retrieve makes an implicit call if we don't -->
-    	<ivy:resolve file="${ivy.file}"/>
-    	<ivy:retrieve pattern="${lib.dir}/[artifact]-[revision].[ext]" />
+	<target name="check.retrieve.necessary" description="Only retrieve jars with Ivy if necessary"
+		unless="module.uptodate">
+		<ivy:resolve file="${ivy.file}" transitive="true"/>
+		<uptodate property="libs.uptodate">
+	        <srcfiles dir="." includes="${ivy.file}"/>
+	        <mapper type="merge" to="{lib.dir}/.done"/>
+		</uptodate>
+	</target>
+	
+    <target name="resolve" depends="check.retrieve.necessary" description="--> resolve and retrieve dependencies with ivy"
+    	unless="libs.uptodate">
+    	<delete includeemptydirs="true" dir="${lib.dir}"/>
+        <mkdir dir="${job.lib.dir}"/> <!-- not usually necessary, ivy creates the directory IF there are dependencies -->
+    	<mkdir dir="${test.lib.dir}"/> 
+    	<ivy:retrieve pattern="${job.lib.dir}/[artifact]-[revision].[ext]" conf="job" />
+    	<ivy:retrieve pattern="${test.lib.dir}/[artifact]-[revision].[ext]" conf="test" />
+    	<touch file="${lib.dir}/.done" />
     </target>
-    
+
     <!-- ================================= 
           target: report              
          ================================= -->
@@ -103,9 +115,9 @@
     <!-- ================================= 
           target: compile              
          ================================= -->
-    <target name="compile" depends="resolve" description="--> compile the project">
+    <target name="compile" depends="resolve" description="--> compile the project" unless="module.uptodate">
         <mkdir dir="${classes.dir}" />
-        <javac srcdir="${src.dir}" destdir="${classes.dir}" classpathref="lib.path.id" debug="true" />
+        <javac srcdir="${src.dir}" destdir="${classes.dir}" classpathref="lib.path.id" debug="true" includeantruntime="false"/>
     </target>
     
     <!-- ================================= 
@@ -181,7 +193,7 @@
     <!-- ================================= 
           target: jar              
          ================================= -->
-    <target name="jar" depends="version, compile" description="--> make a jar file for this project">
+    <target name="jar" depends="version, compile, copyclasses" description="--> make a jar file for this project" unless="module.uptodate">
         <jar destfile="${jar.file}">
             <fileset dir="${classes.dir}" />
             <manifest>
@@ -196,17 +208,25 @@
          ================================= -->
     <target name="job" depends="jar" description="--> generate a job file for this project">
         <jar destfile="${job.file}">     
-	 <zipfileset dir="${lib.dir}" prefix="lib"
+	 <zipfileset dir="${job.lib.dir}" prefix="lib"
                   includes="**/*.jar" excludes="hadoop-*.jar"/>
 	 <zipfileset dir="${classes.dir}"
                   excludes="*.properties"/>
         </jar>
     </target>
+	
+	<target name="copyclasses" description="--> copy the classes from the modules to the central build directory" unless="module.uptodate">
+	    <copy todir="../../build/classes">
+	      <fileset dir="${classes.dir}">
+	      	<exclude name="*.properties"/>
+	      </fileset>
+	    </copy>
+	</target>
 
     <!-- ================================= 
           target: publish              
          ================================= -->
-    <target name="publish" depends="clean-build, jar" description="--> publish this project in the ivy repository">
+    <target name="publish" depends="clean-build, check.if.module.build.necessary, jar" description="--> publish this project in the ivy repository">
     	<ivy:publish artifactspattern="${build.dir}/[artifact].[ext]" 
     			           resolver="shared"
     			           pubrevision="${version}" 
@@ -218,16 +238,33 @@
     <!-- ================================= 
           target: publish-local              
          ================================= -->
-    <target name="publish-local" depends="local-version, jar" description="--> publish this project in the local ivy repository">
+	<target name="check.if.module.build.necessary">
+	    <uptodate property="module.uptodate">
+	    	<srcfiles dir="." includes="ivy.xml"/>
+	        <srcfiles dir="${src.dir}" includes="**/*.java"/>
+	    	<srcfiles dir="." includes="build.xml"/>
+	    	<srcfiles dir="." includes="build.properties"/>
+	    	<srcfiles dir="../../common" includes="common.xml"/>
+	    	<srcfiles dir="../../common" includes="build.properties"/>
+	    	<mapper type="merge" to="${jar.file}"/>
+	    </uptodate>
+		<echo message="${module.uptodate}"/>
+		<property name="libs.uptodate" value="${module.uptodate}"/>
+		<echo message="${libs.uptodate}"/>
+	</target>
+	
+    <target name="publish-local" depends="check.if.module.build.necessary, local-version, jar" description="--> publish this project in the local ivy repository"
+		unless="module.uptodate">
+    	<echo message="Publishing, module not up to date"/>
     	<ivy:publish artifactspattern="${build.dir}/[artifact].[ext]" 
-    			        resolver="local"
-    			        pubrevision="${version}"
-				        pubdate="${now}"
-    			        status="integration"
-    					forcedeliver="true"
+    		        resolver="local"
+    		        pubrevision="${version}"
+    		        pubdate="${now}"
+    		        status="integration"
+    				forcedeliver="true"
     	/>
-        <echo message="project ${ant.project.name} published locally with version ${version}" />
-    </target>
+    	<echo message="project ${ant.project.name} published locally with version ${version}" />
+	</target>
 
 	<!-- ================================= 
           target: clean-local              

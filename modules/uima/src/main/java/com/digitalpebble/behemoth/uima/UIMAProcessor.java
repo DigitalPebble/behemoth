@@ -1,9 +1,6 @@
 package com.digitalpebble.behemoth.uima;
 
-import java.io.ByteArrayInputStream;
 import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -13,11 +10,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.mapred.Reporter;
-
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.uima.UIMAFramework;
 import org.apache.uima.analysis_engine.AnalysisEngine;
 import org.apache.uima.cas.CAS;
@@ -25,16 +20,18 @@ import org.apache.uima.cas.FSIterator;
 import org.apache.uima.cas.Feature;
 import org.apache.uima.cas.Type;
 import org.apache.uima.cas.impl.AnnotationImpl;
+import org.apache.uima.cas.text.AnnotationFS;
 import org.apache.uima.pear.tools.PackageBrowser;
 import org.apache.uima.pear.tools.PackageInstaller;
 import org.apache.uima.resource.ResourceSpecifier;
 import org.apache.uima.util.XMLInputSource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.digitalpebble.behemoth.BehemothDocument;
 import com.digitalpebble.behemoth.DocumentProcessor;
 
 public class UIMAProcessor implements DocumentProcessor {
-
     private static final Logger LOG = LoggerFactory
             .getLogger(UIMAProcessor.class);
 
@@ -56,6 +53,7 @@ public class UIMAProcessor implements DocumentProcessor {
         urlPEAR = appliPath;
     }
 
+    @Override
     public void close() {
         if (cas != null)
             cas.release();
@@ -63,8 +61,9 @@ public class UIMAProcessor implements DocumentProcessor {
             tae.destroy();
     }
 
+    @Override
     public BehemothDocument[] process(BehemothDocument behemoth,
-            Reporter reporter) {
+            Mapper<Text, BehemothDocument, Text, BehemothDocument>.Context reporter) {
         if (reporter != null)
             reporter.setStatus("UIMA : " + behemoth.getUrl().toString());
 
@@ -87,12 +86,12 @@ public class UIMAProcessor implements DocumentProcessor {
             }
         } catch (Exception e) {
             if (reporter != null)
-                reporter.incrCounter("UIMA", "Exception", 1);
+                reporter.getCounter("UIMA", "Exception").increment(1);
             LOG.error(behemoth.getUrl().toString(), e);
         }
 
         if (reporter != null)
-            reporter.incrCounter("UIMA", "Document", 1);
+            reporter.getCounter("UIMA", "Document").increment(1);
 
         // return the modified document
         return new BehemothDocument[] { behemoth };
@@ -164,7 +163,7 @@ public class UIMAProcessor implements DocumentProcessor {
     /** convert the annotations from the CAS into the Behemoth format **/
     private void convertCASToBehemoth(CAS uimadoc,
             com.digitalpebble.behemoth.BehemothDocument behemoth,
-            Reporter reporter) {
+            Mapper<Text, BehemothDocument, Text, BehemothDocument>.Context reporter) {
 
         String[] annotTypes = config.get("uima.annotations.filter", "").split(
                 ",");
@@ -175,7 +174,7 @@ public class UIMAProcessor implements DocumentProcessor {
             uimatypes.add(aType);
         }
 
-        FSIterator annotIterator = cas.getAnnotationIndex().iterator();
+        FSIterator<AnnotationFS> annotIterator = cas.getAnnotationIndex().iterator();
 
         while (annotIterator.hasNext()) {
             Object annotObject = annotIterator.next();
@@ -187,7 +186,7 @@ public class UIMAProcessor implements DocumentProcessor {
             String atype = annotation.getType().toString();
             // wanted type -> generate an annotation for it
             if (reporter != null)
-                reporter.incrCounter("UIMA", atype, 1);
+                reporter.getCounter("UIMA", atype).increment(1);
 
             com.digitalpebble.behemoth.Annotation target = new com.digitalpebble.behemoth.Annotation();
             // short version?

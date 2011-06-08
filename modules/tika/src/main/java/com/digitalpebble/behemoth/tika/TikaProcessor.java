@@ -25,7 +25,7 @@ import java.util.List;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.io.Text;
-import org.apache.hadoop.mapred.Reporter;
+import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MimeType;
@@ -78,7 +78,7 @@ public class TikaProcessor implements DocumentProcessor, TikaConstants {
      */
     @Override
     public BehemothDocument[] process(BehemothDocument inputDoc,
-            Reporter reporter) {
+            Mapper<Text, BehemothDocument, Text, BehemothDocument>.Context reporter) {
         // check that it has some text or content
         if (inputDoc.getContent() == null && inputDoc.getText() == null) {
             LOG.info("No content or text for " + inputDoc.getUrl()
@@ -111,7 +111,7 @@ public class TikaProcessor implements DocumentProcessor, TikaConstants {
         }
 
         // determine which parser to use
-        Parser parser = TikaConfig.getDefaultConfig().getParser();
+        Parser parser = TikaConfig.getDefaultConfig().getParser(); 
 
         // skip the processing if the input document already has some text
         if (inputDoc.getText() != null)

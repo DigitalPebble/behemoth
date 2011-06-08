@@ -19,30 +19,33 @@ package com.digitalpebble.behemoth.uima;
 
 import java.net.URI;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.commons.cli.ParseException;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.filecache.DistributedCache;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
-import org.apache.hadoop.mapred.FileInputFormat;
-import org.apache.hadoop.mapred.FileOutputFormat;
-import org.apache.hadoop.mapred.JobClient;
-import org.apache.hadoop.mapred.JobConf;
-import org.apache.hadoop.mapred.SequenceFileInputFormat;
-import org.apache.hadoop.mapred.SequenceFileOutputFormat;
+import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
+import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
+import org.apache.hadoop.mapreduce.Job;
+import org.apache.hadoop.mapreduce.lib.input.SequenceFileInputFormat;
+import org.apache.hadoop.mapreduce.lib.output.SequenceFileOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.digitalpebble.behemoth.BehemothConfiguration;
 import com.digitalpebble.behemoth.BehemothDocument;
+import com.digitalpebble.behemoth.cli.InputOutputReplaceCliProcessor;
 
 public class UIMADriver extends Configured implements Tool {
 
     private static final Logger LOG = LoggerFactory.getLogger(UIMADriver.class);
-
+    
+    public final static String USAGE = "Process a Behemoth corpus with UIMA";
+    
     public UIMADriver() {
         super(null);
     }
@@ -60,16 +63,21 @@ public class UIMADriver extends Configured implements Tool {
     public int run(String[] args) throws Exception {
 
         final FileSystem fs = FileSystem.get(getConf());
+        
+        InputOutputReplaceCliProcessor cliProcessor = new InputOutputReplaceCliProcessor(
+				UIMADriver.class.getSimpleName(), USAGE);
+		String pearOpt = cliProcessor.addRequiredOption("p", "pear",
+				"Path to PEAR file", true, "path_to_pear_file");
 
-        if (args.length != 3) {
-            String syntax = "com.digitalpebble.behemoth.uima.UIMADriver in out path_pear_file";
-            System.err.println(syntax);
-            return -1;
-        }
+		try {
+			cliProcessor.parse(args);
+		} catch (ParseException me) {
+			return -1;
+		}
 
-        Path inputPath = new Path(args[0]);
-        Path outputPath = new Path(args[1]);
-        String pearPath = args[2];
+        Path inputPath = new Path(cliProcessor.getInputValue());
+        Path outputPath = new Path(cliProcessor.getOutputValue());
+        String pearPath = cliProcessor.getOptionValue(pearOpt);
 
         // check that the GATE application has been stored on HDFS
         Path zap = new Path(pearPath);
@@ -79,12 +87,13 @@ public class UIMADriver extends Configured implements Tool {
             return -1;
         }
 
-        JobConf job = new JobConf(getConf());
+        Configuration conf = getConf();
+        Job job = new Job(conf);
         job.setJarByClass(this.getClass());
         job.setJobName("Processing with UIMA application : " + pearPath);
 
-        job.setInputFormat(SequenceFileInputFormat.class);
-        job.setOutputFormat(SequenceFileOutputFormat.class);
+        job.setInputFormatClass(SequenceFileInputFormat.class);
+        job.setOutputFormatClass(SequenceFileOutputFormat.class);
 
         job.setMapOutputKeyClass(Text.class);
         job.setMapOutputValueClass(BehemothDocument.class);
@@ -99,17 +108,17 @@ public class UIMADriver extends Configured implements Tool {
         FileOutputFormat.setOutputPath(job, outputPath);
 
         // push the UIMA pear onto the DistributedCache
-        DistributedCache.addCacheFile(new URI(pearPath), job);
+        DistributedCache.addCacheFile(new URI(pearPath), job.getConfiguration());
 
-        job.set("uima.pear.path", pearPath);
+        job.getConfiguration().set("uima.pear.path", pearPath);
 
         try {
-            JobClient.runJob(job);
+            job.waitForCompletion(true);
+            cliProcessor.replaceInputFile(getConf());
         } catch (Exception e) {
             e.printStackTrace();
             fs.delete(outputPath, true);
         } finally {
-            DistributedCache.purgeCache(job);
         }
 
         return 0;

@@ -1,0 +1,56 @@
+<project name="behemoth-cli" default="compile" xmlns:ivy="antlib:org.apache.ivy.ant">
+	<property file="build.properties" />
+	<import file="${common.dir}/common.xml" />
+
+	<!-- skip tests for this module -->
+	<target name="test" />
+
+	<!-- override a number of common.xml targets -->
+	
+	<!-- override job so it includes a Main-Class attribute to call Behemoth CLI 
+	     also include Behemoth as classes rather than as jars to avoid classloader issues
+	-->
+
+	<!-- ================================= 
+	          target: job              
+	         ================================= -->
+	<target name="job" depends="jar" description="--> generate a job file for this project">
+		<jar destfile="${job.file}">
+			<zipfileset dir="${job.lib.dir}" prefix="lib" includes="**/*.jar" excludes="hadoop-*.jar,behemoth-*.jar" />
+			<zipfileset dir="../../build/classes" excludes="*.properties" />
+			<manifest>
+				<attribute name="Main-Class" value="com.digitalpebble.behemoth.cli.Behemoth" />
+			</manifest>
+		</jar>
+	</target>
+
+	<!-- override publish to include job creation for this module -->
+
+	<!-- ================================= 
+          target: publish              
+         ================================= -->
+	<target name="publish-local" depends="local-version, jar, copyclasses, job" description="--> publish this project in the local ivy repository">
+		<ivy:publish artifactspattern="${build.dir}/[artifact].[ext]" resolver="local" pubrevision="${version}" status="release" forcedeliver="true"/>
+		<echo message="project ${ant.project.name} released with version ${version}" />
+	</target>
+	
+	<target name="publish" depends="clean-build, jar, copyclasses, job" description="--> publish this project in the shared ivy repository">
+			<ivy:publish artifactspattern="${build.dir}/[artifact].[ext]" resolver="shared" pubrevision="${version}" status="release" />
+			<echo message="project ${ant.project.name} released with version ${version}" />
+		</target>
+	
+    <!-- ================================= 
+          target: jar              
+         ================================= -->
+    <target name="jar" depends="version, compile, copyclasses" description="--> make a jar file for this project" unless="module.uptodate">
+        <jar destfile="${jar.file}">
+            <fileset dir="${classes.dir}" />
+            <manifest>
+                <attribute name="Built-By" value="${user.name}"/>
+                <attribute name="Build-Version" value="${version}" />
+            </manifest>
+        </jar>
+    </target>
+
+</project>
+

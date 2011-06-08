@@ -19,26 +19,25 @@ package com.digitalpebble.behemoth.solr;
 
 import java.util.Random;
 
+import org.apache.commons.cli.MissingOptionException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
-import org.apache.hadoop.filecache.DistributedCache;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
-import org.apache.hadoop.mapred.FileInputFormat;
-import org.apache.hadoop.mapred.FileOutputFormat;
-import org.apache.hadoop.mapred.JobClient;
-import org.apache.hadoop.mapred.JobConf;
-import org.apache.hadoop.mapred.SequenceFileInputFormat;
-import org.apache.hadoop.mapred.SequenceFileOutputFormat;
-import org.apache.hadoop.mapred.lib.IdentityMapper;
+import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
+import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
+import org.apache.hadoop.mapreduce.Job;
+import org.apache.hadoop.mapreduce.lib.input.SequenceFileInputFormat;
+import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 
 import com.digitalpebble.behemoth.BehemothConfiguration;
 import com.digitalpebble.behemoth.BehemothDocument;
+import com.digitalpebble.behemoth.cli.CliProcessor;
 
 /**
  * Sends annotated documents to SOLR for indexing
@@ -47,6 +46,8 @@ import com.digitalpebble.behemoth.BehemothDocument;
 public class SOLRIndexerJob extends Configured implements Tool {
     private static final Log LOG = LogFactory.getLog(SOLRIndexerJob.class);
 
+    public final static String USAGE = "Sends annotated documents to SOLR for indexing";
+    
     public SOLRIndexerJob() {
     }
 
@@ -63,29 +64,37 @@ public class SOLRIndexerJob extends Configured implements Tool {
     public int run(String[] args) throws Exception {
 
         final FileSystem fs = FileSystem.get(getConf());
+        
+        CliProcessor cliProcessor = new CliProcessor(
+                SOLRIndexerJob.class.getSimpleName(), USAGE);
+        String inputOpt = cliProcessor.addRequiredOption("i", "input",
+                "Input directory on HDFS", true);
+        String solrOpt = cliProcessor.addRequiredOption("l", "solr",
+                "SOLR URL", true);
 
-        if (args.length != 2) {
-            String syntax = "com.digitalpebble.solr.SOLRIndexerJob in solrURL";
-            System.err.println(syntax);
+        try {
+            cliProcessor.parse(args);
+        } catch (MissingOptionException me) {
             return -1;
         }
 
-        Path inputPath = new Path(args[0]);
-        String solrURL = args[1];
+        Path inputPath = new Path(cliProcessor.getOptionValue(inputOpt));
+        String solrURL = cliProcessor.getOptionValue(solrOpt);
 
-        JobConf job = new JobConf(getConf());
+        Configuration conf = getConf();
+        Job job = new Job(conf);
 
         job.setJarByClass(this.getClass());
 
         job.setJobName("Indexing " + inputPath + " into SOLR");
 
-        job.setInputFormat(SequenceFileInputFormat.class);
-        job.setOutputFormat(SOLROutputFormat.class);
+        job.setInputFormatClass(SequenceFileInputFormat.class);
+        job.setOutputFormatClass(SOLROutputFormat.class);
 
         job.setOutputKeyClass(Text.class);
         job.setOutputValueClass(BehemothDocument.class);
 
-        job.setMapperClass(IdentityMapper.class);
+        job.setMapperClass(Mapper.class);
         // no reducer : send straight to SOLR at end of mapping
         job.setNumReduceTasks(0);
 
@@ -94,15 +103,14 @@ public class SOLRIndexerJob extends Configured implements Tool {
                 + new Random().nextInt());
         FileOutputFormat.setOutputPath(job, tmp);
 
-        job.set("solr.server.url", solrURL);
+        job.getConfiguration().set("solr.server.url", solrURL);
 
         try {
-            JobClient.runJob(job);
+            job.waitForCompletion(true);
         } catch (Exception e) {
             LOG.error(e);
         } finally {
             fs.delete(tmp, true);
-            DistributedCache.purgeCache(job);
         }
 
         return 0;

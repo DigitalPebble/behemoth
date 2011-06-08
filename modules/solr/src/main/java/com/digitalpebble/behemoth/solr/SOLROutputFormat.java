@@ -18,31 +18,31 @@ package com.digitalpebble.behemoth.solr;
 
 import java.io.IOException;
 
-import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.io.Text;
-import org.apache.hadoop.mapred.FileOutputFormat;
-import org.apache.hadoop.mapred.JobConf;
-import org.apache.hadoop.mapred.RecordWriter;
-import org.apache.hadoop.mapred.Reporter;
-import org.apache.hadoop.util.Progressable;
+import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
+import org.apache.hadoop.mapreduce.RecordWriter;
+import org.apache.hadoop.mapreduce.TaskAttemptContext;
 
 import com.digitalpebble.behemoth.BehemothDocument;
 
 public class SOLROutputFormat extends FileOutputFormat<Text, BehemothDocument> {
 
+    @Override
     public RecordWriter<Text, BehemothDocument> getRecordWriter(
-            FileSystem ignored, JobConf job, String name, Progressable progress)
-            throws IOException {
+            TaskAttemptContext context) throws IOException,
+            InterruptedException {
 
         final SOLRWriter writer = new SOLRWriter();
-        writer.open(job, name);
+        writer.open(context.getConfiguration(), context.getJobName());
 
         return new RecordWriter<Text, BehemothDocument>() {
 
-            public void close(Reporter reporter) throws IOException {
+            @Override
+            public void close(TaskAttemptContext context) throws IOException {
                 writer.close();
             }
 
+            @Override
             public void write(Text key, BehemothDocument doc)
                     throws IOException {
                 writer.write(doc);
