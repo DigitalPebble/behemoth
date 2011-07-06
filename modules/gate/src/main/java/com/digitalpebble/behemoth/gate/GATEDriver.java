@@ -108,9 +108,7 @@ public class GATEDriver extends Configured implements Tool {
         } catch (Exception e) {
             e.printStackTrace();
             fs.delete(outputPath, true);
-        } finally {
-            DistributedCache.purgeCache(job);
-        }
+        } finally {}
 
         return 0;
     }
