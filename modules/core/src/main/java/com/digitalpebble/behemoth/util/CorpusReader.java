@@ -17,11 +17,13 @@
 
 package com.digitalpebble.behemoth.util;
 
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
+import org.apache.hadoop.fs.FileStatus;
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.Text;
-import org.apache.hadoop.io.SequenceFile.Reader;
-import org.apache.hadoop.mapred.SequenceFileOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 
@@ -47,19 +49,24 @@ public class CorpusReader extends Configured implements Tool {
         if (args.length > 1 && "-showBinaryContent".equalsIgnoreCase(args[1]))
             showBinaryContent = true;
 
-        Reader[] cacheReaders = SequenceFileOutputFormat.getReaders(getConf(),
-                input);
-        for (Reader current : cacheReaders) {
-            // read the key + values in that file
+        Configuration conf = getConf();
+        FileSystem fs = FileSystem.get(conf);
+        FileStatus[] fss = fs.listStatus(input);
+        for (FileStatus status : fss) {
+            Path path = status.getPath();
+            // skips the _log or _SUCCESS files
+            if (!path.getName().startsWith("part-")
+                    && !path.getName().equals(input.getName()))
+                continue;
+            SequenceFile.Reader reader = new SequenceFile.Reader(fs, path, conf);
             Text key = new Text();
             BehemothDocument value = new BehemothDocument();
-            while (current.next(key, value)) {
+            while (reader.next(key, value)) {
                 System.out.println(value.toString(showBinaryContent));
             }
-            current.close();
+            reader.close();
         }
 
         return 0;
     }
-
 }
