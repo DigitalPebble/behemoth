@@ -90,13 +90,12 @@
 		unless="module.uptodate">
 		<ivy:resolve file="${ivy.file}" transitive="true"/>
 		<uptodate property="libs.uptodate">
-	        <srcfiles dir="." includes="${ivy.file}"/>
-	        <mapper type="merge" to="{lib.dir}/.done"/>
+	        	<srcfiles dir="." includes="${ivy.file}"/>
+	        	<mapper type="merge" to="{lib.dir}/.done"/>
 		</uptodate>
 	</target>
 	
-    <target name="resolve" depends="check.retrieve.necessary" description="--> resolve and retrieve dependencies with ivy"
-    	unless="libs.uptodate">
+    <target name="resolve" depends="check.retrieve.necessary" description="--> resolve and retrieve dependencies with ivy">
     	<delete includeemptydirs="true" dir="${lib.dir}"/>
         <mkdir dir="${job.lib.dir}"/> <!-- not usually necessary, ivy creates the directory IF there are dependencies -->
     	<mkdir dir="${test.lib.dir}"/> 
@@ -248,9 +247,8 @@
 	    	<srcfiles dir="../../common" includes="build.properties"/>
 	    	<mapper type="merge" to="${jar.file}"/>
 	    </uptodate>
-		<echo message="${module.uptodate}"/>
-		<property name="libs.uptodate" value="${module.uptodate}"/>
-		<echo message="${libs.uptodate}"/>
+	    <property name="libs.uptodate" value="${module.uptodate}"/>
+	    <echo message="${libs.uptodate}"/>
 	</target>
 	
     <target name="publish-local" depends="check.if.module.build.necessary, local-version, jar" description="--> publish this project in the local ivy repository"
