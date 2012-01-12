@@ -102,7 +102,6 @@ public class SOLRIndexerJob extends Configured implements Tool {
             LOG.error(e);
         } finally {
             fs.delete(tmp, true);
-            DistributedCache.purgeCache(job);
         }
 
         return 0;
