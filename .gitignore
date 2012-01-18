@@ -7,5 +7,6 @@
 .svn
 build
 **/build
+**/target
 lib
 
