@@ -13,7 +13,7 @@
   <packaging>jar</packaging>
 
   <name>gate</name>
-  <url>http://github.com/jnioche/behemoth</url>
+  <url>https://github.com/jnioche/behemoth/wiki/GATE-module</url>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

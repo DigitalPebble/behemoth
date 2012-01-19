@@ -16,6 +16,7 @@
         <module>tika</module>
         <module>uima</module>
         <module>io</module>
+        <module>mahout</module>
     </modules>
 
     <build>
