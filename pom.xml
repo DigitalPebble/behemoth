@@ -15,6 +15,7 @@
         <module>gate</module>
         <module>tika</module>
         <module>uima</module>
+        <module>io</module>
     </modules>
 
     <build>
