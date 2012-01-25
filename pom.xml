@@ -17,6 +17,7 @@
         <module>uima</module>
         <module>io</module>
         <module>mahout</module>
+        <module>solr</module>
     </modules>
 
     <build>
