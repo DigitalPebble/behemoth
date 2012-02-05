@@ -73,7 +73,6 @@ public class UIMAMapper extends MapReduceBase implements
 
     private Map<String, Set<Feature>> featfilts = new HashMap<String, Set<Feature>>();
 
-    @Override
     public void map(Text id, BehemothDocument behemoth,
             OutputCollector<Text, BehemothDocument> output, Reporter reporter)
             throws IOException {
