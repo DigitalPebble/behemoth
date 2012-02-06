@@ -31,41 +31,48 @@ import com.digitalpebble.behemoth.BehemothDocument;
  * Extracts tokens from a Behemoth document and outputs them in a StringTuple
  */
 public class SequenceFileTokenizerMapper extends
-        Mapper<Text, BehemothDocument, Text, StringTuple> {
+		Mapper<Text, BehemothDocument, Text, StringTuple> {
 
-    private String tokenType;
-    private String tokenFeature;
+	private String tokenType;
+	private String tokenFeature;
 
-    @Override
-    protected void map(Text key, BehemothDocument value, Context context)
-            throws IOException, InterruptedException {
-        StringTuple document = new StringTuple();
-        Iterator<Annotation> iter = value.getAnnotations().iterator();
+	@Override
+	protected void map(Text key, BehemothDocument value, Context context)
+			throws IOException, InterruptedException {
+		StringTuple document = new StringTuple();
+		Iterator<Annotation> iter = value.getAnnotations().iterator();
 
-        while (iter.hasNext()) {
-            Annotation annot = iter.next();
-            // check the type
-            if (!annot.getType().equals(tokenType))
-                continue;
-            java.util.Map<String, String> features = annot.getFeatures();
-            if (features == null)
-                continue;
-            String featureValue = features.get(tokenFeature);
-            if (featureValue == null)
-                continue;
-            document.add(featureValue);
+		while (iter.hasNext()) {
+			Annotation annot = iter.next();
+			// check the type
+			if (!annot.getType().equals(tokenType))
+				continue;
+			java.util.Map<String, String> features = annot.getFeatures();
+			if (features == null)
+				continue;
 
-        }
-        context.write(key, document);
-    }
+			String featureValue = null;
 
-    @Override
-    protected void setup(Context context) throws IOException,
-            InterruptedException {
-        super.setup(context);
-        this.tokenType = context.getConfiguration()
-                .get(DocumentProcessor.TOKEN_TYPE);
-        this.tokenFeature = context.getConfiguration().get(
-                DocumentProcessor.FEATURE_NAME);
-    }
+			// no feature? use the underlying text
+			if (tokenFeature.equals("")) {
+				featureValue = value.getText().substring((int)annot.getStart(), (int)annot.getEnd());
+			}
+			else featureValue = features.get(tokenFeature);
+			if (featureValue == null)
+				continue;
+			document.add(featureValue);
+
+		}
+		context.write(key, document);
+	}
+
+	@Override
+	protected void setup(Context context) throws IOException,
+			InterruptedException {
+		super.setup(context);
+		this.tokenType = context.getConfiguration().get(
+				DocumentProcessor.TOKEN_TYPE);
+		this.tokenFeature = context.getConfiguration().get(
+				DocumentProcessor.FEATURE_NAME,"");
+	}
 }
