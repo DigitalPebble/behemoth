@@ -17,6 +17,12 @@
 
 package com.digitalpebble.behemoth.util;
 
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.GnuParser;
+import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.ParseException;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.FileStatus;
@@ -35,38 +41,64 @@ import com.digitalpebble.behemoth.BehemothDocument;
  **/
 public class CorpusReader extends Configured implements Tool {
 
-    public static void main(String[] args) throws Exception {
-        int res = ToolRunner.run(BehemothConfiguration.create(),
-                new CorpusReader(), args);
-        System.exit(res);
-    }
+	public static void main(String[] args) throws Exception {
+		int res = ToolRunner.run(BehemothConfiguration.create(),
+				new CorpusReader(), args);
+		System.exit(res);
+	}
 
-    public int run(String[] args) throws Exception {
+	public int run(String[] args) throws Exception {
 
-        Path input = new Path(args[0]);
+		Options options = new Options();
+		// automatically generate the help statement
+		HelpFormatter formatter = new HelpFormatter();
+		// create the parser
+		CommandLineParser parser = new GnuParser();
 
-        boolean showBinaryContent = false;
-        if (args.length > 1 && "-showBinaryContent".equalsIgnoreCase(args[1]))
-            showBinaryContent = true;
+		options.addOption("h", "help", false, "print this message");
+		options.addOption("i", "input", true, "input Behemoth corpus");
+		options.addOption("showBinaryContent", false,
+				"display binary content in output");
 
-        Configuration conf = getConf();
-        FileSystem fs = FileSystem.get(conf);
-        FileStatus[] fss = fs.listStatus(input);
-        for (FileStatus status : fss) {
-            Path path = status.getPath();
-            // skips the _log or _SUCCESS files
-            if (!path.getName().startsWith("part-")
-                    && !path.getName().equals(input.getName()))
-                continue;
-            SequenceFile.Reader reader = new SequenceFile.Reader(fs, path, conf);
-            Text key = new Text();
-            BehemothDocument value = new BehemothDocument();
-            while (reader.next(key, value)) {
-                System.out.println(value.toString(showBinaryContent));
-            }
-            reader.close();
-        }
+		// parse the command line arguments
+		CommandLine line = null;
+		try {
+			line = parser.parse(options, args);
+			String input = line.getOptionValue("i");
+			if (line.hasOption("help")) {
+				formatter.printHelp("CorpusReader", options);
+				return 0;
+			}
+			if (input == null) {
+				formatter.printHelp("CorpusReader", options);
+				return -1;
+			}
+		} catch (ParseException e) {
+			formatter.printHelp("CorpusReader", options);
+		}
 
-        return 0;
-    }
+		boolean showBinaryContent = line.hasOption("showBinaryContent");
+
+		Path inputPath = new Path(line.getOptionValue("i"));
+
+		Configuration conf = getConf();
+		FileSystem fs = FileSystem.get(conf);
+		FileStatus[] fss = fs.listStatus(inputPath);
+		for (FileStatus status : fss) {
+			Path path = status.getPath();
+			// skips the _log or _SUCCESS files
+			if (!path.getName().startsWith("part-")
+					&& !path.getName().equals(inputPath.getName()))
+				continue;
+			SequenceFile.Reader reader = new SequenceFile.Reader(fs, path, conf);
+			Text key = new Text();
+			BehemothDocument value = new BehemothDocument();
+			while (reader.next(key, value)) {
+				System.out.println(value.toString(showBinaryContent));
+			}
+			reader.close();
+		}
+
+		return 0;
+	}
 }
