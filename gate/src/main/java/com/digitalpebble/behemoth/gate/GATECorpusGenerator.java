@@ -18,14 +18,13 @@
 package com.digitalpebble.behemoth.gate;
 
 import gate.Gate;
-import gate.creole.ResourceInstantiationException;
 import gate.util.GateException;
-import gate.util.InvalidOffsetException;
 
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.net.URL;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -40,7 +39,6 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.SequenceFileOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
-import org.apache.tika.exception.TikaException;
 
 import com.digitalpebble.behemoth.BehemothConfiguration;
 import com.digitalpebble.behemoth.BehemothDocument;
@@ -119,8 +117,8 @@ public class GATECorpusGenerator extends Configured implements Tool {
                 // generate a GATE document then save it to XML
                 try {
                     // first put the text
-                    gate.Document gatedocument = GATEProcessor
-                            .generateGATEDoc(inputDoc);
+                	GATEProcessor gp = new GATEProcessor(new URL("dummy"));
+                    gate.Document gatedocument = gp.generateGATEDoc(inputDoc);
 
                     // then save as XML
                     File outputFile = new File(output, num + ".xml");

@@ -20,6 +20,7 @@ package com.digitalpebble.behemoth.gate;
 import gate.AnnotationSet;
 import gate.Corpus;
 import gate.CorpusController;
+import gate.Document;
 import gate.Factory;
 import gate.FeatureMap;
 import gate.Gate;
@@ -28,24 +29,23 @@ import gate.util.InvalidOffsetException;
 import gate.util.OffsetComparator;
 import gate.util.persistence.PersistenceManager;
 
-import java.io.ByteArrayInputStream;
+import java.io.BufferedOutputStream;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Set;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapred.Reporter;
-import org.apache.tika.config.TikaConfig;
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.utils.ParseUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -89,8 +89,6 @@ public class GATEProcessor implements DocumentProcessor {
             reporter.setStatus("GATE : " + inputDoc.getUrl().toString());
 
         boolean clearAS = config.getBoolean("gate.emptyannotationset", false);
-        if (clearAS)
-            inputDoc.getMetadata().clear();
 
         // process the text passed as value with the application
         // a) create a GATE document based on the text value
@@ -119,6 +117,11 @@ public class GATEProcessor implements DocumentProcessor {
 
             // sort the annotations before adding them?
             Collections.sort(beheannotations);
+
+            // clear the existing behemoth annotations
+            if (clearAS) {
+                inputDoc.getAnnotations().clear();
+            }
 
             inputDoc.getAnnotations().addAll(beheannotations);
 
@@ -204,6 +207,54 @@ public class GATEProcessor implements DocumentProcessor {
         return config;
     }
 
+    private gate.Document generateGATEDocFromLocalDump(BehemothDocument inputDoc)
+            throws ResourceInstantiationException, IOException {
+
+        // can't get that to work
+        // File tempDirectory = new
+        // File(this.config.get("hadoop.tmp.dir","/tmp"),this.config.get("user.name",
+        // "./tmp"));
+        // LOG.info("tempDirectory "+tempDirectory);
+        //
+        // tempDirectory.mkdirs();
+        //
+        // File tempInputFile = File.createTempFile("gateInput-",
+        // inputDoc.getUrl(),tempDirectory);
+        //
+        // FileOutputStream fos = new FileOutputStream(tempInputFile);
+        // OutputStream bout = new BufferedOutputStream(fos);
+        // bout.write(inputDoc.getContent());
+        // bout.flush();
+        // bout.close();
+        //
+        // URL url;
+        // try {
+        // url = tempInputFile.toURI().toURL();
+        // } catch (MalformedURLException e) {
+        // // delete the input doc
+        // tempInputFile.delete();
+        // throw e;
+        // }
+
+        FeatureMap params = Factory.newFeatureMap();
+        params.put(Document.DOCUMENT_STRING_CONTENT_PARAMETER_NAME, new String(
+                inputDoc.getContent()));
+        String ct = inputDoc.getContentType();
+        if (ct != null)
+            params.put(Document.DOCUMENT_MIME_TYPE_PARAMETER_NAME, ct);
+
+        gate.Document gatedocument;
+        try {
+            gatedocument = (Document) Factory.createResource(
+                    "gate.corpora.DocumentImpl", params);
+        } finally {
+            // delete the input doc
+            // tempInputFile.delete();
+        }
+
+        return gatedocument;
+    }
+
     /**
      * Generation of a GATE document from a Behemoth one
      * 
@@ -214,22 +265,27 @@ public class GATEProcessor implements DocumentProcessor {
      * @throws ResourceInstantiationException
      * @throws InvalidOffsetException
      * @throws IOException
-     * @throws TikaException
      */
-    public static gate.Document generateGATEDoc(BehemothDocument inputDoc)
+    public gate.Document generateGATEDoc(BehemothDocument inputDoc)
             throws ResourceInstantiationException, InvalidOffsetException,
-            TikaException, IOException {
+            IOException {
 
-        // first put the text
-        // if not use Tika to extract it
-        // TODO rely on GATE's parsing instead to avoid
-        // a direct dependency with Tika
+        gate.Document gatedocument = null;
 
+        // if no text is available (e.g. Tika has not extracted it)
+        // let GATE do the parsing itself from the binary content
         if (inputDoc.getText() == null) {
-            InputStream is = new ByteArrayInputStream(inputDoc.getContent());
-            String textContent = ParseUtils.getStringContent(is, TikaConfig
-                    .getDefaultConfig(), inputDoc.getContentType());
-            inputDoc.setText(textContent);
+            try {
+                gatedocument = generateGATEDocFromLocalDump(inputDoc);
+
+                // transfer the text from GATE to Behemoth
+                String textContent = gatedocument.getContent().toString();
+                inputDoc.setText(textContent);
+
+                return gatedocument;
+            } catch (Exception e) {
+                LOG.error("Can't generate GATE doc from byte dump", e);
+            }
         }
 
         // if the input document does not have any text -> create a doc with an
@@ -240,7 +296,8 @@ public class GATEProcessor implements DocumentProcessor {
             text = "";
         else
             text = inputDoc.getText();
-        gate.Document gatedocument = Factory.newDocument(text);
+
+        gatedocument = Factory.newDocument(text);
 
         // then the metadata as document features
         FeatureMap docFeatures = gatedocument.getFeatures();

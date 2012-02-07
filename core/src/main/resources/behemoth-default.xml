@@ -48,8 +48,8 @@
 
 <property>
   <name>gate.emptyannotationset</name>
-  <value>false</value>
-  <description>if specified all the annotations in the Behemoth document will be deleted before processing with GATE 
+  <value>true</value>
+  <description>if specified all the pre-existing annotations in the Behemoth document will be deleted prior to adding the ones from GATE 
   </description>
 </property>
 
