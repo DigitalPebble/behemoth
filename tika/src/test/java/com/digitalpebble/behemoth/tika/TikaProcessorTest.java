@@ -54,7 +54,7 @@ public class TikaProcessorTest extends TestCase {
         // the output document must be marked as text/html
         assertEquals("text/html", output.getContentType());
         // and have the following text
-        assertEquals("A TITLE\nThis is a simple test", output.getText().trim());
+        assertEquals("A TITLE\n\n\nThis is a simple test", output.getText().trim());
     }
 
 }
