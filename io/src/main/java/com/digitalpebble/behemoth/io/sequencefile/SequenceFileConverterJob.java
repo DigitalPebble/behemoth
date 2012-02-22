@@ -46,7 +46,7 @@ public class SequenceFileConverterJob extends AbstractJob {
     int result = 0;
     addInputOption();
     addOutputOption();
-    if (parseArguments(args) != null) {
+    if (parseArguments(args) == null) {
       return -1;
     }
     Path input = getInputPath();
