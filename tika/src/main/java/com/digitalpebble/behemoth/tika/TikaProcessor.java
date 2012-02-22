@@ -26,9 +26,13 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.Reporter;
+import org.apache.tika.Tika;
 import org.apache.tika.config.TikaConfig;
+import org.apache.tika.detect.Detector;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MimeType;
+import org.apache.tika.mime.MimeTypeException;
 import org.apache.tika.mime.MimeTypes;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
@@ -55,6 +59,7 @@ public class TikaProcessor implements DocumentProcessor, TikaConstants {
 
     private MimeTypes mimetypes = TikaConfig.getDefaultConfig()
             .getMimeRepository();
+  private Detector detector = TikaConfig.getDefaultConfig().getDetector();
 
     @Override
     public Configuration getConf() {
@@ -93,9 +98,19 @@ public class TikaProcessor implements DocumentProcessor, TikaConstants {
             // using the original content
             if (mimeType == null) {
                 if (inputDoc.getContent() != null) {
-                    MimeType mimetype = mimetypes.getMimeType(
-                            inputDoc.getUrl(), inputDoc.getContent());
-                    mt = mimetype.getName();
+
+                  Metadata meta = new Metadata();
+                  meta.set(Metadata.RESOURCE_NAME_KEY, inputDoc.getUrl());
+                  MimeType mimetype = null;
+                  try {
+                    MediaType mediaType = detector.detect(new ByteArrayInputStream(inputDoc.getContent()), meta);
+                    mimetype = mimetypes.forName(mediaType.getType() + "/" + mediaType.getSubtype());
+                  } catch (IOException e) {
+                    LOG.error("Exception", e);
+                  } catch (MimeTypeException e) {
+                    LOG.error("Exception", e);
+                  }
+                  mt = mimetype.getName();
                 } else if (inputDoc.getText() != null) {
                     // force it to text
                     mt = "text/plain";
@@ -179,7 +194,7 @@ public class TikaProcessor implements DocumentProcessor, TikaConstants {
      * this method
      * 
      * @param annotations
-     *            the markup {@link com.digitalpebble.behemoth.Annotations}
+     *            the markup {@link com.digitalpebble.behemoth.Annotation}
      */
     protected void processMarkupAnnotations(BehemothDocument inputDoc,
             List<com.digitalpebble.behemoth.Annotation> annotations) {
