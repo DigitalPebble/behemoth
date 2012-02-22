@@ -25,7 +25,9 @@ import java.util.Map.Entry;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.mapred.JobConf;
+import org.apache.solr.client.solrj.SolrServer;
 import org.apache.solr.client.solrj.SolrServerException;
+import org.apache.solr.client.solrj.impl.CloudSolrServer;
 import org.apache.solr.client.solrj.impl.StreamingUpdateSolrServer;
 import org.apache.solr.common.SolrInputDocument;
 
@@ -36,7 +38,7 @@ public class LucidWorksWriter {
 
     private static final Log LOG = LogFactory.getLog(LucidWorksWriter.class);
 
-    private StreamingUpdateSolrServer solr;
+    private SolrServer solr;
 
     // key = Annotation type ; value = feature name / SOLR field
     private Map<String, Map<String, String>> fieldMapping = new HashMap<String, Map<String, String>>();
@@ -45,7 +47,12 @@ public class LucidWorksWriter {
         String solrURL = job.get("solr.server.url");
         int queueSize = job.getInt("solr.client.queue.size", 100);
         int threadCount = job.getInt("solr.client.threads", 1);
-        solr = new StreamingUpdateSolrServer(solrURL, queueSize, threadCount);
+        String zkHost = job.get("solr.zkhost");
+        if (zkHost != null && zkHost.equals("") == false){
+          solr = new CloudSolrServer(zkHost);
+        } else {
+          solr = new StreamingUpdateSolrServer(solrURL, queueSize, threadCount);
+        }
         // get the Behemoth annotations types and features
         // to store as SOLR fields
         // solr.f.name = BehemothType.featureName
