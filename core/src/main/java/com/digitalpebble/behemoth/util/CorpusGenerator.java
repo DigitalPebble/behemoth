@@ -48,7 +48,8 @@ public class CorpusGenerator {
     this.output = output;
   }
 
-  public void generate(boolean recurse) throws IOException {
+  public long generate(boolean recurse) throws IOException {
+    long result = 0;
     // read from input path
     // create new Content object and add it to the SequenceFile
     Text key = new Text();
@@ -62,11 +63,12 @@ public class CorpusGenerator {
       PerformanceFileFilter pff = new PerformanceFileFilter(writer, key,
               value, conf);
       // iterate on the files in the source dir
-      processFiles(conf, input, recurse, pff);
+      result = processFiles(conf, input, recurse, pff);
 
     } finally {
       IOUtils.closeStream(writer);
     }
+    return result;
   }
 
   public static void main(String argv[]) throws Exception {
@@ -91,12 +93,12 @@ public class CorpusGenerator {
     }
 
     CorpusGenerator generator = new CorpusGenerator(inputDir, output);
-    generator.generate(recurse);//TODO: add support for how many docs were converted
+    long count = generator.generate(recurse);//TODO: add support for how many docs were converted
+    System.out.println(count + " docs converted");
   }
 
-  private static void processFiles(Configuration conf, Path input, boolean recurse,
+  private static long processFiles(Configuration conf, Path input, boolean recurse,
                                    PerformanceFileFilter pff) throws IOException {
-
     FileSystem fs = input.getFileSystem(conf);
     FileStatus[] statuses = fs.listStatus(input, pff);
     for (int i = 0; i < statuses.length; i++) {
@@ -105,13 +107,14 @@ public class CorpusGenerator {
         processFiles(conf, status.getPath(), recurse, pff);
       }
     }
+    return pff.counter;
   }
 
   // Java hack to move the work of processing files into a filter, so that we
   // can process large directories of files
   // without having to create a huge list of files
   static class PerformanceFileFilter implements PathFilter {
-
+    long counter = 0;
     PathFilter defaultIgnores = new PathFilter() {
 
       public boolean accept(Path file) {
@@ -154,6 +157,7 @@ public class CorpusGenerator {
             value.setContent(fileBArray);
 
             writer.append(key, value);
+            counter++;
           } catch (FileNotFoundException e) {
             throw new RuntimeException(e);
           } catch (IOException e) {
