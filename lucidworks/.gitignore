@@ -1,0 +1,14 @@
+*~
+.classpath
+.externalToolBuilders
+.project
+.settings
+.git
+.svn
+build
+**/build
+**/target
+lib
+*.iml
+.idea
+
