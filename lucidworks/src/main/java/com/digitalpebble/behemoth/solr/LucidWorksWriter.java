@@ -21,6 +21,7 @@ import com.digitalpebble.behemoth.BehemothDocument;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.mapred.JobConf;
+import org.apache.hadoop.util.Progressable;
 import org.apache.solr.client.solrj.SolrServer;
 import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.solr.client.solrj.impl.CloudSolrServer;
@@ -41,6 +42,11 @@ public class LucidWorksWriter {
 
   // key = Annotation type ; value = feature name / SOLR field
   private Map<String, Map<String, String>> fieldMapping = new HashMap<String, Map<String, String>>();
+  private Progressable progress;
+
+  public LucidWorksWriter(Progressable progress) {
+    this.progress = progress;
+  }
 
   public void open(JobConf job, String name) throws IOException {
     String zkHost = job.get("solr.zkhost");
@@ -81,6 +87,7 @@ public class LucidWorksWriter {
   public void write(BehemothDocument doc) throws IOException {
     final SolrInputDocument inputDoc = convertToSOLR(doc);
     try {
+      progress.progress();
       solr.add(inputDoc);
     } catch (SolrServerException e) {
       throw makeIOException(e);

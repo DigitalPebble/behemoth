@@ -34,7 +34,7 @@ public class LucidWorksOutputFormat extends FileOutputFormat<Text, BehemothDocum
             FileSystem ignored, JobConf job, String name, Progressable progress)
             throws IOException {
 
-        final LucidWorksWriter writer = new LucidWorksWriter();
+        final LucidWorksWriter writer = new LucidWorksWriter(progress);
         writer.open(job, name);
 
         return new RecordWriter<Text, BehemothDocument>() {

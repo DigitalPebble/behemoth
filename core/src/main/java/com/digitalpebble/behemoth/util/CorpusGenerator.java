@@ -148,6 +148,7 @@ public class CorpusGenerator {
           byte[] fileBArray = new byte[(int) fs.getFileStatus(file).getLen()];
           FSDataInputStream fis = null;
           try {
+            //TODO: better handling of files here, as reading in a sequence file would be really
             fis = fs.open(file);
             fis.readFully(0, fileBArray);
             fis.close();
@@ -155,7 +156,7 @@ public class CorpusGenerator {
             // fill the values for the content object
             value.setUrl(URI);
             value.setContent(fileBArray);
-
+            //TODO: is there a way to stream this in?
             writer.append(key, value);
             counter++;
           } catch (FileNotFoundException e) {

@@ -34,7 +34,7 @@ public class SOLROutputFormat extends FileOutputFormat<Text, BehemothDocument> {
             FileSystem ignored, JobConf job, String name, Progressable progress)
             throws IOException {
 
-        final SOLRWriter writer = new SOLRWriter();
+        final SOLRWriter writer = new SOLRWriter(progress);
         writer.open(job, name);
 
         return new RecordWriter<Text, BehemothDocument>() {
