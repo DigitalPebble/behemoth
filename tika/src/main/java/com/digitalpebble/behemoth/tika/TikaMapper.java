@@ -57,7 +57,7 @@ public class TikaMapper extends MapReduceBase implements
     @Override
     public void configure(JobConf job) {
 
-        String handlerName = job.get("tika.processor");
+        String handlerName = job.get(TikaConstants.TIKA_PROCESSOR_KEY);
         if (handlerName != null) {
             Class handlerClass = job.getClass(handlerName, TikaProcessor.class);
             try {
