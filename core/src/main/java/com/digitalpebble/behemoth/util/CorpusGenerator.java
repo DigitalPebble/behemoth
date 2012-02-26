@@ -40,135 +40,138 @@ import java.io.IOException;
  */
 
 public class CorpusGenerator {
-  private transient static Logger log = LoggerFactory.getLogger(CorpusGenerator.class);
-  private Path input, output;
+    private transient static Logger log = LoggerFactory
+            .getLogger(CorpusGenerator.class);
+    private Path input, output;
 
-  public CorpusGenerator(Path input, Path output) {
-    this.input = input;
-    this.output = output;
-  }
-
-  public void generate(boolean recurse) throws IOException {
-    // read from input path
-    // create new Content object and add it to the SequenceFile
-    Text key = new Text();
-    BehemothDocument value = new BehemothDocument();
-    SequenceFile.Writer writer = null;
-    try {
-      Configuration conf = new Configuration();
-      FileSystem fs = output.getFileSystem(conf);
-      writer = SequenceFile.createWriter(fs, conf, output,
-              key.getClass(), value.getClass());
-      PerformanceFileFilter pff = new PerformanceFileFilter(writer, key,
-              value, conf);
-      // iterate on the files in the source dir
-      processFiles(conf, input, recurse, pff);
-
-    } finally {
-      IOUtils.closeStream(writer);
-    }
-  }
-
-  public static void main(String argv[]) throws Exception {
-
-    // Populate a SequenceFile with the content of a local directory
-
-    String usage = "Content localdir outputDFSDir [--recurse]";
-
-    if (argv.length < 2) {
-      System.out.println("usage:" + usage);
-      return;
+    public CorpusGenerator(Path input, Path output) {
+        this.input = input;
+        this.output = output;
     }
 
+    public void generate(boolean recurse) throws IOException {
+        // read from input path
+        // create new Content object and add it to the SequenceFile
+        Text key = new Text();
+        BehemothDocument value = new BehemothDocument();
+        SequenceFile.Writer writer = null;
+        try {
+            Configuration conf = new Configuration();
+            FileSystem fs = output.getFileSystem(conf);
+            writer = SequenceFile.createWriter(fs, conf, output,
+                    key.getClass(), value.getClass());
+            PerformanceFileFilter pff = new PerformanceFileFilter(writer, key,
+                    value, conf);
+            // iterate on the files in the source dir
+            processFiles(conf, input, recurse, pff);
 
-    Path inputDir = new Path(argv[0]);
-
-    Path output = new Path(argv[1]);
-
-    boolean recurse = false;
-    if (argv.length > 2 && argv[2].equals("--recurse")) {
-      recurse = true;
-    }
-
-    CorpusGenerator generator = new CorpusGenerator(inputDir, output);
-    generator.generate(recurse);//TODO: add support for how many docs were converted
-  }
-
-  private static void processFiles(Configuration conf, Path input, boolean recurse,
-                                   PerformanceFileFilter pff) throws IOException {
-
-    FileSystem fs = input.getFileSystem(conf);
-    FileStatus[] statuses = fs.listStatus(input, pff);
-    for (int i = 0; i < statuses.length; i++) {
-      FileStatus status = statuses[i];
-      if (recurse == true) {
-        processFiles(conf, status.getPath(), recurse, pff);
-      }
-    }
-  }
-
-  // Java hack to move the work of processing files into a filter, so that we
-  // can process large directories of files
-  // without having to create a huge list of files
-  static class PerformanceFileFilter implements PathFilter {
-
-    PathFilter defaultIgnores = new PathFilter() {
-
-      public boolean accept(Path file) {
-        String name = file.getName();
-        return name.startsWith(".") == false;// ignore hidden
-        // directories
-      }
-    };
-
-
-    private SequenceFile.Writer writer;
-    private Text key;
-    private BehemothDocument value;
-    private Configuration conf;
-
-    public PerformanceFileFilter(SequenceFile.Writer writer, Text key,
-                                 BehemothDocument value, Configuration conf) {
-      this.writer = writer;
-      this.key = key;
-      this.value = value;
-      this.conf = conf;
-    }
-
-
-    public boolean accept(Path file) {
-      try {
-        FileSystem fs = file.getFileSystem(conf);
-        if (defaultIgnores.accept(file) && fs.getFileStatus(file).isDir() == false) {
-          String URI = file.toUri().toString();
-          //Hmm, kind of dangerous to do this
-          byte[] fileBArray = new byte[(int) fs.getFileStatus(file).getLen()];
-          FSDataInputStream fis = null;
-          try {
-            fis = fs.open(file);
-            fis.readFully(0, fileBArray);
-            fis.close();
-            key.set(URI);
-            // fill the values for the content object
-            value.setUrl(URI);
-            value.setContent(fileBArray);
-
-            writer.append(key, value);
-          } catch (FileNotFoundException e) {
-            throw new RuntimeException(e);
-          } catch (IOException e) {
-            throw new RuntimeException(e);
-          }
+        } finally {
+            IOUtils.closeStream(writer);
         }
-        // if it is a directory, accept it so we can possibly recurse on it,
-        // otherwise we don't care about actually accepting the file, since
-        // all the work is done in the accept method here.
-        return fs.getFileStatus(file).isDir();
-      } catch (IOException e) {
-        log.error("Exception", e);
-      }
-      return false;
     }
-  }
+
+    public static void main(String argv[]) throws Exception {
+
+        // Populate a SequenceFile with the content of a local directory
+
+        String usage = "Content localdir outputDFSDir [--recurse]";
+
+        if (argv.length < 2) {
+            System.out.println("usage:" + usage);
+            return;
+        }
+
+        Path inputDir = new Path(argv[0]);
+
+        Path output = new Path(argv[1]);
+
+        boolean recurse = false;
+        if (argv.length > 2 && argv[2].equals("--recurse")) {
+            recurse = true;
+        }
+
+        CorpusGenerator generator = new CorpusGenerator(inputDir, output);
+        generator.generate(recurse);// TODO: add support for how many docs were
+                                    // converted
+    }
+
+    private static void processFiles(Configuration conf, Path input,
+            boolean recurse, PerformanceFileFilter pff) throws IOException {
+
+        FileSystem fs = input.getFileSystem(conf);
+        FileStatus[] statuses = fs.listStatus(input, pff);
+        for (int i = 0; i < statuses.length; i++) {
+            FileStatus status = statuses[i];
+            if (recurse == true) {
+                processFiles(conf, status.getPath(), recurse, pff);
+            }
+        }
+    }
+
+    // Java hack to move the work of processing files into a filter, so that we
+    // can process large directories of files
+    // without having to create a huge list of files
+    static class PerformanceFileFilter implements PathFilter {
+
+        PathFilter defaultIgnores = new PathFilter() {
+
+            public boolean accept(Path file) {
+                String name = file.getName();
+                return name.startsWith(".") == false;// ignore hidden
+                // directories
+            }
+        };
+
+        private SequenceFile.Writer writer;
+        private Text key;
+        private BehemothDocument value;
+        private Configuration conf;
+
+        public PerformanceFileFilter(SequenceFile.Writer writer, Text key,
+                BehemothDocument value, Configuration conf) {
+            this.writer = writer;
+            this.key = key;
+            this.value = value;
+            this.conf = conf;
+        }
+
+        public boolean accept(Path file) {
+            try {
+                FileSystem fs = file.getFileSystem(conf);
+                if (defaultIgnores.accept(file)
+                        && fs.getFileStatus(file).isDir() == false) {
+                    String URI = file.toUri().toString();
+                    // Hmm, kind of dangerous to do this
+                    byte[] fileBArray = new byte[(int) fs.getFileStatus(file)
+                            .getLen()];
+                    FSDataInputStream fis = null;
+                    try {
+                        fis = fs.open(file);
+                        fis.readFully(0, fileBArray);
+                        fis.close();
+                        key.set(URI);
+                        // fill the values for the content object
+                        value.setUrl(URI);
+                        value.setContent(fileBArray);
+
+                        writer.append(key, value);
+                    } catch (FileNotFoundException e) {
+                        throw new RuntimeException(e);
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+                // if it is a directory, accept it so we can possibly recurse on
+                // it,
+                // otherwise we don't care about actually accepting the file,
+                // since
+                // all the work is done in the accept method here.
+                return fs.getFileStatus(file).isDir();
+            } catch (IOException e) {
+                log.error("Exception", e);
+            }
+            return false;
+        }
+    }
 
 }
