@@ -27,6 +27,7 @@ import org.apache.hadoop.fs.PathFilter;
 import org.apache.hadoop.io.IOUtils;
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapred.Reporter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,10 +44,21 @@ public class CorpusGenerator {
     private transient static Logger log = LoggerFactory
             .getLogger(CorpusGenerator.class);
     private Path input, output;
+    private Reporter reporter;
+
+    public enum Counters {
+        DOC_COUNT
+    };
 
     public CorpusGenerator(Path input, Path output) {
         this.input = input;
         this.output = output;
+    }
+
+    public CorpusGenerator(Path input, Path output, Reporter reporter) {
+        this.input = input;
+        this.output = output;
+        this.reporter = reporter;
     }
 
     public long generate(boolean recurse) throws IOException {
@@ -62,7 +74,7 @@ public class CorpusGenerator {
             writer = SequenceFile.createWriter(fs, conf, output,
                     key.getClass(), value.getClass());
             PerformanceFileFilter pff = new PerformanceFileFilter(writer, key,
-                    value, conf);
+                    value, conf, reporter);
             // iterate on the files in the source dir
             result = processFiles(conf, input, recurse, pff);
 
@@ -129,13 +141,15 @@ public class CorpusGenerator {
         private Text key;
         private BehemothDocument value;
         private Configuration conf;
+        private Reporter reporter;
 
         public PerformanceFileFilter(SequenceFile.Writer writer, Text key,
-                BehemothDocument value, Configuration conf) {
+                BehemothDocument value, Configuration conf, Reporter reporter) {
             this.writer = writer;
             this.key = key;
             this.value = value;
             this.conf = conf;
+            this.reporter = reporter;
         }
 
         public boolean accept(Path file) {
@@ -159,6 +173,9 @@ public class CorpusGenerator {
 
                         writer.append(key, value);
                         counter++;
+                        if (reporter != null) {
+                            reporter.incrCounter(Counters.DOC_COUNT, counter);
+                        }
                     } catch (FileNotFoundException e) {
                         throw new RuntimeException(e);
                     } catch (IOException e) {
