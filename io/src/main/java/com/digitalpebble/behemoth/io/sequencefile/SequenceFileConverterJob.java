@@ -1,4 +1,5 @@
 package com.digitalpebble.behemoth.io.sequencefile;
+
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -15,7 +16,6 @@ package com.digitalpebble.behemoth.io.sequencefile;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 
 import com.digitalpebble.behemoth.BehemothConfiguration;
 import com.digitalpebble.behemoth.BehemothDocument;
@@ -34,35 +34,35 @@ import org.slf4j.LoggerFactory;
  *
  **/
 public class SequenceFileConverterJob extends AbstractJob {
-  private transient static Logger log = LoggerFactory.getLogger(SequenceFileConverterJob.class);
+    private transient static Logger log = LoggerFactory
+            .getLogger(SequenceFileConverterJob.class);
 
-  public static void main(String[] args) throws Exception {
-    int res = ToolRunner.run(BehemothConfiguration.create(),
-            new SequenceFileConverterJob(), args);
-    System.exit(res);
-  }
-
-  public int run(String[] args) throws Exception {
-    int result = 0;
-    addInputOption();
-    addOutputOption();
-    if (parseArguments(args) == null) {
-      return -1;
+    public static void main(String[] args) throws Exception {
+        int res = ToolRunner.run(BehemothConfiguration.create(),
+                new SequenceFileConverterJob(), args);
+        System.exit(res);
     }
-    Path input = getInputPath();
-    Path output = getOutputPath();
 
-    Job job = prepareJob(input, output, SequenceFileInputFormat.class, SequenceFileConverterMapper.class,
-            Text.class, BehemothDocument.class,
-            SequenceFileOutputFormat.class);
-    job.setJobName("Convert Sequence File: " + input);
-    job.waitForCompletion(true);
+    public int run(String[] args) throws Exception {
+        int result = 0;
+        addInputOption();
+        addOutputOption();
+        if (parseArguments(args) == null) {
+            return -1;
+        }
+        Path input = getInputPath();
+        Path output = getOutputPath();
 
-    if (log.isInfoEnabled()) {
-      log.info("Conversion: done");
+        Job job = prepareJob(input, output, SequenceFileInputFormat.class,
+                SequenceFileConverterMapper.class, Text.class,
+                BehemothDocument.class, SequenceFileOutputFormat.class);
+        job.setJobName("Convert Sequence File: " + input);
+        job.waitForCompletion(true);
+
+        if (log.isInfoEnabled()) {
+            log.info("Conversion: done");
+        }
+        return result;
     }
-    return result;
-  }
-
 
 }
