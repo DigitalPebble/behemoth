@@ -16,7 +16,6 @@ package com.digitalpebble.behemoth.io.sequencefile;
  * limitations under the License.
  */
 
-
 import com.digitalpebble.behemoth.BehemothConfiguration;
 import com.digitalpebble.behemoth.BehemothDocument;
 import org.apache.hadoop.fs.Path;
