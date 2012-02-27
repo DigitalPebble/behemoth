@@ -155,8 +155,8 @@ public class WarcHTMLResponseRecord {
                 Pattern thisPattern = pIter.next();
                 Matcher matcher = thisPattern.matcher(thisCheckPiece);
                 if (matcher.find() && (matcher.groupCount() > 0)) {
-                    String thisMatch = getNormalizedContentURL(baseURL, matcher
-                            .group(1));
+                    String thisMatch = getNormalizedContentURL(baseURL,
+                            matcher.group(1));
                     if (HTTP_START_PATTERN.matcher(thisMatch).matches()) {
                         if (!retSet.contains(thisMatch)
                                 && !baseURL.equals(thisMatch)) {
@@ -164,7 +164,7 @@ public class WarcHTMLResponseRecord {
                             hasAdded = true;
                         } // end if (!retSet.contains(thisMatch))
                     } // end if
-                    // (HTTP_START_PATTERN.matcher(thisMatch).matches())
+                      // (HTTP_START_PATTERN.matcher(thisMatch).matches())
                 } // end if (matcher.find() && (matcher.groupCount() > 0))
                 matcher.reset();
             } // end while (!hasAdded && pIter.hasNext())
