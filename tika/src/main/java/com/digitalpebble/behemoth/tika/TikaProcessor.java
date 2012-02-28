@@ -61,18 +61,15 @@ public class TikaProcessor implements DocumentProcessor, TikaConstants {
             .getMimeRepository();
   private Detector detector = TikaConfig.getDefaultConfig().getDetector();
 
-    @Override
     public Configuration getConf() {
         return config;
     }
 
-    @Override
     public void setConf(Configuration conf) {
         config = conf;
         mimeType = config.get(TIKA_MIME_TYPE_KEY);
     }
 
-    @Override
     public void close() {
     }
 
@@ -81,7 +78,6 @@ public class TikaProcessor implements DocumentProcessor, TikaConstants {
      * 
      * @return an array of documents or null if an exception is encountered
      */
-    @Override
     public BehemothDocument[] process(BehemothDocument inputDoc,
             Reporter reporter) {
         // check that it has some text or content
