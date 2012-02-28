@@ -26,7 +26,7 @@
       <version>2.2.1</version>
       <configuration>
         <descriptors>
-          <descriptor>../hadoop-job.xml</descriptor>
+          <descriptor>./lucidworks-hadoop.xml</descriptor>
         </descriptors>
       </configuration>
       <executions>
