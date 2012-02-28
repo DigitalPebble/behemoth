@@ -52,6 +52,7 @@ public class LucidWorksWriter {
     String zkHost = job.get("solr.zkhost");
     if (zkHost != null && zkHost.equals("") == false) {
       String collection = job.get("solr.zk.collection", "collection1");
+      LOG.info("Indexing to collection: "+ collection + " w/ ZK host: " + zkHost);
       solr = new CloudSolrServer(zkHost);
       ((CloudSolrServer)solr).setDefaultCollection(collection);
     } else {
@@ -104,8 +105,8 @@ public class LucidWorksWriter {
     inputDoc.setField("id", doc.getUrl());
     inputDoc.setField("text", doc.getText());
 
-    LOG.info("Adding field : id\t" + doc.getUrl());
-    LOG.info("Adding field : text\t" + doc.getText());
+    LOG.debug("Adding field : id\t" + doc.getUrl());
+    //LOG.debug("Adding field : text\t" + doc.getText());
 
     // iterate on the annotations of interest and
     // create a new field for each one
