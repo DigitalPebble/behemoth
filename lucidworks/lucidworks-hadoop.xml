@@ -7,6 +7,12 @@
 		<format>jar</format>
 	</formats>
 	<includeBaseDirectory>false</includeBaseDirectory>
+  <fileSets>
+    <fileSet>
+      <directory>lib</directory>
+      <includes><include>*.jar</include></includes>
+    </fileSet>
+  </fileSets>
 	<dependencySets>
 		<dependencySet>
 			<unpack>false</unpack>

@@ -51,7 +51,9 @@ public class LucidWorksWriter {
   public void open(JobConf job, String name) throws IOException {
     String zkHost = job.get("solr.zkhost");
     if (zkHost != null && zkHost.equals("") == false) {
+      String collection = job.get("solr.zk.collection", "collection1");
       solr = new CloudSolrServer(zkHost);
+      ((CloudSolrServer)solr).setDefaultCollection(collection);
     } else {
       String solrURL = job.get("solr.server.url");
       int queueSize = job.getInt("solr.client.queue.size", 100);
