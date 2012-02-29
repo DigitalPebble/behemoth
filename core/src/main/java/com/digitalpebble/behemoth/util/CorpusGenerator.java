@@ -172,7 +172,7 @@ public class CorpusGenerator {
             writer.append(key, value);
             counter++;
             if (reporter != null){
-              reporter.incrCounter(Counters.DOC_COUNT, counter);
+              reporter.incrCounter(Counters.DOC_COUNT, 1);
             }
           } catch (FileNotFoundException e) {
             throw new RuntimeException(e);
