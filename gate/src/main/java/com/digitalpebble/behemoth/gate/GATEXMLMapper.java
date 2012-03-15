@@ -27,21 +27,19 @@ import org.apache.hadoop.mapred.Reporter;
 import com.digitalpebble.behemoth.BehemothDocument;
 
 /**
- * Process BehemothDocuments with GATE and generate BehemothDocuments as output
+ * Processes BehemothDocuments with GATE but stores the output at the GATE XML format.
+ * Useful for debugging
  **/
 
-public class GATEMapper extends AbstractGATEMapper implements
-        Mapper<Text, BehemothDocument, Text, BehemothDocument> {
+public class GATEXMLMapper extends AbstractGATEMapper implements
+        Mapper<Text, BehemothDocument, Text, Text> {
 
     public void map(Text key, BehemothDocument behedoc,
-            OutputCollector<Text, BehemothDocument> output, Reporter reporter)
+            OutputCollector<Text, Text> output, Reporter reporter)
             throws IOException {
 
-        BehemothDocument[] outputDocs = processor.process(behedoc, reporter);
-        for (BehemothDocument doc : outputDocs) {
-            // TODO output under a different key?
-            output.collect(key, doc);
-        }
+        String outputDoc = processor.processNative(behedoc, reporter);
+        output.collect(key, new Text(outputDoc));
     }
 
 }
