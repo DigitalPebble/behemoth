@@ -29,12 +29,8 @@ import gate.util.InvalidOffsetException;
 import gate.util.OffsetComparator;
 import gate.util.persistence.PersistenceManager;
 
-import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -80,6 +76,46 @@ public class GATEProcessor implements DocumentProcessor {
     // Process an input document with GATE
     public synchronized BehemothDocument[] process(BehemothDocument inputDoc) {
         return process(inputDoc, null);
+    }
+
+    // Process an input document with GATE and a Reporter and return a GATE XML
+
+    public synchronized String processNative(BehemothDocument inputDoc,
+            Reporter reporter) {
+        if (reporter != null)
+            reporter.setStatus("GATE : " + inputDoc.getUrl().toString());
+        // process the text passed as value with the application
+        // a) create a GATE document based on the text value
+        gate.Document gatedocument = null;
+        try {
+
+            gatedocument = generateGATEDoc(inputDoc);
+            // add it to the current corpus
+            corpus.add(gatedocument);
+            // get the application and assign the corpus to it
+            this.GATEapplication.setCorpus(corpus);
+            // process it with GATE
+            this.GATEapplication.execute();
+
+            // transfer the annotations from the GATE document
+            // to the Behemoth one using the filters
+            if (reporter != null)
+                reporter.incrCounter("GATE", "Document", 1);
+
+            return gatedocument.toXml();
+
+        } catch (Exception e) {
+            LOG.error(inputDoc.getUrl().toString(), e);
+            if (reporter != null)
+                reporter.incrCounter("GATE", "Exceptions", 1);
+        } finally {
+            // remove the document from the corpus again
+            corpus.clear();
+            // and from memory
+            if (gatedocument != null)
+                Factory.deleteResource(gatedocument);
+        }
+        return null;
     }
 
     // Process an input document with GATE and a Reporter
