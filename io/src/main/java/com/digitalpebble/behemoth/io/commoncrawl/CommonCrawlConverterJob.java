@@ -7,6 +7,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.BytesWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.FileInputFormat;
+import org.apache.hadoop.mapred.FileOutputFormat;
 import org.apache.hadoop.mapred.JobClient;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.MapReduceBase;
@@ -23,7 +24,7 @@ import org.commoncrawl.protocol.shared.ArcFileItem;
 import java.io.IOException;
 
 /**
- *
+ * Converts CommonCrawl to BehemothDocument
  *
  **/
 public class CommonCrawlConverterJob extends Configured implements Tool {
@@ -31,13 +32,13 @@ public class CommonCrawlConverterJob extends Configured implements Tool {
   public int run(String[] args) throws Exception {
 
     if (args.length != 2) {
-      String syntax = "hadoop jar job.jar " + CommonCrawlConverterJob.class.getName() + " input solrURL";
+      String syntax = "hadoop jar job.jar " + CommonCrawlConverterJob.class.getName() + " input output";
       System.err.println(syntax);
       return -1;
     }
 
     Path inputPath = new Path(args[0]);
-    String solrURL = args[1];
+    Path output = new Path(args[1]);
 
     JobConf conf = new JobConf(getConf(), getClass());
     conf.setJobName(getClass().getName());
@@ -53,14 +54,13 @@ public class CommonCrawlConverterJob extends Configured implements Tool {
     conf.setOutputFormat(SequenceFileOutputFormat.class);
     conf.setOutputKeyClass(Text.class);
     conf.setOutputValueClass(BehemothDocument.class);
-
+    FileOutputFormat.setOutputPath(conf, output);
     // MapReduce
     conf.setMapperClass(ArcToBehemothTransformer.class);
     //conf.setMapperClass(NutchArcToBehemothTransformer.class);
     conf.setNumReduceTasks(0); // map-only
 
-    // Solr
-    conf.set("solr.server.url", solrURL);
+
 
     JobClient.runJob(conf);
     return 0;
