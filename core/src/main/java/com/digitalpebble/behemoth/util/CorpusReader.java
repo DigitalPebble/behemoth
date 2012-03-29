@@ -57,7 +57,7 @@ public class CorpusReader extends Configured implements Tool {
 
 		options.addOption("h", "help", false, "print this message");
 		options.addOption("i", "input", true, "input Behemoth corpus");
-		options.addOption("showBinaryContent", false,
+		options.addOption("s", "showBinaryContent", false,
 				"display binary content in output");
 
 		// parse the command line arguments
