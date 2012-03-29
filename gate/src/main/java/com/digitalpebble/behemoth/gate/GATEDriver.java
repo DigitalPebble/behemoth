@@ -60,10 +60,17 @@ public class GATEDriver extends Configured implements Tool {
 
         final FileSystem fs = FileSystem.get(getConf());
 
-        if (args.length != 3) {
-            String syntax = "com.digitalpebble.behemoth.gate.GATEDriver in out path_gate_file";
+        if (args.length < 3 | args.length > 4) {
+            String syntax = "com.digitalpebble.behemoth.gate.GATEDriver in out path_gate_file [-XML]";
             System.err.println(syntax);
             return -1;
+        }
+
+        boolean dumpGATEXML = false;
+
+        for (String arg : args) {
+            if (arg.equalsIgnoreCase("-xml"))
+                dumpGATEXML = true;
         }
 
         Path inputPath = new Path(args[0]);
@@ -82,16 +89,21 @@ public class GATEDriver extends Configured implements Tool {
         // MUST not forget the line below
         job.setJarByClass(this.getClass());
 
-        job.setJobName("Processing with GATE application from "
+        job.setJobName("Processing "+args[0]+" with GATE application from "
                 + zip_application_path);
 
         job.setInputFormat(SequenceFileInputFormat.class);
         job.setOutputFormat(SequenceFileOutputFormat.class);
 
         job.setOutputKeyClass(Text.class);
-        job.setOutputValueClass(BehemothDocument.class);
 
-        job.setMapperClass(GATEMapper.class);
+        if (dumpGATEXML) {
+            job.setOutputValueClass(Text.class);
+            job.setMapperClass(GATEXMLMapper.class);
+        } else {
+            job.setOutputValueClass(BehemothDocument.class);
+            job.setMapperClass(GATEMapper.class);
+        }
 
         job.setNumReduceTasks(0);
 
@@ -108,7 +120,8 @@ public class GATEDriver extends Configured implements Tool {
         } catch (Exception e) {
             e.printStackTrace();
             fs.delete(outputPath, true);
-        } finally {}
+        } finally {
+        }
 
         return 0;
     }
