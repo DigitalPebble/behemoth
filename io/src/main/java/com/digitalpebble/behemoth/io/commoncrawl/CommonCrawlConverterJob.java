@@ -19,6 +19,7 @@ import org.apache.hadoop.mapred.SequenceFileOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 import org.commoncrawl.hadoop.io.ARCInputFormat;
+import org.commoncrawl.hadoop.io.JetS3tARCSource;
 import org.commoncrawl.protocol.shared.ArcFileItem;
 
 import java.io.IOException;
@@ -45,8 +46,12 @@ public class CommonCrawlConverterJob extends Configured implements Tool {
     conf.setJarByClass(CommonCrawlConverterJob.class);
 
     // Input
-    ARCInputFormat.setARCSourceClass(conf, ARCInputSource.class);
+    //ARCInputFormat.setARCSourceClass(conf, ARCInputSource.class);
+    //Files are Gzipped
     FileInputFormat.setInputPaths(conf, inputPath);
+    ARCInputFormat.setARCSourceClass(conf, JetS3tARCSource.class);
+    ARCInputFormat inputFormat = new ARCInputFormat();
+    inputFormat.configure(conf);
     conf.setInputFormat(ARCInputFormat.class);
     //conf.setInputFormat(ArcInputFormat.class);
 
