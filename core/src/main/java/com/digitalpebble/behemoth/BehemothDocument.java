@@ -79,8 +79,16 @@ public class BehemothDocument implements Writable {
         this.content = content;
     }
 
+    /** Can be null if does not exist **/
     public MapWritable getMetadata() {
         return metadata;
+    }
+
+    /** Instanticates a new Metadata if it does not exist and create is set to true **/
+    public MapWritable getMetadata(boolean create) {
+        if (metadata == null && create)
+            metadata = new MapWritable();
+        return getMetadata();
     }
 
     public void setMetadata(MapWritable metadata) {
