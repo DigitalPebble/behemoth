@@ -95,7 +95,12 @@ public class LucidWorksIndexerJob extends Configured implements Tool {
         job.set("solr.server.url", solrURL);
 
         try {
-            JobClient.runJob(job);
+          long start = System.currentTimeMillis();
+          JobClient.runJob(job);
+          long finish = System.currentTimeMillis();
+          if (LOG.isInfoEnabled()) {
+            LOG.info("LucidWorksIndexerJob completed. Time " + (finish - start) + " ms");
+          }
         } catch (Exception e) {
             LOG.error(e);
         } finally {

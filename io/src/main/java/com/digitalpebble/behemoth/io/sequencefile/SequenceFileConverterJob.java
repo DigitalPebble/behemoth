@@ -55,10 +55,11 @@ public class SequenceFileConverterJob extends AbstractJob {
             Text.class, BehemothDocument.class,
             SequenceFileOutputFormat.class);
     job.setJobName("Convert Sequence File: " + input);
+    long start = System.currentTimeMillis();
     job.waitForCompletion(true);
-
+    long finish = System.currentTimeMillis();
     if (log.isInfoEnabled()) {
-      log.info("Conversion: done");
+      log.info("SequenceFileConverterJob completed. Timing: " + (finish - start) + " ms");
     }
     return result;
   }

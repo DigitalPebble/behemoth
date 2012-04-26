@@ -168,8 +168,13 @@ public class CorpusGenerator extends Configured implements Tool {
         setInput(inputDir);
         setOutput(output);
 
-        long count = generate(recurse);
-        System.out.println(count + " docs converted");
+      long start = System.currentTimeMillis();
+      long count = generate(recurse);
+      long finish = System.currentTimeMillis();
+      if (log.isInfoEnabled()) {
+        log.info("CorpusGenerator completed. Timing: " + (finish - start) + " ms");
+      }
+        log.info(count + " docs converted");
         return 0;
     }
 

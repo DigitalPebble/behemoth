@@ -133,7 +133,12 @@ public class LanguageIdDriver extends Configured implements Tool {
 			FileOutputFormat.setOutputPath(job, outputPath);
 
 			try {
-				JobClient.runJob(job);
+        long start = System.currentTimeMillis();
+        JobClient.runJob(job);
+        long finish = System.currentTimeMillis();
+        if (log.isInfoEnabled()) {
+          log.info("LanguagedIdDriver completed. Timing: " + (finish - start) + " ms");
+        }
 			} catch (Exception e) {
 				e.printStackTrace();
 				fs.delete(outputPath, true);
