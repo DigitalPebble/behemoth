@@ -18,6 +18,7 @@
         <module>io</module>
         <module>mahout</module>
         <module>solr</module>
+        <module>language-id</module>
     </modules>
 
     <build>
