@@ -65,9 +65,9 @@
     <dependency>
           <groupId>org.commoncrawl</groupId>
           <artifactId>commoncrawl</artifactId>
-          <version>0.1</version>
+          <version>0.1-nolibs</version>
       <scope>system</scope>
-      <systemPath>${basedir}/lib/commoncrawl-0.1.jar</systemPath>
+      <systemPath>${basedir}/lib/commoncrawl-0.1-nolibs.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>commons-lang</groupId>
