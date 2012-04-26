@@ -15,6 +15,7 @@
         <module>gate</module>
         <module>tika</module>
         <module>uima</module>
+        <module>lucidworks</module>
         <module>io</module>
         <module>mahout</module>
         <module>solr</module>
@@ -28,8 +29,8 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
                     <configuration>
-                        <source>1.5</source>
-                        <target>1.5</target>
+                        <source>1.6</source>
+                        <target>1.6</target>
                     </configuration>
                 </plugin>
             </plugins>
@@ -40,7 +41,7 @@
     <dependency>
       <groupId>org.apache.hadoop</groupId>
       <artifactId>hadoop-core</artifactId>
-      <version>1.0.0</version>
+      <version>0.20.205.0</version>
       <scope>provided</scope>
     </dependency>
         <dependency>

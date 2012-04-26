@@ -25,6 +25,7 @@ import java.util.Map.Entry;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.mapred.JobConf;
+import org.apache.hadoop.util.Progressable;
 import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.solr.client.solrj.impl.StreamingUpdateSolrServer;
 import org.apache.solr.common.SolrInputDocument;
@@ -40,8 +41,13 @@ public class SOLRWriter {
 
     // key = Annotation type ; value = feature name / SOLR field
     private Map<String, Map<String, String>> fieldMapping = new HashMap<String, Map<String, String>>();
+    private Progressable progress;
 
-    public void open(JobConf job, String name) throws IOException {
+    public SOLRWriter(Progressable progress) {
+      this.progress = progress;
+    }
+
+  public void open(JobConf job, String name) throws IOException {
         String solrURL = job.get("solr.server.url");
         int queueSize = job.getInt("solr.client.queue.size", 100);
         int threadCount = job.getInt("solr.client.threads", 1);
@@ -75,6 +81,7 @@ public class SOLRWriter {
     public void write(BehemothDocument doc) throws IOException {
         final SolrInputDocument inputDoc = convertToSOLR(doc);
         try {
+            progress.progress();
             solr.add(inputDoc);
         } catch (SolrServerException e) {
             throw makeIOException(e);

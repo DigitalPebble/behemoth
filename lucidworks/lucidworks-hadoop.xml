@@ -7,6 +7,12 @@
 		<format>jar</format>
 	</formats>
 	<includeBaseDirectory>false</includeBaseDirectory>
+  <fileSets>
+    <fileSet>
+      <directory>lib</directory>
+      <includes><include>*.jar</include></includes>
+    </fileSet>
+  </fileSets>
 	<dependencySets>
 		<dependencySet>
 			<unpack>false</unpack>
@@ -20,6 +26,15 @@
 			</excludes>
 		</dependencySet>
     <dependencySet>
+			<unpack>true</unpack>
+			<includes>
+				<include>${artifact.groupId}:${artifact.artifactId}</include>
+				<include>org.apache.mahout:mahout-core</include>
+				<include>org.apache.mahout:mahout-collections</include>
+				<include>org.apache.mahout:mahout-math</include>
+			</includes>
+		</dependencySet>
+    <dependencySet>
 			<unpack>false</unpack>
 			<scope>system</scope>
 			<outputDirectory>lib</outputDirectory>
@@ -29,15 +44,6 @@
 				<exclude>org.apache.mahout:mahout-collections</exclude>
 				<exclude>org.apache.mahout:mahout-math</exclude>
 			</excludes>
-		</dependencySet>
-		<dependencySet>
-			<unpack>true</unpack>
-			<includes>
-				<include>${artifact.groupId}:${artifact.artifactId}</include>
-				<include>org.apache.mahout:mahout-core</include>
-				<include>org.apache.mahout:mahout-collections</include>
-				<include>org.apache.mahout:mahout-math</include>
-			</includes>
 		</dependencySet>
 	</dependencySets>
 </assembly>
