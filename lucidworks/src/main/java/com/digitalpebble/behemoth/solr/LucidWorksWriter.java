@@ -20,6 +20,9 @@ import com.digitalpebble.behemoth.Annotation;
 import com.digitalpebble.behemoth.BehemothDocument;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.io.MapWritable;
+import org.apache.hadoop.io.SequenceFile;
+import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.util.Progressable;
 import org.apache.solr.client.solrj.SolrServer;
@@ -43,6 +46,8 @@ public class LucidWorksWriter {
   // key = Annotation type ; value = feature name / SOLR field
   private Map<String, Map<String, String>> fieldMapping = new HashMap<String, Map<String, String>>();
   private Progressable progress;
+  private boolean includeMetadata = false;
+  private boolean includeAnnotations = false;
 
   public LucidWorksWriter(Progressable progress) {
     this.progress = progress;
@@ -61,6 +66,9 @@ public class LucidWorksWriter {
       int threadCount = job.getInt("solr.client.threads", 1);
       solr = new StreamingUpdateSolrServer(solrURL, queueSize, threadCount);
     }
+    includeMetadata = job.getBoolean("indexMetadata", false);
+    includeAnnotations = job.getBoolean("indexAnnotations", false);
+
     // get the Behemoth annotations types and features
     // to store as SOLR fields
     // solr.f.name = BehemothType.featureName
@@ -108,6 +116,13 @@ public class LucidWorksWriter {
     LOG.debug("Adding field : id\t" + doc.getUrl());
     //LOG.debug("Adding field : text\t" + doc.getText());
 
+    //Rely on LucidWorks field mapping to handle this, or the dynamic fields
+    MapWritable metadata = doc.getMetadata();
+    if (includeMetadata && metadata != null) {
+      for (Entry<Writable, Writable> entry : metadata.entrySet()) {
+        inputDoc.addField(entry.getKey().toString(), entry.getValue().toString());
+      }
+    }
     // iterate on the annotations of interest and
     // create a new field for each one
     // it is advised NOT to set frequent annotation types
@@ -118,31 +133,33 @@ public class LucidWorksWriter {
     // to form a new content string separated by spaces
 
     // iterate on the annotations
-    Iterator<Annotation> iterator = doc.getAnnotations().iterator();
-    while (iterator.hasNext()) {
-      Annotation current = iterator.next();
-      // check whether it belongs to a type we'd like to send to SOLR
-      Map<String, String> featureField = fieldMapping.get(current
-              .getType());
-      if (featureField == null)
-        continue;
-      // iterate on the expected features
-      for (String targetFeature : featureField.keySet()) {
-        String SOLRFieldName = featureField.get(targetFeature);
-        String value = null;
-        // special case for covering text
-        if ("*".equals(targetFeature)) {
-          value = doc.getText().substring((int) current.getStart(),
-                  (int) current.getEnd());
+    if (includeAnnotations) {
+      Iterator<Annotation> iterator = doc.getAnnotations().iterator();
+      while (iterator.hasNext()) {
+        Annotation current = iterator.next();
+        // check whether it belongs to a type we'd like to send to SOLR
+        Map<String, String> featureField = fieldMapping.get(current
+                .getType());
+        if (featureField == null)
+          continue;
+        // iterate on the expected features
+        for (String targetFeature : featureField.keySet()) {
+          String SOLRFieldName = featureField.get(targetFeature);
+          String value = null;
+          // special case for covering text
+          if ("*".equals(targetFeature)) {
+            value = doc.getText().substring((int) current.getStart(),
+                    (int) current.getEnd());
+          }
+          // get the value for the feature
+          else {
+            value = current.getFeatures().get(targetFeature);
+          }
+          LOG.debug("Adding field : " + SOLRFieldName + "\t" + value);
+          // skip if no value has been found
+          if (value != null)
+            inputDoc.setField(SOLRFieldName, value);
         }
-        // get the value for the feature
-        else {
-          value = current.getFeatures().get(targetFeature);
-        }
-        LOG.debug("Adding field : " + SOLRFieldName + "\t" + value);
-        // skip if no value has been found
-        if (value != null)
-          inputDoc.setField(SOLRFieldName, value);
       }
     }
 
