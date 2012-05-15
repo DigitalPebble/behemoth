@@ -39,8 +39,10 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.PathFilter;
 import org.apache.hadoop.io.IOUtils;
+import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.Text;
+import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
@@ -135,17 +137,25 @@ public class CorpusGenerator extends Configured implements Tool {
                 "processes directories recursively (default true)");
         options.addOption("u", "unpack", true,
                 "unpack content of archives (default true)");
+        options.addOption(
+                "md",
+                "metadata",
+                true,
+                "add document metadata separated by semicolon e.g. -md source=internet;label=public");
 
         // parse the command line arguments
         CommandLine line = null;
         try {
             line = parser.parse(options, args);
-            String input = line.getOptionValue("i");
             if (line.hasOption("help")) {
                 formatter.printHelp("CorpusGenerator", options);
                 return 0;
             }
-            if (input == null) {
+            if (!line.hasOption("i")) {
+                formatter.printHelp("CorpusGenerator", options);
+                return -1;
+            }
+            if (!line.hasOption("o")) {
                 formatter.printHelp("CorpusGenerator", options);
                 return -1;
             }
@@ -154,16 +164,21 @@ public class CorpusGenerator extends Configured implements Tool {
         }
 
         boolean recurse = true;
-        if ("false".equalsIgnoreCase(line.getOptionValue("r")))
+        if (line.hasOption("r") && "false".equalsIgnoreCase(line.getOptionValue("r")))
             recurse = false;
         boolean unpack = true;
-        if ("false".equalsIgnoreCase(line.getOptionValue("u")))
+        if (line.hasOption("u") && "false".equalsIgnoreCase(line.getOptionValue("u")))
             unpack = false;
 
         getConf().setBoolean(unpackParamName, unpack);
 
         Path inputDir = new Path(line.getOptionValue("i"));
         Path output = new Path(line.getOptionValue("o"));
+
+        if (line.hasOption("md")) {
+            String md = line.getOptionValue("md");
+            getConf().set("md", md);
+        }
 
         setInput(inputDir);
         setOutput(output);
@@ -214,6 +229,25 @@ public class CorpusGenerator extends Configured implements Tool {
             this.value = value;
             this.conf = conf;
             this.reporter = reporter;
+
+            // add the metadata
+            String md = conf.get("md", "");
+
+            if (md.isEmpty() == false) {
+                String[] mds = md.split(";");
+                for (String metadata : mds) {
+                    String[] keyval = metadata.split("=");
+                    log.info("key: "+keyval[0]+"\tval:"+keyval[1]);
+                    Writable mdvalue;
+                    Writable mdkey = new Text(keyval[0]);
+                    if (keyval.length == 1) {
+                        mdvalue = NullWritable.get();
+                    } else {
+                        mdvalue = new Text(keyval[1]);
+                    }
+                    value.getMetadata(true).put(mdkey, mdvalue);
+                }
+            }
         }
 
         public boolean accept(Path file) {
@@ -244,7 +278,6 @@ public class CorpusGenerator extends Configured implements Tool {
                                 // fill the values for the content object
                                 value.setUrl(name);
                                 value.setContent(content);
-
                                 writer.append(key, value);
                                 counter++;
                                 if (reporter != null) {
