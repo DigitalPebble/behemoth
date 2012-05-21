@@ -1,3 +1,4 @@
+package com.digitalpebble.behemoth.tika;
 /**
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -15,115 +16,44 @@
  * limitations under the License.
  */
 
-package com.digitalpebble.behemoth.tika;
-
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.Locator;
 import org.xml.sax.SAXException;
 
-import com.digitalpebble.behemoth.Annotation;
+/**
+ *
+ *
+ **/
+public abstract class TikaMarkupHandler implements ContentHandler {
 
-/*******************************************************************************
- * SAX Handler which gets events from the Tika parser events and create Behemoth
- * annotations accordingly.
- * 
- ******************************************************************************/
+  protected StringBuffer textBuffer;
 
-public class TikaMarkupHandler implements ContentHandler {
+  public TikaMarkupHandler() {
+    textBuffer = new StringBuffer();
+  }
 
-    private StringBuffer textBuffer;
+  @Override
+  public void startElement(String s, String s1, String s2, Attributes attributes) throws SAXException {
 
-    private List<Annotation> annotationBuffer;
+  }
 
-    private LinkedList<Annotation> startedAnnotations;
+  public void endElement(String uri, String localName, String qName)
+          throws SAXException {
 
-    public TikaMarkupHandler() {
-        textBuffer = new StringBuffer();
-        annotationBuffer = new LinkedList<Annotation>();
-        startedAnnotations = new LinkedList<Annotation>();
-    }
+      int endOffset = textBuffer.length();
 
-    public void characters(char[] ch, int start, int length)
-            throws SAXException {
-        textBuffer.append(ch, start, length);
-    }
+      // add a \n after the head if the text is not empty
+      // i.e. there is a title
+      if (localName.equals("head") && endOffset > 0)
+          textBuffer.append("\n");
+  }
 
-    public void startDocument() throws SAXException {
-        textBuffer = new StringBuffer();
-        annotationBuffer = new LinkedList<Annotation>();
-        startedAnnotations = new LinkedList<Annotation>();
-    }
+  public String getText() {
+      return this.textBuffer.toString();
+  }
 
-    public void endDocument() throws SAXException {
-        // there should be no annotation left at this stage
-        if (startedAnnotations.size() != 0) {
-            // TODO log + error message
-        }
-    }
-
-    public void startElement(String uri, String localName, String qName,
-            Attributes atts) throws SAXException {
-        int startOffset = textBuffer.length();
-
-        Annotation annot = new Annotation();
-        annot.setStart(startOffset);
-        // use the localname as a type
-        annot.setType(localName);
-        // convert the attributes into features
-        for (int i = 0; i < atts.getLength(); i++) {
-            String key = atts.getLocalName(i);
-            String value = atts.getValue(i);
-            annot.getFeatures().put(key, value);
-        }
-        this.startedAnnotations.addLast(annot);
-    }
-
-    public void endElement(String uri, String localName, String qName)
-            throws SAXException {
-
-        int endOffset = textBuffer.length();
-
-        // add a \n after the head if the text is not empty
-        // i.e. there is a title
-        if (localName.equals("head") && endOffset > 0)
-            textBuffer.append("\n");
-
-        // try to get the corresponding annotation
-        // we start from the last temporary
-        // and go up the stack
-        Iterator<Annotation> iter = startedAnnotations.iterator();
-        Annotation startedAnnot = null;
-        while (iter.hasNext()) {
-            Annotation temp = iter.next();
-            if (temp.getType().equals(localName)) {
-                startedAnnot = temp;
-                break;
-            }
-        }
-        // found something?
-        if (startedAnnot == null) {
-            // TODO log etc...
-            return;
-        }
-
-        startedAnnot.setEnd(endOffset);
-        startedAnnotations.remove(startedAnnot);
-        annotationBuffer.add(startedAnnot);
-    }
-
-    public void ignorableWhitespace(char[] ch, int start, int length)
-            throws SAXException {
-        characters(ch, start, length);
-    }
-
-    // the following methods are simply ignored
-
-    public void startPrefixMapping(String prefix, String uri)
+      public void startPrefixMapping(String prefix, String uri)
             throws SAXException {
     }
 
@@ -140,12 +70,8 @@ public class TikaMarkupHandler implements ContentHandler {
             throws SAXException {
     }
 
-    public String getText() {
-        return this.textBuffer.toString();
+  public void ignorableWhitespace(char[] ch, int start, int length)
+            throws SAXException {
+        characters(ch, start, length);
     }
-
-    public List<Annotation> getAnnotations() {
-        return this.annotationBuffer;
-    }
-
 }

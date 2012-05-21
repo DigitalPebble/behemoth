@@ -26,7 +26,6 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.Reporter;
-import org.apache.tika.Tika;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.metadata.Metadata;
@@ -54,7 +53,8 @@ public class TikaProcessor implements DocumentProcessor, TikaConstants {
             .getLogger(TikaProcessor.class);
 
     private Configuration config;
-
+    private boolean includeMetadata = false;
+    private boolean includeAnnotations = false;
     private String mimeType = "text/plain";
 
     private MimeTypes mimetypes = TikaConfig.getDefaultConfig()
@@ -68,6 +68,9 @@ public class TikaProcessor implements DocumentProcessor, TikaConstants {
     public void setConf(Configuration conf) {
         config = conf;
         mimeType = config.get(TIKA_MIME_TYPE_KEY);
+        includeMetadata = conf.getBoolean("indexMetadata", false);
+        includeAnnotations = conf.getBoolean("indexAnnotations", false);
+
     }
 
     public void close() {
@@ -142,16 +145,25 @@ public class TikaProcessor implements DocumentProcessor, TikaConstants {
             reporter.getCounter("MIME-TYPE", inputDoc.getContentType())
                     .increment(1);
 
-        TikaMarkupHandler handler = new TikaMarkupHandler();
-        ParseContext context = new ParseContext();
+        TikaMarkupHandler handler;
+        if (includeAnnotations == true){
+          handler = new AnnotatingMarkupHandler();
+        } else {
+          handler = new NoAnnotationsMarkupHandler();
+        }
+      ParseContext context = new ParseContext();
         // specify a custom HTML mapper via the Context
         context.set(HtmlMapper.class, new IdentityHtmlMapper());
 
         try {
             parser.parse(is, handler, metadata, context);
             processText(inputDoc, handler.getText());
+          if (includeMetadata == true) {
             processMetadata(inputDoc, metadata);
-            processMarkupAnnotations(inputDoc, handler.getAnnotations());
+          }
+          if (includeAnnotations == true) {
+            processMarkupAnnotations(inputDoc, ((AnnotatingMarkupHandler) handler).getAnnotations());
+          }
         } catch (Exception e) {
             LOG.error(inputDoc.getUrl().toString(), e);
             if (reporter != null)
