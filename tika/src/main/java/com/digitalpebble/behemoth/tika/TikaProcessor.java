@@ -67,8 +67,8 @@ public class TikaProcessor implements DocumentProcessor, TikaConstants {
   public void setConf(Configuration conf) {
     config = conf;
     mimeType = config.get(TIKA_MIME_TYPE_KEY);
-    includeMetadata = conf.getBoolean("includeMetadata", false);
-    includeAnnotations = conf.getBoolean("includeAnnotations", false);
+    includeMetadata = conf.getBoolean("tika.metadata", false);
+    includeAnnotations = conf.getBoolean("tika.annotations", false);
 
   }
 

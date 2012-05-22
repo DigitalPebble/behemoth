@@ -59,7 +59,7 @@ public class TikaProcessorTest extends TestCase {
     // and have the following text
     assertEquals("A TITLE\n\n\nThis is a simple test", output.getText().trim());
     Configuration conf = BehemothConfiguration.create();
-    conf.setBoolean("includeMetadata", true);
+    conf.setBoolean("tika.metadata", true);
     tika.setConf(conf);
     doc = new BehemothDocument();
     doc.setContent(text.getBytes());
@@ -70,7 +70,7 @@ public class TikaProcessorTest extends TestCase {
     Writable keywords = metadata.get(new Text("keywords"));
     assertNotNull("keywords", keywords);
 
-    conf.setBoolean("includeAnnotations", true);
+    conf.setBoolean("tika.annotations", true);
     tika.setConf(conf);
     doc = new BehemothDocument();
     doc.setContent(text.getBytes());
