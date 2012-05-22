@@ -23,7 +23,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
-import org.apache.hadoop.filecache.DistributedCache;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
@@ -32,7 +31,6 @@ import org.apache.hadoop.mapred.FileOutputFormat;
 import org.apache.hadoop.mapred.JobClient;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.SequenceFileInputFormat;
-import org.apache.hadoop.mapred.SequenceFileOutputFormat;
 import org.apache.hadoop.mapred.lib.IdentityMapper;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
@@ -41,22 +39,22 @@ import com.digitalpebble.behemoth.BehemothConfiguration;
 import com.digitalpebble.behemoth.BehemothDocument;
 
 /**
- * Sends annotated documents to SOLR for indexing
+ * Sends annotated documents to LucidWorks for indexing
  */
 
-public class SOLRIndexerJob extends Configured implements Tool {
-    private static final Log LOG = LogFactory.getLog(SOLRIndexerJob.class);
+public class LucidWorksIndexerJob extends Configured implements Tool {
+    private static final Log LOG = LogFactory.getLog(LucidWorksIndexerJob.class);
 
-    public SOLRIndexerJob() {
+    public LucidWorksIndexerJob() {
     }
 
-    public SOLRIndexerJob(Configuration conf) {
+    public LucidWorksIndexerJob(Configuration conf) {
         super(conf);
     }
 
     public static void main(String args[]) throws Exception {
         int res = ToolRunner.run(BehemothConfiguration.create(),
-                new SOLRIndexerJob(), args);
+                new LucidWorksIndexerJob(), args);
         System.exit(res);
     }
 
@@ -65,7 +63,7 @@ public class SOLRIndexerJob extends Configured implements Tool {
         final FileSystem fs = FileSystem.get(getConf());
 
         if (args.length != 2) {
-            String syntax = "com.digitalpebble.solr.SOLRIndexerJob in solrURL";
+            String syntax = "com.digitalpebble.solr.LucidWorksIndexerJob in solrURL";
             System.err.println(syntax);
             return -1;
         }
@@ -77,10 +75,10 @@ public class SOLRIndexerJob extends Configured implements Tool {
 
         job.setJarByClass(this.getClass());
 
-        job.setJobName("Indexing " + inputPath + " into SOLR");
+        job.setJobName("Indexing " + inputPath + " into LucidWorks");
 
         job.setInputFormat(SequenceFileInputFormat.class);
-        job.setOutputFormat(SOLROutputFormat.class);
+        job.setOutputFormat(LucidWorksOutputFormat.class);
 
         job.setOutputKeyClass(Text.class);
         job.setOutputValueClass(BehemothDocument.class);
@@ -101,7 +99,7 @@ public class SOLRIndexerJob extends Configured implements Tool {
           JobClient.runJob(job);
           long finish = System.currentTimeMillis();
           if (LOG.isInfoEnabled()) {
-            LOG.info("SOLRIndexerJob completed. Timing: " + (finish - start) + " ms");
+            LOG.info("LucidWorksIndexerJob completed. Time " + (finish - start) + " ms");
           }
         } catch (Exception e) {
             LOG.error(e);
