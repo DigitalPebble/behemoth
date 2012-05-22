@@ -42,20 +42,15 @@ public class AnnotatingMarkupHandler extends TikaMarkupHandler implements Conten
     private LinkedList<Annotation> startedAnnotations;
 
     public AnnotatingMarkupHandler() {
-        textBuffer = new StringBuffer();
+        textBuffer = new StringBuilder();
         annotationBuffer = new LinkedList<Annotation>();
         startedAnnotations = new LinkedList<Annotation>();
-    }
-
-    public void characters(char[] ch, int start, int length)
-            throws SAXException {
-        textBuffer.append(ch, start, length);
     }
 
     public void startDocument() throws SAXException {
-        textBuffer = new StringBuffer();
-        annotationBuffer = new LinkedList<Annotation>();
-        startedAnnotations = new LinkedList<Annotation>();
+        textBuffer.setLength(0);
+        annotationBuffer.clear();
+        startedAnnotations.clear();
     }
 
     public void endDocument() throws SAXException {

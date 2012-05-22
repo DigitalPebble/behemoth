@@ -17,21 +17,16 @@
 
 package com.digitalpebble.behemoth.tika;
 
-import com.digitalpebble.behemoth.Annotation;
-import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
-import org.xml.sax.Locator;
 import org.xml.sax.SAXException;
 
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-
-/*******************************************************************************
+/**
+ * ****************************************************************************
  * SAX Handler which gets events from the Tika parser events and create Behemoth
  * documents, but skips the annotations
- * 
- ******************************************************************************/
+ * <p/>
+ * ****************************************************************************
+ */
 
 public class NoAnnotationsMarkupHandler extends TikaMarkupHandler implements ContentHandler {
 
@@ -40,19 +35,14 @@ public class NoAnnotationsMarkupHandler extends TikaMarkupHandler implements Con
     super();
   }
 
-    public void characters(char[] ch, int start, int length)
-            throws SAXException {
-        textBuffer.append(ch, start, length);
-    }
+  public void startDocument() throws SAXException {
+    textBuffer.setLength(0);
+  }
 
-    public void startDocument() throws SAXException {
-        textBuffer = new StringBuffer();
-    }
+  @Override
+  public void endDocument() throws SAXException {
 
-    @Override
-    public void endDocument() throws SAXException {
-
-    }
+  }
 
 
 }

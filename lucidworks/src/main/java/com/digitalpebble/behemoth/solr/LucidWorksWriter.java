@@ -66,8 +66,8 @@ public class LucidWorksWriter {
       int threadCount = job.getInt("solr.client.threads", 1);
       solr = new StreamingUpdateSolrServer(solrURL, queueSize, threadCount);
     }
-    includeMetadata = job.getBoolean("indexMetadata", false);
-    includeAnnotations = job.getBoolean("indexAnnotations", false);
+    includeMetadata = job.getBoolean("includeMetadata", false);
+    includeAnnotations = job.getBoolean("includeAnnotations", false);
 
     // get the Behemoth annotations types and features
     // to store as SOLR fields

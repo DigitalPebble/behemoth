@@ -27,10 +27,10 @@ import org.xml.sax.SAXException;
  **/
 public abstract class TikaMarkupHandler implements ContentHandler {
 
-  protected StringBuffer textBuffer;
+  protected StringBuilder textBuffer;
 
   public TikaMarkupHandler() {
-    textBuffer = new StringBuffer();
+    textBuffer = new StringBuilder();
   }
 
   @Override
@@ -41,37 +41,42 @@ public abstract class TikaMarkupHandler implements ContentHandler {
   public void endElement(String uri, String localName, String qName)
           throws SAXException {
 
-      int endOffset = textBuffer.length();
+    int endOffset = textBuffer.length();
 
-      // add a \n after the head if the text is not empty
-      // i.e. there is a title
-      if (localName.equals("head") && endOffset > 0)
-          textBuffer.append("\n");
+    // add a \n after the head if the text is not empty
+    // i.e. there is a title
+    if (localName.equals("head") && endOffset > 0)
+      textBuffer.append("\n");
   }
 
   public String getText() {
-      return this.textBuffer.toString();
+    return this.textBuffer.toString();
   }
 
-      public void startPrefixMapping(String prefix, String uri)
-            throws SAXException {
-    }
+  public void startPrefixMapping(String prefix, String uri)
+          throws SAXException {
+  }
 
-    public void endPrefixMapping(String prefix) throws SAXException {
-    }
+  public void endPrefixMapping(String prefix) throws SAXException {
+  }
 
-    public void setDocumentLocator(Locator locator) {
-    }
+  public void setDocumentLocator(Locator locator) {
+  }
 
-    public void skippedEntity(String name) throws SAXException {
-    }
+  public void skippedEntity(String name) throws SAXException {
+  }
 
-    public void processingInstruction(String target, String data)
-            throws SAXException {
-    }
+  public void processingInstruction(String target, String data)
+          throws SAXException {
+  }
 
   public void ignorableWhitespace(char[] ch, int start, int length)
-            throws SAXException {
-        characters(ch, start, length);
-    }
+          throws SAXException {
+    characters(ch, start, length);
+  }
+
+  public void characters(char[] ch, int start, int length)
+          throws SAXException {
+    textBuffer.append(ch, start, length);
+  }
 }
