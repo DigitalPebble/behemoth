@@ -47,6 +47,7 @@ public final class BehemothDocumentProcessor {
 	public static final String TOKEN_TYPE = "Token.type";
 	public static final String FEATURE_NAME = "Feature.name";
 	public static final String ANALYZER_CLASS = "analyzer.class";
+	public static final String MD_LABEL = "Metadata.Key.Label";
 
 	// public static final Charset CHARSET = Charset.forName("UTF-8");
 
@@ -99,7 +100,7 @@ public final class BehemothDocumentProcessor {
 		FileInputFormat.setInputPaths(job, input);
 		FileOutputFormat.setOutputPath(job, output);
 
-		job.setMapperClass(BehemothAnnotationMapper.class);
+		job.setMapperClass(BehemothTokenizerMapper.class);
 		job.setInputFormatClass(SequenceFileInputFormat.class);
 		job.setNumReduceTasks(0);
 		job.setOutputFormatClass(SequenceFileOutputFormat.class);
@@ -152,6 +153,39 @@ public final class BehemothDocumentProcessor {
 		job.setNumReduceTasks(0);
 		job.setOutputFormatClass(SequenceFileOutputFormat.class);
 		HadoopUtil.delete(conf, output);
+
+		boolean succeeded = job.waitForCompletion(true);
+		if (!succeeded)
+			throw new IllegalStateException("Job failed!");
+
+	}
+
+	public static void dumpLabels(Path input, Path output,
+			Configuration baseConf) throws IOException, InterruptedException,
+			ClassNotFoundException {
+		Configuration conf = new Configuration(baseConf);
+		// this conf parameter needs to be set enable serialisation of conf
+		// values
+		conf.set(
+				"io.serializations",
+				"org.apache.hadoop.io.serializer.JavaSerialization,"
+						+ "org.apache.hadoop.io.serializer.WritableSerialization");
+
+		Job job = new Job(conf);
+		job.setJobName("DocumentProcessor::LabelDumper: input-folder: "
+				+ input);
+		job.setJarByClass(BehemothDocumentProcessor.class);
+
+		job.setOutputKeyClass(Text.class);
+		job.setOutputValueClass(Text.class);
+		FileInputFormat.setInputPaths(job, input);
+		FileOutputFormat.setOutputPath(job, output);
+
+		job.setMapperClass(BehemothLabelMapper.class);
+		job.setInputFormatClass(SequenceFileInputFormat.class);
+		job.setNumReduceTasks(0);
+		job.setOutputFormatClass(SequenceFileOutputFormat.class);
+		//HadoopUtil.delete(conf, output);
 
 		boolean succeeded = job.waitForCompletion(true);
 		if (!succeeded)

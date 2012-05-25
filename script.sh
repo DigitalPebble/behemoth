@@ -42,7 +42,7 @@ hadoop jar $behe_home/$module/target/behemoth-$module-1.0-SNAPSHOT-job.jar com.d
 
 # corpus reader (useful for older version of Hadoop e.g. 0.18.x)
 module=core
-hadoop jar $behe_home/$module/target/behemoth-$module-1.0-SNAPSHOT-job.jar  com.digitalpebble.behemoth.util.CorpusReader -conf $behe_home/conf/behemoth-site.xml ClueWeb09Annie
+hadoop jar $behe_home/$module/target/behemoth-$module-1.0-SNAPSHOT-job.jar  com.digitalpebble.behemoth.util.CorpusReader -conf $behe_home/conf/behemoth-site.xml -i ClueWeb09Annie
 
 # use of SOLR -> requires to have a SOLR instance running
 module=solr

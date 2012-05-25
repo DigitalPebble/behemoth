@@ -30,7 +30,7 @@ import com.digitalpebble.behemoth.BehemothDocument;
 /**
  * Extracts tokens from a Behemoth document and outputs them in a StringTuple
  */
-public class BehemothAnnotationMapper extends
+public class BehemothTokenizerMapper extends
 		Mapper<Text, BehemothDocument, Text, StringTuple> {
 
 	private String tokenType;
