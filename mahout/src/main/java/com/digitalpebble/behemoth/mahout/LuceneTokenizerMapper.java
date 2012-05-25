@@ -1,5 +1,3 @@
-package com.digitalpebble.behemoth.mahout;
-
 /**
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -16,52 +14,51 @@ package com.digitalpebble.behemoth.mahout;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.digitalpebble.behemoth.mahout;
 
 import java.io.IOException;
-import java.util.Iterator;
+import java.io.StringReader;
 
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Mapper;
+import org.apache.lucene.analysis.Analyzer;
+import org.apache.lucene.analysis.TokenStream;
+import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
+import org.apache.mahout.common.ClassUtils;
 import org.apache.mahout.common.StringTuple;
+import org.apache.mahout.vectorizer.DefaultAnalyzer;
+import org.apache.mahout.vectorizer.DocumentProcessor;
 
-import com.digitalpebble.behemoth.Annotation;
 import com.digitalpebble.behemoth.BehemothDocument;
 
 /**
- * Extracts tokens from a Behemoth document and outputs them in a StringTuple
+ * Tokenizes a text document and outputs tokens in a StringTuple
  */
-public class SequenceFileTokenizerMapper extends
+public class LuceneTokenizerMapper extends
 		Mapper<Text, BehemothDocument, Text, StringTuple> {
 
-	private String tokenType;
-	private String tokenFeature;
+	private Analyzer analyzer;
 
 	@Override
 	protected void map(Text key, BehemothDocument value, Context context)
 			throws IOException, InterruptedException {
+		String sContent = value.getText();
+		if (sContent == null) {
+			// no text available? skip
+			context.getCounter("LuceneTokenizer", "BehemothDocWithoutText")
+					.increment(1);
+			return;
+		}
+		TokenStream stream = analyzer.reusableTokenStream(key.toString(),
+				new StringReader(sContent.toString()));
+		CharTermAttribute termAtt = stream
+				.addAttribute(CharTermAttribute.class);
 		StringTuple document = new StringTuple();
-		Iterator<Annotation> iter = value.getAnnotations().iterator();
-
-		while (iter.hasNext()) {
-			Annotation annot = iter.next();
-			// check the type
-			if (!annot.getType().equals(tokenType))
-				continue;
-			java.util.Map<String, String> features = annot.getFeatures();
-			if (features == null)
-				continue;
-
-			String featureValue = null;
-
-			// no feature? use the underlying text
-			if (tokenFeature.equals("")) {
-				featureValue = value.getText().substring((int)annot.getStart(), (int)annot.getEnd());
+		stream.reset();
+		while (stream.incrementToken()) {
+			if (termAtt.length() > 0) {
+				document.add(new String(termAtt.buffer(), 0, termAtt.length()));
 			}
-			else featureValue = features.get(tokenFeature);
-			if (featureValue == null)
-				continue;
-			document.add(featureValue);
-
 		}
 		context.write(key, document);
 	}
@@ -70,9 +67,9 @@ public class SequenceFileTokenizerMapper extends
 	protected void setup(Context context) throws IOException,
 			InterruptedException {
 		super.setup(context);
-		this.tokenType = context.getConfiguration().get(
-				DocumentProcessor.TOKEN_TYPE);
-		this.tokenFeature = context.getConfiguration().get(
-				DocumentProcessor.FEATURE_NAME,"");
+		analyzer = ClassUtils.instantiateAs(
+				context.getConfiguration().get(
+						DocumentProcessor.ANALYZER_CLASS,
+						DefaultAnalyzer.class.getName()), Analyzer.class);
 	}
 }
