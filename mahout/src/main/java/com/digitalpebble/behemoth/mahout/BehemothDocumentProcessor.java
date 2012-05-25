@@ -185,7 +185,7 @@ public final class BehemothDocumentProcessor {
 		job.setInputFormatClass(SequenceFileInputFormat.class);
 		job.setNumReduceTasks(0);
 		job.setOutputFormatClass(SequenceFileOutputFormat.class);
-		//HadoopUtil.delete(conf, output);
+		HadoopUtil.delete(conf, output);
 
 		boolean succeeded = job.waitForCompletion(true);
 		if (!succeeded)

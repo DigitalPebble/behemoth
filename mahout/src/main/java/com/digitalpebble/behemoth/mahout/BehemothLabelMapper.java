@@ -33,7 +33,8 @@ public class BehemothLabelMapper extends
 	protected void map(Text key, BehemothDocument value, Context context)
 			throws IOException, InterruptedException {
 		Text label = (Text) value.getMetadata(true).get(metadataKey);
-		context.write(key, label);
+		if (label != null)
+			context.write(key, label);
 	}
 
 	@Override

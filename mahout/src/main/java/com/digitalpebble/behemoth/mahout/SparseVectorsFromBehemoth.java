@@ -226,12 +226,15 @@ public final class SparseVectorsFromBehemoth extends AbstractJob implements
 				.withRequired(false)
 				.withDescription("If set, overwrite the output directory")
 				.withShortName("ow").create();
-		
-		Option labelMDOpt = obuilder.withLongName("labelMDKey")
+
+		Option labelMDOpt = obuilder
+				.withLongName("labelMDKey")
 				.withRequired(false)
+				.withArgument(
+						abuilder.withName("label_md_key").create())
 				.withDescription("Document metadata holding the label")
 				.withShortName("label").create();
-		
+
 		Option helpOpt = obuilder.withLongName("help")
 				.withDescription("Print out help").withShortName("h").create();
 
@@ -246,7 +249,7 @@ public final class SparseVectorsFromBehemoth extends AbstractJob implements
 				.withOption(overwriteOutput).withOption(helpOpt)
 				.withOption(sequentialAccessVectorOpt)
 				.withOption(namedVectorOpt).withOption(logNormalizeOpt)
-				.create();
+				.withOption(labelMDOpt).create();
 		try {
 			Parser parser = new Parser();
 			parser.setGroup(group);
@@ -370,7 +373,7 @@ public final class SparseVectorsFromBehemoth extends AbstractJob implements
 			if (cmdLine.hasOption(logNormalizeOpt)) {
 				logNormalize = true;
 			}
-			
+
 			String labelMDKey = null;
 			if (cmdLine.hasOption(labelMDOpt)) {
 				labelMDKey = cmdLine.getValue(labelMDOpt).toString();
@@ -464,7 +467,7 @@ public final class SparseVectorsFromBehemoth extends AbstractJob implements
 			}
 
 			// dump labels?
-			if (labelMDKey!=null) {
+			if (labelMDKey != null) {
 				BehemothDocumentProcessor.dumpLabels(inputDir, new Path(
 						outputDir, "labels"), conf);
 			}
