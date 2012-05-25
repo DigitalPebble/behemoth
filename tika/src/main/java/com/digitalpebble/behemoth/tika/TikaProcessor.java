@@ -204,7 +204,7 @@ public class TikaProcessor implements DocumentProcessor, TikaConstants {
      *            the extracted {@link org.apache.tika.metadata.Metadata}
      */
     protected void processMetadata(BehemothDocument inputDoc, Metadata metadata) {
-        MapWritable mapW = new MapWritable();
+        MapWritable mapW = inputDoc.getMetadata(true);
         for (String name : metadata.names()) {
             String[] values = metadata.getValues(name);
             // temporary fix to avoid
@@ -220,6 +220,7 @@ public class TikaProcessor implements DocumentProcessor, TikaConstants {
                     buff.append(",");
                 buff.append(values[i]);
             }
+            // TODO prefix md?
             mapW.put(new Text(name), new Text(buff.toString()));
             // mapW.put(new Text(name), new TextArrayWritable(values));
         }
