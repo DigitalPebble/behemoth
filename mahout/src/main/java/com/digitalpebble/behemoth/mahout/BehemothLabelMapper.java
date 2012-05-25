@@ -21,12 +21,17 @@ import java.io.IOException;
 
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Mapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.digitalpebble.behemoth.BehemothDocument;
 
 public class BehemothLabelMapper extends
 		Mapper<Text, BehemothDocument, Text, Text> {
 
+	private static final Logger log = LoggerFactory
+			.getLogger(BehemothLabelMapper.class);
+	
 	private Text metadataKey;
 
 	@Override
@@ -43,5 +48,6 @@ public class BehemothLabelMapper extends
 		super.setup(context);
 		metadataKey = new Text(context.getConfiguration().get(
 				BehemothDocumentProcessor.MD_LABEL, "UNKNOWN_METADATA_KEY"));
+		log.info("Using metadata key "+metadataKey+" for labels");
 	}
 }

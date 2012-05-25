@@ -468,6 +468,7 @@ public final class SparseVectorsFromBehemoth extends AbstractJob implements
 
 			// dump labels?
 			if (labelMDKey != null) {
+				conf.set(BehemothDocumentProcessor.MD_LABEL, labelMDKey);
 				BehemothDocumentProcessor.dumpLabels(inputDir, new Path(
 						outputDir, "labels"), conf);
 			}
