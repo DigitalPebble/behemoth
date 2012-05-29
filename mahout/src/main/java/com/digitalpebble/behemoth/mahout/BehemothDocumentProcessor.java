@@ -30,7 +30,6 @@ import org.apache.hadoop.mapreduce.lib.output.SequenceFileOutputFormat;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.mahout.common.HadoopUtil;
 import org.apache.mahout.common.StringTuple;
-import org.apache.mahout.vectorizer.document.SequenceFileTokenizerMapper;
 
 import com.digitalpebble.behemoth.BehemothDocument;
 

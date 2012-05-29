@@ -1,7 +1,13 @@
 package com.digitalpebble.behemoth.mahout.util;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -9,8 +15,13 @@ import org.apache.commons.cli.GnuParser;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
+import org.apache.hadoop.fs.FileStatus;
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.NullWritable;
+import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.FileInputFormat;
 import org.apache.hadoop.mapred.FileOutputFormat;
@@ -24,8 +35,12 @@ import org.apache.hadoop.mapred.RunningJob;
 import org.apache.hadoop.mapred.SequenceFileInputFormat;
 import org.apache.hadoop.mapred.SequenceFileOutputFormat;
 import org.apache.hadoop.mapred.lib.IdentityMapper;
+import org.apache.hadoop.mapreduce.OutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
+import org.apache.mahout.common.HadoopUtil;
+import org.apache.mahout.math.Vector;
+import org.apache.mahout.math.Vector.Element;
 import org.apache.mahout.math.VectorWritable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -105,24 +120,83 @@ public class Mahout2LibSVM extends Configured implements Tool,
 
 		Path vectorPath = new Path(line.getOptionValue("v"));
 		Path labelPath = new Path(line.getOptionValue("l"));
-		Path output = new Path(line.getOptionValue("o"));
+		String output = line.getOptionValue("o");
 
-		Path tempOutput = new Path(output.getParent(), output.getName()
-				+ "_TMP");
+		Path tempOutput = new Path(vectorPath.getParent(), "temp-"
+				+ System.currentTimeMillis());
 
 		// extracts the string representations from the vectors
 		int retVal = vectorToString(vectorPath, tempOutput);
-		if (retVal != 0)
+		if (retVal != 0) {
+			HadoopUtil.delete(getConf(), tempOutput);
 			return retVal;
+		}
 
-		return convert(tempOutput, labelPath, output);
+		Path tempOutput2 = new Path(vectorPath.getParent(), "temp-"
+				+ System.currentTimeMillis());
+
+		retVal = convert(tempOutput, labelPath, tempOutput2);
+
+		// delete the temp output
+		HadoopUtil.delete(getConf(), tempOutput);
+
+		if (retVal != 0) {
+			HadoopUtil.delete(getConf(), tempOutput2);
+			return retVal;
+		}
+
+		// convert tempOutput to standard file
+		BufferedWriter bow = new BufferedWriter(
+				new FileWriter(new File(output)));
+
+		// the label dictionary is not dumped to text
+		int labelMaxIndex = 0;
+		Map<String, Integer> labelIndex = new HashMap<String, Integer>();
+
+		Configuration conf = getConf();
+		FileSystem fs = FileSystem.get(conf);
+		FileStatus[] fss = fs.listStatus(tempOutput2);
+		try {
+			for (FileStatus status : fss) {
+				Path path = status.getPath();
+				// skips the _log or _SUCCESS files
+				if (!path.getName().startsWith("part-")
+						&& !path.getName().equals(tempOutput2.getName()))
+					continue;
+				SequenceFile.Reader reader = new SequenceFile.Reader(fs, path,
+						conf);
+				// read the key + values in that file
+				Text key = new Text();
+				Text value = new Text();
+				while (reader.next(key, value)) {
+					String label = key.toString();
+					// replace the label by its index
+					Integer indexLabel = labelIndex.get(label);
+					if (indexLabel == null) {
+						indexLabel = new Integer(labelMaxIndex);
+						labelIndex.put(label, indexLabel);
+						labelMaxIndex++;
+					}
+					String val = value.toString();
+					bow.append(indexLabel.toString()).append(val).append("\n");
+				}
+				reader.close();
+			}
+			bow.flush();
+		} catch (Exception e) {
+			e.printStackTrace();
+			return -1;
+		} finally {
+			bow.close();
+			fs.delete(tempOutput2, true);
+		}
+		return 0;
 	}
 
 	public int vectorToString(Path vectorPath, Path output) throws IOException {
 		JobConf job = new JobConf(getConf());
 		// job.setJobName(this.getClass().getName());
 		job.setJarByClass(this.getClass());
-
 		FileInputFormat.addInputPath(job, vectorPath);
 		job.setInputFormat(SequenceFileInputFormat.class);
 		job.setNumReduceTasks(0);
@@ -133,6 +207,7 @@ public class Mahout2LibSVM extends Configured implements Tool,
 		job.setOutputValueClass(Text.class);
 
 		RunningJob rj = JobClient.runJob(job);
+
 		if (rj.isSuccessful() == false)
 			return -1;
 		return 0;
@@ -143,7 +218,6 @@ public class Mahout2LibSVM extends Configured implements Tool,
 		JobConf job = new JobConf(getConf());
 		// job.setJobName(this.getClass().getName());
 		job.setJarByClass(this.getClass());
-
 		FileInputFormat.addInputPath(job, vectorPath);
 		FileInputFormat.addInputPath(job, labelPath);
 		job.setInputFormat(SequenceFileInputFormat.class);
@@ -153,7 +227,6 @@ public class Mahout2LibSVM extends Configured implements Tool,
 		// 1 reducers
 		job.setNumReduceTasks(1);
 		job.setReducerClass(Mahout2LibSVM.class);
-
 		FileOutputFormat.setOutputPath(job, output);
 		job.setOutputFormat(SequenceFileOutputFormat.class);
 		job.setOutputKeyClass(Text.class);
@@ -201,8 +274,20 @@ public class Mahout2LibSVM extends Configured implements Tool,
 	public void map(Text key, VectorWritable value,
 			OutputCollector<Text, Text> output, Reporter reporter)
 			throws IOException {
-		String rep = value.get().toString();
-		output.collect(key, new Text("VECTOR_" + rep));
+		Vector v = value.get();
+		StringBuffer buffer = new StringBuffer();
+		for (int i = 0; i < v.size(); i++) {
+			Element el = v.getElement(i);
+			int index = el.index();
+			// increment index so that starts at 1
+			index++;
+			double weight = el.get();
+			if (weight != 0)
+				buffer.append(" ").append(index).append(":").append(weight);
+		}
+		String rep = buffer.toString();
+		if (rep.length() > 0)
+			output.collect(key, new Text("VECTOR_" + rep));
 	}
 
 }
