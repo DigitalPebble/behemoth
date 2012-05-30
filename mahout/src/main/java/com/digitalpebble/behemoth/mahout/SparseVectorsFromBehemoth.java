@@ -256,6 +256,13 @@ public final class SparseVectorsFromBehemoth extends AbstractJob implements
 			parser.setHelpOption(helpOpt);
 			CommandLine cmdLine = parser.parse(args);
 
+			// check that we have an analyser or a token type
+			if (!cmdLine.hasOption(analyzerNameOpt) && !cmdLine.hasOption(typeNameOpt)) {
+				CommandLineUtil.printHelp(group);
+				return -1;
+			}
+			
+			
 			if (cmdLine.hasOption(helpOpt)) {
 				CommandLineUtil.printHelp(group);
 				return -1;

@@ -49,8 +49,13 @@ public class LanguageIdProcessor implements DocumentProcessor {
 			.getLogger(LanguageIdProcessor.class);
 
 	private Configuration config;
-	
-	private final String[] defaultLanguagesToLoad = new String[]{"af","ar","bg","bn","cs","da","de","el","en","es","et","fa","fi","fr","gu","he","hi","hr","hu","id","it","ja","kn","ko","lt","lv","mk","ml","mr","ne","nl","no","pa","pl","pt","ro","ru","sk","sl","so","sq","sv","sw","ta","te","th","tl","tr","uk","ur","vi","zh-cn","zh-tw"};
+
+	private final String[] defaultLanguagesToLoad = new String[] { "af", "ar",
+			"bg", "bn", "cs", "da", "de", "el", "en", "es", "et", "fa", "fi",
+			"fr", "gu", "he", "hi", "hr", "hu", "id", "it", "ja", "kn", "ko",
+			"lt", "lv", "mk", "ml", "mr", "ne", "nl", "no", "pa", "pl", "pt",
+			"ro", "ru", "sk", "sl", "so", "sq", "sv", "sw", "ta", "te", "th",
+			"tl", "tr", "uk", "ur", "vi", "zh-cn", "zh-tw" };
 
 	public Configuration getConf() {
 		return config;
@@ -58,35 +63,36 @@ public class LanguageIdProcessor implements DocumentProcessor {
 
 	public void setConf(Configuration conf) {
 		config = conf;
-		
+
 		// TODO get list of languages to load from conf
-		
+
 		String[] languagesToLoad = defaultLanguagesToLoad;
-		
+
 		List<String> json_profiles = new ArrayList<String>();
-		
-		for (String langCode : languagesToLoad){
+
+		for (String langCode : languagesToLoad) {
 			try {
 				json_profiles.add(loadLanguageProfile(langCode));
 			} catch (IOException e) {
-				LOG.info("Can't load language profile for "+langCode);
+				LOG.info("Can't load language profile for " + langCode);
 			}
 		}
-		
+
 		try {
 			DetectorFactory.loadProfile(json_profiles);
 		} catch (LangDetectException e) {
 			LOG.info("Can't load language profiles");
 		}
 	}
-	
-	private static String loadLanguageProfile(String langCode) throws IOException{
-		InputStream is = DetectorFactory.class.getClassLoader().getResourceAsStream("profiles/"+langCode);
+
+	private static String loadLanguageProfile(String langCode)
+			throws IOException {
+		InputStream is = DetectorFactory.class.getClassLoader()
+				.getResourceAsStream("profiles/" + langCode);
 		String profile = IOUtils.toString(is);
 		is.close();
 		return profile;
 	}
-	
 
 	public void close() {
 	}
@@ -96,10 +102,18 @@ public class LanguageIdProcessor implements DocumentProcessor {
 		// check that it has some text
 		if (inputDoc.getText() == null) {
 			LOG.info("No text for " + inputDoc.getUrl() + " skipping");
+			reporter.getCounter("LANGUAGE ID", "MISSING TEXT").increment(1);
 			return new BehemothDocument[] { inputDoc };
 		}
 
 		String lang = null;
+
+		// skip docs with empty text
+		if (inputDoc.getText().trim().isEmpty()) {
+			LOG.info("Empty text for " + inputDoc.getUrl() + " skipping");
+			reporter.getCounter("LANGUAGE ID", "EMPTY TEXT").increment(1);
+			return new BehemothDocument[] { inputDoc };
+		}
 
 		try {
 			Detector detector = DetectorFactory.create();
@@ -107,7 +121,7 @@ public class LanguageIdProcessor implements DocumentProcessor {
 			lang = detector.detect();
 			inputDoc.getMetadata(true).put(languageMDKey, new Text(lang));
 		} catch (LangDetectException e) {
-			e.printStackTrace();
+			LOG.error("Exception on doc " + inputDoc.getUrl(), e);
 			lang = null;
 		}
 

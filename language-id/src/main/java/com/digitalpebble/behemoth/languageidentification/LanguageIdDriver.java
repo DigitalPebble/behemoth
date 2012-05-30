@@ -16,6 +16,9 @@
  */
 package com.digitalpebble.behemoth.languageidentification;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.GnuParser;
@@ -95,6 +98,19 @@ public class LanguageIdDriver extends Configured implements Tool {
 			outputPath = new Path(output);
 		} catch (ParseException e) {
 			formatter.printHelp("LanguageIdDriver", options);
+		}
+		
+		// check whether needs overwriting
+		if (fs.exists(outputPath)){
+			  System.out.println("Output path "+outputPath + " already exists. Overwrite [y/n]?");
+			  InputStreamReader inp = new InputStreamReader(System.in);
+			  BufferedReader br = new BufferedReader(inp);
+			  String str = br.readLine();
+			  br.close();
+			  if (str.equals("y")){
+				  fs.delete(outputPath, true);
+			  }
+			  else return 0;
 		}
 
 		JobConf job = new JobConf(getConf());
