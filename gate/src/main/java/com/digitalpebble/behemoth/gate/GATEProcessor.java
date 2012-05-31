@@ -47,6 +47,7 @@ import org.slf4j.LoggerFactory;
 
 import com.digitalpebble.behemoth.Annotation;
 import com.digitalpebble.behemoth.BehemothDocument;
+import com.digitalpebble.behemoth.DocumentFilter;
 import com.digitalpebble.behemoth.DocumentProcessor;
 
 /**
@@ -68,6 +69,8 @@ public class GATEProcessor implements DocumentProcessor {
     private GATEAnnotationFilters filters = null;
 
     private URL applicationDescriptorPath = null;
+    
+    private DocumentFilter docFilter = null;
 
     public GATEProcessor(URL appliPath) {
         applicationDescriptorPath = appliPath;
@@ -123,6 +126,13 @@ public class GATEProcessor implements DocumentProcessor {
             Reporter reporter) {
         if (reporter != null)
             reporter.setStatus("GATE : " + inputDoc.getUrl().toString());
+        
+        // skip processing document based on filter
+        boolean keep = docFilter.filter(inputDoc);
+        if (!keep){
+        	  reporter.incrCounter("GATE", "DOC SKIPPED BY FILTERS", 1);
+        	  return new BehemothDocument[]{};
+        }
 
         boolean clearAS = config.getBoolean("gate.emptyannotationset", false);
 
@@ -228,6 +238,9 @@ public class GATEProcessor implements DocumentProcessor {
 
             // load the annotation and feature filters from the configuration
             this.filters = GATEAnnotationFilters.getFilters(config);
+            
+            this.docFilter = DocumentFilter.getFilters(config);
+            
         } catch (Exception e) {
             LOG.error("Encountered error while initialising GATE", e);
             throw new RuntimeException(e);
