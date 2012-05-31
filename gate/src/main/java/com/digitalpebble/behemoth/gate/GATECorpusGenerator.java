@@ -33,6 +33,8 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.hadoop.conf.Configured;
+import org.apache.hadoop.fs.FileStatus;
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.SequenceFile.Reader;
 import org.apache.hadoop.io.Text;
@@ -49,94 +51,106 @@ import com.digitalpebble.behemoth.BehemothDocument;
  **/
 public class GATECorpusGenerator extends Configured implements Tool {
 
-    public GATECorpusGenerator() throws GateException {
-        Gate.runInSandbox(true);
-        Gate.init();
-    }
+	public GATECorpusGenerator() throws GateException {
+		Gate.runInSandbox(true);
+		Gate.init();
+	}
 
-    public static void main(String[] args) throws Exception {
-        int res = ToolRunner.run(BehemothConfiguration.create(),
-                new GATECorpusGenerator(), args);
-        System.exit(res);
-    }
+	public static void main(String[] args) throws Exception {
+		int res = ToolRunner.run(BehemothConfiguration.create(),
+				new GATECorpusGenerator(), args);
+		System.exit(res);
+	}
 
-    public int run(String[] args) throws Exception {
+	public int run(String[] args) throws Exception {
 
-        Options options = new Options();
-        // automatically generate the help statement
-        HelpFormatter formatter = new HelpFormatter();
-        // create the parser
-        CommandLineParser parser = new GnuParser();
+		Options options = new Options();
+		// automatically generate the help statement
+		HelpFormatter formatter = new HelpFormatter();
+		// create the parser
+		CommandLineParser parser = new GnuParser();
 
-        options.addOption("h", "help", false, "print this message");
-        options.addOption("i", "input", true, "Behemoth corpus");
-        options.addOption("o", "output", true, "GATE corpus dir");
+		options.addOption("h", "help", false, "print this message");
+		options.addOption("i", "input", true, "Behemoth corpus");
+		options.addOption("o", "output", true, "GATE corpus dir");
 
-        // parse the command line arguments
-        try {
-            CommandLine line = parser.parse(options, args);
-            String input = line.getOptionValue("i");
-            String output = line.getOptionValue("o");
-            if (line.hasOption("help")) {
-                formatter.printHelp("GATECorpusGenerator", options);
-                return 0;
-            }
-            if (input == null || output == null) {
-                formatter.printHelp("GATECorpusGenerator", options);
-                return -1;
-            }
-            generateXMLdocs(input, output);
+		// parse the command line arguments
+		try {
+			CommandLine line = parser.parse(options, args);
+			String input = line.getOptionValue("i");
+			String output = line.getOptionValue("o");
+			if (line.hasOption("help")) {
+				formatter.printHelp("GATECorpusGenerator", options);
+				return 0;
+			}
+			if (input == null || output == null) {
+				formatter.printHelp("GATECorpusGenerator", options);
+				return -1;
+			}
+			generateXMLdocs(input, output);
 
-        } catch (ParseException e) {
-            formatter.printHelp("GATECorpusGenerator", options);
-        }
-        return 0;
-    }
+		} catch (ParseException e) {
+			formatter.printHelp("GATECorpusGenerator", options);
+		}
+		return 0;
+	}
 
-    private void generateXMLdocs(String inputf, String outputf)
-            throws IOException {
-        Path input = new Path(inputf);
+	private void generateXMLdocs(String inputf, String outputf)
+			throws IOException {
+		Path input = new Path(inputf);
 
-        File output = new File(outputf);
-        if (output.exists() && output.isFile()) {
-            System.err.println("Output " + outputf + " already exists");
-            return;
-        }
-        if (output.exists() == false)
-            output.mkdirs();
+		File output = new File(outputf);
+		if (output.exists() && output.isFile()) {
+			System.err.println("Output " + outputf + " already exists");
+			return;
+		}
+		if (output.exists() == false)
+			output.mkdirs();
 
-        Reader[] cacheReaders = SequenceFileOutputFormat.getReaders(getConf(),
-                input);
-        for (Reader current : cacheReaders) {
-            // read the key + values in that file
-            Text key = new Text();
-            BehemothDocument inputDoc = new BehemothDocument();
-            int num = 0;
-            while (current.next(key, inputDoc)) {
-                num++;
-                // generate a GATE document then save it to XML
-                try {
-                    // first put the text
-                	GATEProcessor gp = new GATEProcessor(new URL("dummy"));
-                    gate.Document gatedocument = gp.generateGATEDoc(inputDoc);
+		FileSystem fs = input.getFileSystem(getConf());
+		FileStatus[] statuses = fs.listStatus(input);
+		for (int i = 0; i < statuses.length; i++) {
+			FileStatus status = statuses[i];
+			Path suPath = status.getPath();
+			generateXMLdocs(suPath, output);
+		}
+	}
 
-                    // then save as XML
-                    File outputFile = new File(output, num + ".xml");
-                    if (outputFile.exists() == false)
-                        outputFile.createNewFile();
+	private void generateXMLdocs(Path input, File dir) throws IOException {
 
-                    BufferedWriter writer = new BufferedWriter(new FileWriter(
-                            outputFile));
-                    writer.write(gatedocument.toXml());
-                    writer.close();
+		Reader[] cacheReaders = SequenceFileOutputFormat.getReaders(getConf(),
+				input);
+		for (Reader current : cacheReaders) {
+			// read the key + values in that file
+			Text key = new Text();
+			BehemothDocument inputDoc = new BehemothDocument();
+			int num = 0;
+			while (current.next(key, inputDoc)) {
+				num++;
+				// generate a GATE document then save it to XML
+				try {
+					// first put the text
+					GATEProcessor gp = new GATEProcessor(new URL(
+							"http://dummy.com"));
+					gate.Document gatedocument = gp.generateGATEDoc(inputDoc);
 
-                } catch (Exception e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
-                }
-            }
-            current.close();
-        }
-    }
+					// then save as XML
+					File outputFile = new File(dir, num + ".xml");
+					if (outputFile.exists() == false)
+						outputFile.createNewFile();
+
+					BufferedWriter writer = new BufferedWriter(new FileWriter(
+							outputFile));
+					writer.write(gatedocument.toXml());
+					writer.close();
+
+				} catch (Exception e) {
+					System.err.println("Exception on doc "+key.toString());
+					e.printStackTrace();
+				}
+			}
+			current.close();
+		}
+	}
 
 }
