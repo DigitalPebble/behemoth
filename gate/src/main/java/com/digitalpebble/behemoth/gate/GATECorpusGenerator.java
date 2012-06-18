@@ -17,6 +17,7 @@
 
 package com.digitalpebble.behemoth.gate;
 
+import gate.Factory;
 import gate.Gate;
 import gate.util.GateException;
 
@@ -143,9 +144,10 @@ public class GATECorpusGenerator extends Configured implements Tool {
 							outputFile));
 					writer.write(gatedocument.toXml());
 					writer.close();
-
+					
+					Factory.deleteResource(gatedocument);
 				} catch (Exception e) {
-					System.err.println("Exception on doc "+key.toString());
+					System.err.println("Exception on doc " + key.toString());
 					e.printStackTrace();
 				}
 			}
