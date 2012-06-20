@@ -19,14 +19,12 @@ package com.digitalpebble.behemoth;
 
 import java.io.IOException;
 import java.util.Iterator;
-import java.util.Map;
 
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reducer;
 import org.apache.hadoop.mapred.Reporter;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,28 +39,12 @@ public class BehemothReducer implements
 	public static final Logger LOG = LoggerFactory
 			.getLogger(BehemothReducer.class);
 
-	// prefix used to define the annotation types and (optionally) feature names
-	// to use for
-	// splitting a document into subdocuments
-	// if the value is empty - no feature constraint is done otherwise we expect
-	// the value to be a regular expression
-	// e.g. behemothreducer.splitter.annotation.div => class=page
-	public static final String docSplittingAnnotationParamName = "behemothreducer.splitter.annotation";
-
-	// true to copy the document features from the original document to the sub
-	// documents, false otherwise
-	public static final String transferDocFeaturesParamName = "behemothreducer.splitter.transfer.features";
-
-	private boolean splitterTransferFeatures = true;
-
 	private DocumentFilter docFilter;
 
-	public void configure(JobConf conf) {
-		splitterTransferFeatures = conf.getBoolean(
-				transferDocFeaturesParamName, true);
-		Map<String, String> annotSplitMap = conf
-				.getValByRegex(docSplittingAnnotationParamName + ".+");
+	private DocumentSplitter docSplitter;
 
+	public void configure(JobConf conf) {
+		this.docSplitter = DocumentSplitter.getSplitter(conf);
 		this.docFilter = DocumentFilter.getFilters(conf);
 	}
 
@@ -75,13 +57,21 @@ public class BehemothReducer implements
 
 		while (doc.hasNext()) {
 			BehemothDocument inputDoc = doc.next();
-			boolean keep = docFilter.keep(inputDoc);
-			if (!keep) {
-				reporter.incrCounter("BehemothReducer",
-						"DOC SKIPPED BY FILTERS", 1);
-				continue;
+
+			// TODO split THEN filter
+			BehemothDocument[] subdocs = docSplitter.split(inputDoc);
+			if (subdocs.length > 1) {
+				reporter.incrCounter("BehemothReducer", "DOC SPLITTED", 1);
 			}
-			output.collect(key, inputDoc);
+			for (BehemothDocument bdoc : subdocs) {
+				boolean keep = docFilter.keep(bdoc);
+				if (!keep) {
+					reporter.incrCounter("BehemothReducer",
+							"DOC SKIPPED BY FILTERS", 1);
+					continue;
+				}
+				output.collect(key, bdoc);
+			}
 		}
 
 	}
