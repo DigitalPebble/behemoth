@@ -44,6 +44,7 @@ import org.slf4j.LoggerFactory;
 
 import com.digitalpebble.behemoth.BehemothConfiguration;
 import com.digitalpebble.behemoth.BehemothDocument;
+import com.digitalpebble.behemoth.BehemothReducer;
 
 public class LanguageIdDriver extends Configured implements Tool {
 	private transient static Logger log = LoggerFactory
@@ -76,9 +77,12 @@ public class LanguageIdDriver extends Configured implements Tool {
 		options.addOption("h", "help", false, "print this message");
 		options.addOption("i", "input", true, "input file or directory");
 		options.addOption("o", "output", true, "output Behemoth corpus");
+		options.addOption("w", "overwrite", false, "overwrite the output");
 
 		Path inputPath = null;
 		Path outputPath = null;
+
+		boolean overWrite = false;
 
 		// parse the command line arguments
 		CommandLine cmdLine = null;
@@ -96,21 +100,21 @@ public class LanguageIdDriver extends Configured implements Tool {
 			}
 			inputPath = new Path(input);
 			outputPath = new Path(output);
+			if (cmdLine.hasOption("overwrite")) {
+				overWrite = true;
+			}
 		} catch (ParseException e) {
 			formatter.printHelp("LanguageIdDriver", options);
 		}
-		
+
 		// check whether needs overwriting
-		if (fs.exists(outputPath)){
-			  System.out.println("Output path "+outputPath + " already exists. Overwrite [y/n]?");
-			  InputStreamReader inp = new InputStreamReader(System.in);
-			  BufferedReader br = new BufferedReader(inp);
-			  String str = br.readLine();
-			  br.close();
-			  if (str.equals("y")){
-				  fs.delete(outputPath, true);
-			  }
-			  else return 0;
+		if (fs.exists(outputPath)) {
+			if (!overWrite) {
+				System.out.println("Output path " + outputPath
+						+ " already exists. Use option -w to overwrite.");
+				return 0;
+			} else
+				fs.delete(outputPath, true);
 		}
 
 		JobConf job = new JobConf(getConf());
@@ -128,7 +132,8 @@ public class LanguageIdDriver extends Configured implements Tool {
 
 		job.setMapperClass(LanguageIdMapper.class);
 
-		job.setNumReduceTasks(0);
+		// TODO make this optional based on presence of parameters
+		job.setReducerClass(BehemothReducer.class);
 
 		FileInputFormat.addInputPath(job, inputPath);
 		FileOutputFormat.setOutputPath(job, outputPath);
