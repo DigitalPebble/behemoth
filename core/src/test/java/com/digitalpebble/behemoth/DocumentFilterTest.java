@@ -20,11 +20,11 @@ public class DocumentFilterTest extends TestCase {
 
 		BehemothDocument doc = new BehemothDocument();
 		doc.getMetadata(true).put(new Text("lang"), new Text("en"));
-		boolean kept = filter.filter(doc);
+		boolean kept = filter.keep(doc);
 		assertEquals(true, kept);
 
 		doc.getMetadata(true).put(new Text("lang"), new Text("fr"));
-		kept = filter.filter(doc);
+		kept = filter.keep(doc);
 		assertEquals(false, kept);
 
 		// negative filters
@@ -34,11 +34,11 @@ public class DocumentFilterTest extends TestCase {
 				".+");
 
 		filter = DocumentFilter.getFilters(config);
-		kept = filter.filter(doc);
+		kept = filter.keep(doc);
 		assertEquals(false, kept);
 
 		doc = new BehemothDocument();
-		kept = filter.filter(doc);
+		kept = filter.keep(doc);
 		assertEquals(true, kept);
 
 	}
@@ -51,11 +51,11 @@ public class DocumentFilterTest extends TestCase {
 		DocumentFilter filter = DocumentFilter.getFilters(config);
 		BehemothDocument doc = new BehemothDocument();
 		doc.getMetadata(true).put(new Text("lang"), new Text("en"));
-		boolean kept = filter.filter(doc);
+		boolean kept = filter.keep(doc);
 		assertEquals(false, kept);
 
 		doc = new BehemothDocument();
-		kept = filter.filter(doc);
+		kept = filter.keep(doc);
 		assertEquals(true, kept);
 
 	}

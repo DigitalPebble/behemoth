@@ -92,7 +92,10 @@ public class DocumentFilter {
 	}
 
 	/** Returns true if the document can be kept, false otherwise **/
-	public boolean filter(BehemothDocument input) {
+	public boolean keep(BehemothDocument input) {
+		// filter if null
+		if (input==null) return false;
+		
 		MapWritable metadata = input.getMetadata();
 		// no rules at all -> fine!
 		if (KVpatterns.size() == 0)

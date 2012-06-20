@@ -38,6 +38,7 @@ import org.apache.hadoop.util.ToolRunner;
 
 import com.digitalpebble.behemoth.BehemothConfiguration;
 import com.digitalpebble.behemoth.BehemothDocument;
+import com.digitalpebble.behemoth.BehemothReducer;
 
 public class GATEDriver extends Configured implements Tool {
     private static final Logger LOG = LoggerFactory.getLogger(GATEDriver.class);
@@ -105,7 +106,10 @@ public class GATEDriver extends Configured implements Tool {
             job.setMapperClass(GATEMapper.class);
         }
 
-        job.setNumReduceTasks(0);
+        // job.setNumReduceTasks(0);
+        // TODO detect if any filters or splitters have been defined
+        // and activate the reducer accordingly
+        job.setReducerClass(BehemothReducer.class);
 
         FileInputFormat.addInputPath(job, inputPath);
         FileOutputFormat.setOutputPath(job, outputPath);
