@@ -6,6 +6,8 @@ mvn clean package
 
 hadoop jar $behe_home/core/target/behemoth-core-1.0-SNAPSHOT-job.jar com.digitalpebble.behemoth.util.CorpusGenerator -i $behe_home/gate/src/test/resources/docs -o textcorpus
 
+hadoop jar $behe_home/core/target/behemoth-core-1.0-SNAPSHOT-job.jar com.digitalpebble.behemoth.util.CorpusGenerator -i $behe_home/gate/src/test/resources/docs -o textcorpus
+
 # have a quick look at the content
 hadoop fs -libjars $behe_home/core/target/behemoth-core-1.0-SNAPSHOT-job.jar -text textcorpus
 
@@ -23,6 +25,9 @@ hadoop jar $behe_home/$module/target/behemoth-$module-1.0-SNAPSHOT-job.jar com.d
 # process with Language-ID
 module=language-id
 hadoop jar $behe_home/$module/target/behemoth-$module-1.0-SNAPSHOT-job.jar com.digitalpebble.behemoth.languageidentification.LanguageIdDriver -i textcorpusTika -o textcorpusTikaLang
+
+# same but filter on language 
+hadoop jar $behe_home/$module/target/behemoth-$module-1.0-SNAPSHOT-job.jar com.digitalpebble.behemoth.languageidentification.LanguageIdDriver -D document.filter.md.keep.lang=en -i textcorpusTika -o -o textcorpusTika-EN
 
 # process with UIMA
 module=uima

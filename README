@@ -3,7 +3,7 @@ Behemoth is an open source platform for large scale document processing based on
 It consists of a simple annotation-based implementation of a document and a number of modules operating on these documents.
 One of the main aspects of Behemoth is to simplify the deployment of document analysers on a large scale but also to provide reusable modules for :
 - ingesting from common data sources (Warc, Nutch, etc...)
-- text processing (Tika, UIMA, GATE)
+- text processing (Tika, UIMA, GATE, Language Identification)
 - generating output for external tools (SOLR, Mahout)
 
 Its modular architecture simplifies the development of custom annotators based on MapReduce.
