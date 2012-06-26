@@ -9,6 +9,7 @@
     <packaging>pom</packaging>
     <version>1.0</version>
     <name>Behemoth Parent</name>
+    <description>Parent module for Behemoth</description>  
 
     <modules>
         <module>core</module>
@@ -20,6 +21,27 @@
         <module>solr</module>
         <module>language-id</module>
     </modules>
+
+  <licenses>
+    <license>
+      <name>The Apache Software License, Version 2.0</name>
+      <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
+  
+  <scm>
+    <url>https://github.com/DigitalPebble/behemoth</url>
+    <connection>https://github.com/DigitalPebble/behemoth.git</connection>
+  </scm>
+  
+  <developers>
+    <developer>
+      <id>jnioche</id>
+      <name>Julien Nioche</name>
+      <email>julien@digitalpebble.com</email>
+    </developer>
+  </developers>
 
     <build>
         <pluginManagement>

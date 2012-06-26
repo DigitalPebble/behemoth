@@ -13,7 +13,9 @@
   <packaging>jar</packaging>
 
   <name>core</name>
-  <url>https://github.com/jnioche/behemoth/wiki/Core-module</url>
+  <description>Core module for Behemoth</description>  
+  
+  <url>https://github.com/DigitalPebble/behemoth/wiki/Core-module</url>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -57,7 +59,7 @@
 	<groupId>org.apache.commons</groupId>
 	<artifactId>commons-compress</artifactId>
 	<version>1.3</version>
-</dependency>
+    </dependency>
   </dependencies>
 
 </project>
