@@ -33,13 +33,12 @@ import org.apache.hadoop.mapred.JobClient;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.SequenceFileInputFormat;
 import org.apache.hadoop.mapred.SequenceFileOutputFormat;
-import org.apache.hadoop.mapred.lib.IdentityMapper;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 
 import com.digitalpebble.behemoth.BehemothConfiguration;
 import com.digitalpebble.behemoth.BehemothDocument;
-import com.digitalpebble.behemoth.BehemothReducer;
+import com.digitalpebble.behemoth.BehemothMapper;
 
 /**
  * Utility class used to filter the content of a Behemoth SequenceFile.
@@ -102,17 +101,15 @@ public class CorpusFilter extends Configured implements Tool {
 		job.setOutputKeyClass(Text.class);
 		job.setOutputValueClass(BehemothDocument.class);
 
-		job.setMapperClass(IdentityMapper.class);
-
-		boolean isFilterRequired = BehemothReducer.isRequired(job);
+		boolean isFilterRequired = BehemothMapper.isRequired(job);
 		// should be the case here
-		if (isFilterRequired)
-			job.setReducerClass(BehemothReducer.class);
-		else
-		{
-			System.err.println("No filters or splitters configured. Check your behemoth-site.xml");
+		if (!isFilterRequired) {
+			System.err
+					.println("No filters configured. Check your behemoth-site.xml");
 			return -1;
 		}
+		job.setMapperClass(BehemothMapper.class);
+		job.setNumReduceTasks(0);
 
 		FileInputFormat.addInputPath(job, inputPath);
 		FileOutputFormat.setOutputPath(job, outputPath);
