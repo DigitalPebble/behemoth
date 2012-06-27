@@ -45,8 +45,8 @@ public class DocumentFilter {
 
 	public static final String DocumentFilterParamNamePrefixKeep = "document.filter.md.keep.";
 	public static final String DocumentFilterParamNamePrefixSkip = "document.filter.md.skip.";
-	public static final String DocumentFilterParamNameURLFilterKeep = "document.filter.url.keep.";
-	public static final String DocumentFilterParamNameMimeTypeFilterKeep = "document.filter.mimetype.keep.";
+	public static final String DocumentFilterParamNameURLFilterKeep = "document.filter.url.keep";
+	public static final String DocumentFilterParamNameMimeTypeFilterKeep = "document.filter.mimetype.keep";
 
 	private Map<String, String> KVpatterns = new HashMap<String, String>();
 
