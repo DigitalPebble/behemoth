@@ -17,6 +17,7 @@
 package com.digitalpebble.behemoth;
 
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.mapred.JobConf;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -50,6 +51,14 @@ public class DocumentSplitter {
 
 	private String splittingannot;
 
+	/**
+	 * Checks whether any splitters have been specified in the configuration
+	 **/
+	public static boolean isRequired(JobConf conf) {
+		DocumentSplitter splitter = DocumentSplitter.getSplitter(conf);
+		return splitter.splittingannot.length() > 0;
+	}
+
 	// Builds a document filter given a conf object
 	public static DocumentSplitter getSplitter(Configuration conf) {
 
@@ -59,7 +68,7 @@ public class DocumentSplitter {
 				transferDocFeaturesParamName, true);
 
 		// get the annotation to use for splitting
-		splitter.splittingannot = conf.get(docSplittingAnnotationParamName);
+		splitter.splittingannot = conf.get(docSplittingAnnotationParamName, "");
 
 		LOG.info("Splitting into subdocs with " + splitter.splittingannot);
 
@@ -70,7 +79,7 @@ public class DocumentSplitter {
 
 		// need to sort the annotations
 		AnnotationsUtil.sort(input.getAnnotations());
-		
+
 		// TODO if has only one span matching AND covers the whole text
 		// return existing doc
 

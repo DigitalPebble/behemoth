@@ -77,4 +77,29 @@ public class DocumentFilterTest extends TestCase {
 
 	}
 
+	public void testURLFilter() {
+		Configuration config = BehemothConfiguration.create();
+		config.set(DocumentFilter.DocumentFilterParamNameURLFilterKeep, ".+");
+
+		// no URL set - must fail
+		DocumentFilter filter = DocumentFilter.getFilters(config);
+		BehemothDocument doc = new BehemothDocument();
+		doc.getMetadata(true).put(new Text("lang"), new Text("en"));
+		boolean kept = filter.keep(doc);
+		assertEquals(false, kept);
+
+		doc = new BehemothDocument();
+		doc.setUrl("any random rubbish will do");
+		kept = filter.keep(doc);
+		assertEquals(true, kept);
+	}
+	
+	public void testURLFilterRequired() {
+		Configuration config = BehemothConfiguration.create();
+		// no filters set : must fail
+		assertEquals(false, DocumentFilter.isRequired(config));
+		config.set(DocumentFilter.DocumentFilterParamNameURLFilterKeep, ".+");
+		assertEquals(true, DocumentFilter.isRequired(config));
+	}
+
 }

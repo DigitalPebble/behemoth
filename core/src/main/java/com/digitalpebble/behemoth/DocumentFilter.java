@@ -20,10 +20,14 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.logging.Filter;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.io.Writable;
+import org.apache.hadoop.mapred.JobConf;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,7 +35,8 @@ import org.slf4j.LoggerFactory;
  * Filters used by Mappers / Reducers to skip Behemoth documents based on their
  * metadata. Can have either positive or negative filters but not both. The
  * filters values are regular expressions and the document will be kept or
- * skipped if it matches ANY of the filters.
+ * skipped if it matches ANY of the filters. It can filter based on the document
+ * URL and or mime-type using regular expressions.
  **/
 public class DocumentFilter {
 
@@ -40,10 +45,30 @@ public class DocumentFilter {
 
 	public static final String DocumentFilterParamNamePrefixKeep = "document.filter.md.keep.";
 	public static final String DocumentFilterParamNamePrefixSkip = "document.filter.md.skip.";
+	public static final String DocumentFilterParamNameURLFilterKeep = "document.filter.url.keep.";
+	public static final String DocumentFilterParamNameMimeTypeFilterKeep = "document.filter.mimetype.keep.";
 
 	private Map<String, String> KVpatterns = new HashMap<String, String>();
 
 	private boolean negativeMode = true;
+
+	private Pattern URLRegex;
+	
+	private Pattern MimetypeRegex;
+
+	/**
+	 * Checks whether any splitters have been specified in the configuration
+	 **/
+	public static boolean isRequired(Configuration conf) {
+		DocumentFilter fitler = DocumentFilter.getFilters(conf);
+		if (fitler.KVpatterns.size() > 0)
+			return true;
+		if (fitler.URLRegex != null)
+			return true;
+		if (fitler.MimetypeRegex != null)
+			return true;
+		return false;
+	}
 
 	// Builds a document filter given a conf object
 	public static DocumentFilter getFilters(Configuration conf) {
@@ -88,14 +113,49 @@ public class DocumentFilter {
 			filter.KVpatterns.put(k, v);
 		}
 
+		String URLPatternS = conf.get(DocumentFilterParamNameURLFilterKeep, "");
+		if (URLPatternS.length() > 0) {
+			try {
+				filter.URLRegex = Pattern.compile(URLPatternS);
+			} catch (PatternSyntaxException e) {
+				filter.URLRegex = null;
+				LOG.error("Can't create regular expression for URL from " + URLPatternS);
+			}
+		}
+		
+		String MTPatternS = conf.get(DocumentFilterParamNameMimeTypeFilterKeep, "");
+		if (MTPatternS.length() > 0) {
+			try {
+				filter.MimetypeRegex = Pattern.compile(MTPatternS);
+			} catch (PatternSyntaxException e) {
+				filter.MimetypeRegex = null;
+				LOG.error("Can't create regular expression for MimeType from " + MTPatternS);
+			}
+		}
+
 		return filter;
 	}
 
 	/** Returns true if the document can be kept, false otherwise **/
 	public boolean keep(BehemothDocument input) {
 		// filter if null
-		if (input==null) return false;
+		if (input == null)
+			return false;
 		
+		// check on the URL
+		if (URLRegex!=null){
+			if (input.getUrl()==null) return false;
+			boolean match = URLRegex.matcher(input.getUrl()).matches();
+			if (!match) return false;
+		}
+		
+		// check on the MimeType
+		if (MimetypeRegex!=null){
+			if (input.getContentType()==null) return false;
+			boolean match = MimetypeRegex.matcher(input.getContentType()).matches();
+			if (!match) return false;
+		}
+
 		MapWritable metadata = input.getMetadata();
 		// no rules at all -> fine!
 		if (KVpatterns.size() == 0)

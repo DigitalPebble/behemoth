@@ -43,6 +43,16 @@ public class BehemothReducer implements
 
 	private DocumentSplitter docSplitter;
 
+	/**
+	 * Checks whether any filters or splitters have been specified in the
+	 * configuration
+	 **/
+	public static boolean isRequired(JobConf conf) {
+		if (DocumentSplitter.isRequired(conf)) return true;
+		if (DocumentFilter.isRequired(conf)) return true;
+		return false;
+	}
+
 	public void configure(JobConf conf) {
 		this.docSplitter = DocumentSplitter.getSplitter(conf);
 		this.docFilter = DocumentFilter.getFilters(conf);
