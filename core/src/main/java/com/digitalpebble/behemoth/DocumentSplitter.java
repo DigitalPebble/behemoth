@@ -69,8 +69,10 @@ public class DocumentSplitter {
 
 		// get the annotation to use for splitting
 		splitter.splittingannot = conf.get(docSplittingAnnotationParamName, "");
-
-		LOG.info("Splitting into subdocs with " + splitter.splittingannot);
+		if (splitter.splittingannot.length() > 0)
+			LOG.info("Splitting into subdocs with : " + splitter.splittingannot);
+		else
+			LOG.info("No splitting into subdocs");
 
 		return splitter;
 	}
