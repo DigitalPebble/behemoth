@@ -57,8 +57,11 @@ public class CorpusReader extends Configured implements Tool {
 
 		options.addOption("h", "help", false, "print this message");
 		options.addOption("i", "input", true, "input Behemoth corpus");
-		options.addOption("s", "showBinaryContent", false,
+		options.addOption("c", "displayContent", false,
 				"display binary content in output");
+		options.addOption("t", "displayText", false, "display text in output");
+		options.addOption("a", "displayAnnotations", false,
+				"display annotations in output");
 
 		// parse the command line arguments
 		CommandLine line = null;
@@ -77,7 +80,9 @@ public class CorpusReader extends Configured implements Tool {
 			formatter.printHelp("CorpusReader", options);
 		}
 
-		boolean showBinaryContent = line.hasOption("showBinaryContent");
+		boolean showBinaryContent = line.hasOption("displayContent");
+		boolean showText = line.hasOption("displayText");
+		boolean showAnnotations = line.hasOption("displayAnnotations");
 
 		Path inputPath = new Path(line.getOptionValue("i"));
 
@@ -94,7 +99,8 @@ public class CorpusReader extends Configured implements Tool {
 			Text key = new Text();
 			BehemothDocument value = new BehemothDocument();
 			while (reader.next(key, value)) {
-				System.out.println(value.toString(showBinaryContent));
+				System.out.println(value.toString(showBinaryContent,
+						showAnnotations, showBinaryContent));
 			}
 			reader.close();
 		}

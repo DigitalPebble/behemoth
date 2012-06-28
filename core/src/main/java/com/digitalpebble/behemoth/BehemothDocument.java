@@ -280,10 +280,15 @@ public class BehemothDocument implements Writable {
 
 	/** By default includes the binary content in the string representation **/
 	public String toString() {
-		return toString(true);
+		return toString(true, true, true);
 	}
 
 	public String toString(boolean binaryContent) {
+		return toString(binaryContent, true, true);
+	}
+
+	public String toString(boolean showContent, boolean showAnnotations,
+			boolean showText) {
 		StringBuffer buffer = new StringBuffer();
 
 		buffer.append("\nurl: ").append(url);
@@ -297,7 +302,7 @@ public class BehemothDocument implements Writable {
 				buffer.append(e.getValue());
 			}
 		}
-		if (binaryContent) {
+		if (showContent) {
 			buffer.append("\nContent:\n");
 			int maxLengthText = Math.min(200, content.length);
 			buffer.append(new String(content).substring(0, maxLengthText));
@@ -305,12 +310,12 @@ public class BehemothDocument implements Writable {
 		// try
 		// default
 		// encoding
-		if (this.text != null) {
+		if (this.text != null && showText) {
 			buffer.append("\nText:\n");
 			int maxLengthText = Math.min(200, text.length());
 			buffer.append(text.substring(0, maxLengthText));
 		}
-		if (annotations == null)
+		if (annotations == null || !showAnnotations)
 			return buffer.toString();
 		buffer.append("\nAnnotations:\n");
 		for (Annotation ann : annotations) {

@@ -73,7 +73,7 @@ public class GATECorpusGenerator extends Configured implements Tool {
 
         options.addOption("h", "help", false, "print this message");
         options.addOption("i", "input", true, "Behemoth corpus");
-        options.addOption("o", "output", true, "GATE corpus dir");
+        options.addOption("o", "output", true, "local GATE XML corpus dir");
 
         // parse the command line arguments
         try {
@@ -113,6 +113,8 @@ public class GATECorpusGenerator extends Configured implements Tool {
         for (int i = 0; i < statuses.length; i++) {
             FileStatus status = statuses[i];
             Path suPath = status.getPath();
+            if (suPath.getName().equals("_SUCCESS"))
+                continue;
             generateXMLdocs(suPath, output);
         }
     }
