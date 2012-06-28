@@ -37,10 +37,10 @@ public class GATEProcessorTest extends TestCase {
     private GATEProcessor gate = null;
 
     public void setUp() throws Exception {
-        java.net.URL archive =
-            getClass().getClassLoader().getResource("ANNIE.zip");       
+        java.net.URL archive = getClass().getClassLoader().getResource(
+                "ANNIE.zip");
         File ANNIEApp = new File(archive.toURI());
-	System.out.println(ANNIEApp.toString());
+        System.out.println(ANNIEApp.toString());
         File unzippedANNIE = unzip(ANNIEApp);
         File appDescriptor = new File(unzippedANNIE, "application.xgapp");
         // try loading the GATE Processor

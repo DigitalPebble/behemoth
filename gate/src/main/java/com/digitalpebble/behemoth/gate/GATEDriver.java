@@ -90,7 +90,7 @@ public class GATEDriver extends Configured implements Tool {
         // MUST not forget the line below
         job.setJarByClass(this.getClass());
 
-        job.setJobName("Processing "+args[0]+" with GATE application from "
+        job.setJobName("Processing " + args[0] + " with GATE application from "
                 + zip_application_path);
 
         job.setInputFormat(SequenceFileInputFormat.class);

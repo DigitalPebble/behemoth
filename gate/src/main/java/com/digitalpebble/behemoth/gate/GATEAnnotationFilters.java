@@ -28,8 +28,6 @@ import java.util.Set;
 
 import org.apache.hadoop.conf.Configuration;
 
-import com.digitalpebble.behemoth.Annotation;
-
 /** Container for the annotation filters which is built from **/
 
 public class GATEAnnotationFilters {
@@ -37,13 +35,15 @@ public class GATEAnnotationFilters {
     HashSet<String> types;
     Map<String, Set<String>> featfilts;
     String annotationSetName;
+    HashSet<String> docFeatureNames;
 
     public static GATEAnnotationFilters getFilters(Configuration config) {
         GATEAnnotationFilters filter = new GATEAnnotationFilters();
 
         filter.annotationSetName = config.get("gate.annotationset.output", "");
-        String[] stypes = config.get("gate.annotations.filter", "").split(",");
-        String[] sFeatFilt = config.get("gate.features.filter", "").split(",");
+        String[] stypes = config.getStrings("gate.annotations.filter", "");
+        String[] sFeatFilt = config.getStrings("gate.features.filter", "");
+        String[] docFeatFilt = config.getStrings("gate.docfeatures.filter", "");
 
         // the featurefilters have the following form : Type.featureName
         filter.featfilts = new HashMap<String, Set<String>>();
@@ -61,7 +61,16 @@ public class GATEAnnotationFilters {
 
         filter.types = new HashSet<String>();
         for (String s : stypes) {
-            filter.types.add(s);
+            s = s.trim();
+            if (s.length() > 0)
+                filter.types.add(s);
+        }
+
+        filter.docFeatureNames = new HashSet<String>();
+        for (String s : docFeatFilt) {
+            s = s.trim();
+            if (s.length() > 0)
+                filter.docFeatureNames.add(s);
         }
 
         return filter;
@@ -71,7 +80,11 @@ public class GATEAnnotationFilters {
         return types;
     }
 
-    public Map<String, Set<String>> getFeatfilts() {
+    public HashSet<String> getDocFeaturesFilter() {
+        return docFeatureNames;
+    }
+
+    public Map<String, Set<String>> getFeatureFilters() {
         return featfilts;
     }
 
