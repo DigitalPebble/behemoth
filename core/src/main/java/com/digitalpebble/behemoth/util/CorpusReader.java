@@ -35,6 +35,7 @@ import org.apache.hadoop.util.ToolRunner;
 
 import com.digitalpebble.behemoth.BehemothConfiguration;
 import com.digitalpebble.behemoth.BehemothDocument;
+import com.digitalpebble.behemoth.DocumentFilter;
 
 /**
  * Utility class used to read the content of a Behemoth SequenceFile.
@@ -88,6 +89,11 @@ public class CorpusReader extends Configured implements Tool {
 
 		Configuration conf = getConf();
 		FileSystem fs = FileSystem.get(conf);
+
+		// filter input
+		DocumentFilter filters = DocumentFilter.getFilters(conf);
+		boolean doFilter = DocumentFilter.isRequired(conf);
+
 		FileStatus[] fss = fs.listStatus(inputPath);
 		for (FileStatus status : fss) {
 			Path path = status.getPath();
@@ -99,8 +105,12 @@ public class CorpusReader extends Configured implements Tool {
 			Text key = new Text();
 			BehemothDocument value = new BehemothDocument();
 			while (reader.next(key, value)) {
+				// skip this document?
+				if (doFilter && filters.keep(value) == false)
+					continue;
+
 				System.out.println(value.toString(showBinaryContent,
-						showAnnotations, showBinaryContent));
+						showAnnotations, showText));
 			}
 			reader.close();
 		}

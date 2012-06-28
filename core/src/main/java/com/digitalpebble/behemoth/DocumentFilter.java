@@ -20,14 +20,12 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.logging.Filter;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.io.Writable;
-import org.apache.hadoop.mapred.JobConf;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
