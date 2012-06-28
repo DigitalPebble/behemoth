@@ -79,6 +79,7 @@ public class CorpusReader extends Configured implements Tool {
 			}
 		} catch (ParseException e) {
 			formatter.printHelp("CorpusReader", options);
+			return -1;
 		}
 
 		boolean showBinaryContent = line.hasOption("displayContent");

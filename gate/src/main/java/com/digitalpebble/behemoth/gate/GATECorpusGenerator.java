@@ -42,6 +42,8 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.SequenceFileOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.digitalpebble.behemoth.BehemothConfiguration;
 import com.digitalpebble.behemoth.BehemothDocument;
@@ -52,6 +54,9 @@ import com.digitalpebble.behemoth.BehemothDocument;
  **/
 public class GATECorpusGenerator extends Configured implements Tool {
 
+    private static final Logger LOG = LoggerFactory
+            .getLogger(GATECorpusGenerator.class);
+    
     public GATECorpusGenerator() throws GateException {
         Gate.runInSandbox(true);
         Gate.init();
@@ -110,16 +115,18 @@ public class GATECorpusGenerator extends Configured implements Tool {
 
         FileSystem fs = input.getFileSystem(getConf());
         FileStatus[] statuses = fs.listStatus(input);
+        int count[] = { 0 };
         for (int i = 0; i < statuses.length; i++) {
             FileStatus status = statuses[i];
             Path suPath = status.getPath();
             if (suPath.getName().equals("_SUCCESS"))
                 continue;
-            generateXMLdocs(suPath, output);
+            generateXMLdocs(suPath, output, count);
         }
     }
 
-    private void generateXMLdocs(Path input, File dir) throws IOException {
+    private void generateXMLdocs(Path input, File dir, int[] count)
+            throws IOException {
 
         Reader[] cacheReaders = SequenceFileOutputFormat.getReaders(getConf(),
                 input);
@@ -127,30 +134,32 @@ public class GATECorpusGenerator extends Configured implements Tool {
             // read the key + values in that file
             Text key = new Text();
             BehemothDocument inputDoc = new BehemothDocument();
-            int num = 0;
+            BufferedWriter writer = null;
+            gate.Document gatedocument = null;
             while (current.next(key, inputDoc)) {
-                num++;
+                count[0]++;
                 // generate a GATE document then save it to XML
                 try {
                     // first put the text
                     GATEProcessor gp = new GATEProcessor(new URL(
                             "http://dummy.com"));
-                    gate.Document gatedocument = gp.generateGATEDoc(inputDoc);
+                    gatedocument = gp.generateGATEDoc(inputDoc);
 
                     // then save as XML
-                    File outputFile = new File(dir, num + ".xml");
+                    File outputFile = new File(dir, count[0] + ".xml");
                     if (outputFile.exists() == false)
                         outputFile.createNewFile();
 
-                    BufferedWriter writer = new BufferedWriter(new FileWriter(
-                            outputFile));
+                    writer = new BufferedWriter(new FileWriter(outputFile));
                     writer.write(gatedocument.toXml());
-                    writer.close();
 
-                    Factory.deleteResource(gatedocument);
                 } catch (Exception e) {
-                    System.err.println("Exception on doc " + key.toString());
-                    e.printStackTrace();
+                    LOG.error("Exception on doc ["+count[0]+"] " + key.toString(), e);
+                } finally {
+                    if (writer != null)
+                        writer.close();
+                    if (gatedocument != null)
+                        Factory.deleteResource(gatedocument);
                 }
             }
             current.close();
