@@ -59,7 +59,10 @@ public class TikaProcessor implements DocumentProcessor, TikaConstants {
 
     private MimeTypes mimetypes = TikaConfig.getDefaultConfig()
             .getMimeRepository();
-  private Detector detector = TikaConfig.getDefaultConfig().getDetector();
+    private Detector detector = TikaConfig.getDefaultConfig().getDetector();
+
+    private int contentLengthThresholdFilter = -1;
+    private static String contentLengthThresholdFilterParamName = "tika.filter.content.byte";
 
     public Configuration getConf() {
         return config;
@@ -68,6 +71,8 @@ public class TikaProcessor implements DocumentProcessor, TikaConstants {
     public void setConf(Configuration conf) {
         config = conf;
         mimeType = config.get(TIKA_MIME_TYPE_KEY);
+        contentLengthThresholdFilter = config.getInt(
+                contentLengthThresholdFilterParamName, -1);
     }
 
     public void close() {
@@ -84,7 +89,10 @@ public class TikaProcessor implements DocumentProcessor, TikaConstants {
         if (inputDoc.getContent() == null && inputDoc.getText() == null) {
             LOG.info("No content or text for " + inputDoc.getUrl()
                     + " skipping");
-            return null;
+            if (reporter != null)
+                reporter.getCounter("TIKA", "NO CONTENT OR TEXT").increment(
+                        1);
+            return new BehemothDocument[] { inputDoc };
         }
 
         // determine the content type if missing
@@ -95,18 +103,21 @@ public class TikaProcessor implements DocumentProcessor, TikaConstants {
             if (mimeType == null) {
                 if (inputDoc.getContent() != null) {
 
-                  Metadata meta = new Metadata();
-                  meta.set(Metadata.RESOURCE_NAME_KEY, inputDoc.getUrl());
-                  MimeType mimetype = null;
-                  try {
-                    MediaType mediaType = detector.detect(new ByteArrayInputStream(inputDoc.getContent()), meta);
-                    mimetype = mimetypes.forName(mediaType.getType() + "/" + mediaType.getSubtype());
-                  } catch (IOException e) {
-                    LOG.error("Exception", e);
-                  } catch (MimeTypeException e) {
-                    LOG.error("Exception", e);
-                  }
-                  mt = mimetype.getName();
+                    Metadata meta = new Metadata();
+                    meta.set(Metadata.RESOURCE_NAME_KEY, inputDoc.getUrl());
+                    MimeType mimetype = null;
+                    try {
+                        MediaType mediaType = detector
+                                .detect(new ByteArrayInputStream(inputDoc
+                                        .getContent()), meta);
+                        mimetype = mimetypes.forName(mediaType.getType() + "/"
+                                + mediaType.getSubtype());
+                    } catch (IOException e) {
+                        LOG.error("Exception", e);
+                    } catch (MimeTypeException e) {
+                        LOG.error("Exception", e);
+                    }
+                    mt = mimetype.getName();
                 } else if (inputDoc.getText() != null) {
                     // force it to text
                     mt = "text/plain";
@@ -125,8 +136,23 @@ public class TikaProcessor implements DocumentProcessor, TikaConstants {
         Parser parser = TikaConfig.getDefaultConfig().getParser();
 
         // skip the processing if the input document already has some text
-        if (inputDoc.getText() != null)
+        if (inputDoc.getText() != null) {
+            if (reporter != null)
+                reporter.getCounter("TIKA",
+                        "TEXT ALREADY AVAILABLE").increment(1);
             return new BehemothDocument[] { inputDoc };
+        }
+
+        // filter based on content length
+        // optional
+        int length = inputDoc.getContent().length;
+        if (contentLengthThresholdFilter != -1
+                && length > contentLengthThresholdFilter) {
+            if (reporter != null)
+                reporter.getCounter("TIKA", "FILTERED-CONTENT-LENGTH").increment(
+                        1);
+            return new BehemothDocument[] { inputDoc };
+        }
 
         // otherwise parse the document and retrieve the text, metadata and
         // markup annotations
