@@ -63,6 +63,8 @@ public class CorpusReader extends Configured implements Tool {
 		options.addOption("t", "displayText", false, "display text in output");
 		options.addOption("a", "displayAnnotations", false,
 				"display annotations in output");
+		options.addOption("m", "displayMetadata", false,
+				"display metadata in output");
 
 		// parse the command line arguments
 		CommandLine line = null;
@@ -85,6 +87,7 @@ public class CorpusReader extends Configured implements Tool {
 		boolean showBinaryContent = line.hasOption("displayContent");
 		boolean showText = line.hasOption("displayText");
 		boolean showAnnotations = line.hasOption("displayAnnotations");
+		boolean showMD = line.hasOption("displayMetadata");
 
 		Path inputPath = new Path(line.getOptionValue("i"));
 
@@ -111,7 +114,7 @@ public class CorpusReader extends Configured implements Tool {
 					continue;
 
 				System.out.println(value.toString(showBinaryContent,
-						showAnnotations, showText));
+						showAnnotations, showText, showMD));
 			}
 			reader.close();
 		}

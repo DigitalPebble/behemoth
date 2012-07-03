@@ -280,21 +280,21 @@ public class BehemothDocument implements Writable {
 
 	/** By default includes the binary content in the string representation **/
 	public String toString() {
-		return toString(true, true, true);
+		return toString(true, true, true, true);
 	}
 
 	public String toString(boolean binaryContent) {
-		return toString(binaryContent, true, true);
+		return toString(binaryContent, true, true, true);
 	}
 
 	public String toString(boolean showContent, boolean showAnnotations,
-			boolean showText) {
+			boolean showText, boolean showMD) {
 		StringBuffer buffer = new StringBuffer();
 
 		buffer.append("\nurl: ").append(url);
 		buffer.append("\ncontentType: ").append(contentType);
-		buffer.append("\nmetadata: ");
-		if (metadata != null) {
+		if (metadata != null && showMD) {
+			buffer.append("\nmetadata: ");
 			for (Entry<Writable, Writable> e : metadata.entrySet()) {
 				buffer.append("\n\t");
 				buffer.append(e.getKey());
