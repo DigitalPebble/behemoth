@@ -26,7 +26,6 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.Reporter;
-import org.apache.tika.Tika;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.metadata.Metadata;
@@ -90,8 +89,7 @@ public class TikaProcessor implements DocumentProcessor, TikaConstants {
             LOG.info("No content or text for " + inputDoc.getUrl()
                     + " skipping");
             if (reporter != null)
-                reporter.getCounter("TIKA", "NO CONTENT OR TEXT").increment(
-                        1);
+                reporter.getCounter("TIKA", "NO CONTENT OR TEXT").increment(1);
             return new BehemothDocument[] { inputDoc };
         }
 
@@ -138,8 +136,8 @@ public class TikaProcessor implements DocumentProcessor, TikaConstants {
         // skip the processing if the input document already has some text
         if (inputDoc.getText() != null) {
             if (reporter != null)
-                reporter.getCounter("TIKA",
-                        "TEXT ALREADY AVAILABLE").increment(1);
+                reporter.getCounter("TIKA", "TEXT ALREADY AVAILABLE")
+                        .increment(1);
             return new BehemothDocument[] { inputDoc };
         }
 
@@ -149,8 +147,8 @@ public class TikaProcessor implements DocumentProcessor, TikaConstants {
         if (contentLengthThresholdFilter != -1
                 && length > contentLengthThresholdFilter) {
             if (reporter != null)
-                reporter.getCounter("TIKA", "FILTERED-CONTENT-LENGTH").increment(
-                        1);
+                reporter.getCounter("TIKA", "FILTERED-CONTENT-LENGTH")
+                        .increment(1);
             return new BehemothDocument[] { inputDoc };
         }
 
@@ -168,16 +166,33 @@ public class TikaProcessor implements DocumentProcessor, TikaConstants {
             reporter.getCounter("MIME-TYPE", inputDoc.getContentType())
                     .increment(1);
 
+        // TODO check config whether want the markup or just the text and
+        // metadata?
         TikaMarkupHandler handler = new TikaMarkupHandler();
         ParseContext context = new ParseContext();
-        // specify a custom HTML mapper via the Context
-        context.set(HtmlMapper.class, new IdentityHtmlMapper());
+
+        // TODO generalise the approach so that can set any class via context        
+        String customMapper = config.get("tika.context.HtmlMapper.class");
+        if (customMapper != null) {
+            try {
+                Class<HtmlMapper> customMapperClass = (Class<HtmlMapper>) Class
+                        .forName(customMapper);
+                // specify a custom HTML mapper via the Context
+                context.set(HtmlMapper.class, customMapperClass.newInstance());
+            } catch (Exception e) {
+                LOG.error("Can't use class " + customMapper
+                        + " for HtmlMapper, using default");
+            }
+        }
 
         try {
             parser.parse(is, handler, metadata, context);
             processText(inputDoc, handler.getText());
             processMetadata(inputDoc, metadata);
             processMarkupAnnotations(inputDoc, handler.getAnnotations());
+            if (reporter != null)
+                reporter.getCounter("TIKA", "ANNOTATIONS ADDED").increment(
+                        handler.getAnnotations().size());
         } catch (Exception e) {
             LOG.error(inputDoc.getUrl().toString(), e);
             if (reporter != null)
