@@ -38,161 +38,183 @@ import org.slf4j.LoggerFactory;
  **/
 public class DocumentFilter {
 
-	private static final Logger LOG = LoggerFactory
-			.getLogger(DocumentFilter.class);
+    private static final Logger LOG = LoggerFactory
+            .getLogger(DocumentFilter.class);
 
-	public static final String DocumentFilterParamNamePrefixKeep = "document.filter.md.keep.";
-	public static final String DocumentFilterParamNamePrefixSkip = "document.filter.md.skip.";
-	public static final String DocumentFilterParamNameURLFilterKeep = "document.filter.url.keep";
-	public static final String DocumentFilterParamNameMimeTypeFilterKeep = "document.filter.mimetype.keep";
+    public static final String DocumentFilterParamNamePrefixKeep = "document.filter.md.keep.";
+    public static final String DocumentFilterParamNamePrefixSkip = "document.filter.md.skip.";
+    public static final String DocumentFilterParamNameURLFilterKeep = "document.filter.url.keep";
+    public static final String DocumentFilterParamNameMimeTypeFilterKeep = "document.filter.mimetype.keep";
+    public static final String DocumentFilterParamNameLength = "document.filter.max.content.length";
 
-	private Map<String, String> KVpatterns = new HashMap<String, String>();
+    private Map<String, String> KVpatterns = new HashMap<String, String>();
 
-	private boolean negativeMode = true;
+    private boolean negativeMode = true;
 
-	private Pattern URLRegex;
-	
-	private Pattern MimetypeRegex;
+    private Pattern URLRegex;
 
-	/**
-	 * Checks whether any splitters have been specified in the configuration
-	 **/
-	public static boolean isRequired(Configuration conf) {
-		DocumentFilter fitler = DocumentFilter.getFilters(conf);
-		if (fitler.KVpatterns.size() > 0)
-			return true;
-		if (fitler.URLRegex != null)
-			return true;
-		if (fitler.MimetypeRegex != null)
-			return true;
-		return false;
-	}
+    private Pattern MimetypeRegex;
 
-	// Builds a document filter given a conf object
-	public static DocumentFilter getFilters(Configuration conf) {
-		// extracts the patterns
-		Map<String, String> PositiveKVpatterns = conf
-				.getValByRegex(DocumentFilterParamNamePrefixKeep + ".+");
-		Map<String, String> NegativeKVpatterns = conf
-				.getValByRegex(DocumentFilterParamNamePrefixSkip + ".+");
+    private int maxContentLength = -1;
 
-		Map<String, String> tmpMap;
+    /**
+     * Checks whether any splitters have been specified in the configuration
+     **/
+    public static boolean isRequired(Configuration conf) {
+        DocumentFilter filter = DocumentFilter.getFilters(conf);
+        if (filter.KVpatterns.size() > 0)
+            return true;
+        if (filter.URLRegex != null)
+            return true;
+        if (filter.MimetypeRegex != null)
+            return true;
+        if (filter.maxContentLength != -1)
+            return true;
+        return false;
+    }
 
-		DocumentFilter filter = new DocumentFilter();
+    // Builds a document filter given a conf object
+    public static DocumentFilter getFilters(Configuration conf) {
+        // extracts the patterns
+        Map<String, String> PositiveKVpatterns = conf
+                .getValByRegex(DocumentFilterParamNamePrefixKeep + ".+");
+        Map<String, String> NegativeKVpatterns = conf
+                .getValByRegex(DocumentFilterParamNamePrefixSkip + ".+");
 
-		// has to be either prositive or negative but not both
-		if (PositiveKVpatterns.size() > 0 && NegativeKVpatterns.size() > 0) {
-			throw new RuntimeException(
-					"Can't have positive AND negative document filters - check your configuration");
-		} else if (PositiveKVpatterns.size() > 0) {
-			filter.negativeMode = false;
-			tmpMap = PositiveKVpatterns;
-		} else {
-			filter.negativeMode = true;
-			tmpMap = NegativeKVpatterns;
-		}
+        Map<String, String> tmpMap;
 
-		// normalise the keys
-		Iterator<Entry<String, String>> kviter = tmpMap.entrySet().iterator();
-		while (kviter.hasNext()) {
-			Entry<String, String> ent = kviter.next();
-			String k = ent.getKey();
-			String v = ent.getValue();
-			k = k.substring(DocumentFilterParamNamePrefixKeep.length());
+        DocumentFilter filter = new DocumentFilter();
 
-			StringBuffer message = new StringBuffer();
-			if (filter.negativeMode)
-				message.append("Negative ");
-			else
-				message.append("Positive ");
-			message.append("filter found : ").append(k).append(" = ").append(v);
-			LOG.info(message.toString());
+        // has to be either prositive or negative but not both
+        if (PositiveKVpatterns.size() > 0 && NegativeKVpatterns.size() > 0) {
+            throw new RuntimeException(
+                    "Can't have positive AND negative document filters - check your configuration");
+        } else if (PositiveKVpatterns.size() > 0) {
+            filter.negativeMode = false;
+            tmpMap = PositiveKVpatterns;
+        } else {
+            filter.negativeMode = true;
+            tmpMap = NegativeKVpatterns;
+        }
 
-			filter.KVpatterns.put(k, v);
-		}
+        // normalise the keys
+        Iterator<Entry<String, String>> kviter = tmpMap.entrySet().iterator();
+        while (kviter.hasNext()) {
+            Entry<String, String> ent = kviter.next();
+            String k = ent.getKey();
+            String v = ent.getValue();
+            k = k.substring(DocumentFilterParamNamePrefixKeep.length());
 
-		String URLPatternS = conf.get(DocumentFilterParamNameURLFilterKeep, "");
-		if (URLPatternS.length() > 0) {
-			try {
-				filter.URLRegex = Pattern.compile(URLPatternS);
-			} catch (PatternSyntaxException e) {
-				filter.URLRegex = null;
-				LOG.error("Can't create regular expression for URL from " + URLPatternS);
-			}
-		}
-		
-		String MTPatternS = conf.get(DocumentFilterParamNameMimeTypeFilterKeep, "");
-		if (MTPatternS.length() > 0) {
-			try {
-				filter.MimetypeRegex = Pattern.compile(MTPatternS);
-			} catch (PatternSyntaxException e) {
-				filter.MimetypeRegex = null;
-				LOG.error("Can't create regular expression for MimeType from " + MTPatternS);
-			}
-		}
+            StringBuffer message = new StringBuffer();
+            if (filter.negativeMode)
+                message.append("Negative ");
+            else
+                message.append("Positive ");
+            message.append("filter found : ").append(k).append(" = ").append(v);
+            LOG.info(message.toString());
 
-		return filter;
-	}
+            filter.KVpatterns.put(k, v);
+        }
 
-	/** Returns true if the document can be kept, false otherwise **/
-	public boolean keep(BehemothDocument input) {
-		// filter if null
-		if (input == null)
-			return false;
-		
-		// check on the URL
-		if (URLRegex!=null){
-			if (input.getUrl()==null) return false;
-			boolean match = URLRegex.matcher(input.getUrl()).matches();
-			if (!match) return false;
-		}
-		
-		// check on the MimeType
-		if (MimetypeRegex!=null){
-			if (input.getContentType()==null) return false;
-			boolean match = MimetypeRegex.matcher(input.getContentType()).matches();
-			if (!match) return false;
-		}
+        String URLPatternS = conf.get(DocumentFilterParamNameURLFilterKeep, "");
+        if (URLPatternS.length() > 0) {
+            try {
+                filter.URLRegex = Pattern.compile(URLPatternS);
+            } catch (PatternSyntaxException e) {
+                filter.URLRegex = null;
+                LOG.error("Can't create regular expression for URL from "
+                        + URLPatternS);
+            }
+        }
 
-		MapWritable metadata = input.getMetadata();
-		// no rules at all -> fine!
-		if (KVpatterns.size() == 0)
-			return true;
+        String MTPatternS = conf.get(DocumentFilterParamNameMimeTypeFilterKeep,
+                "");
+        if (MTPatternS.length() > 0) {
+            try {
+                filter.MimetypeRegex = Pattern.compile(MTPatternS);
+            } catch (PatternSyntaxException e) {
+                filter.MimetypeRegex = null;
+                LOG.error("Can't create regular expression for MimeType from "
+                        + MTPatternS);
+            }
+        }
 
-		// document MUST have a certain value to be kept
-		if (metadata == null || metadata.isEmpty()) {
-			if (!negativeMode)
-				return false;
-			else
-				return true;
-		}
+        filter.maxContentLength = conf
+                .getInt(DocumentFilterParamNameLength, -1);
 
-		boolean hasMatch = false;
+        return filter;
+    }
 
-		// find common keys between filters and content of doc
-		for (Writable wkey : metadata.keySet()) {
-			String key = wkey.toString();
-			String value = metadata.get(wkey).toString();
-			// see if it matches
-			String regex = KVpatterns.get(key);
-			if (regex == null)
-				continue;
-			if (value.matches(regex)) {
-				hasMatch = true;
-				break;
-			}
-		}
+    /** Returns true if the document can be kept, false otherwise **/
+    public boolean keep(BehemothDocument input) {
+        // filter if null
+        if (input == null)
+            return false;
 
-		if (hasMatch) {
-			return (!negativeMode);
-		}
+        // check length content
+        if (input.getContent() != null && maxContentLength != -1) {
+            if (input.getContent().length > maxContentLength)
+                return false;
+        }
 
-		// no negative rule matching
-		if (negativeMode)
-			return true;
+        // check on the URL
+        if (URLRegex != null) {
+            if (input.getUrl() == null)
+                return false;
+            boolean match = URLRegex.matcher(input.getUrl()).matches();
+            if (!match)
+                return false;
+        }
 
-		// no positive rule matching
-		return false;
-	}
+        // check on the MimeType
+        if (MimetypeRegex != null) {
+            if (input.getContentType() == null)
+                return false;
+            boolean match = MimetypeRegex.matcher(input.getContentType())
+                    .matches();
+            if (!match)
+                return false;
+        }
+
+        MapWritable metadata = input.getMetadata();
+        // no rules at all -> fine!
+        if (KVpatterns.size() == 0)
+            return true;
+
+        // document MUST have a certain value to be kept
+        if (metadata == null || metadata.isEmpty()) {
+            if (!negativeMode)
+                return false;
+            else
+                return true;
+        }
+
+        boolean hasMatch = false;
+
+        // find common keys between filters and content of doc
+        for (Writable wkey : metadata.keySet()) {
+            String key = wkey.toString();
+            String value = metadata.get(wkey).toString();
+            // see if it matches
+            String regex = KVpatterns.get(key);
+            if (regex == null)
+                continue;
+            if (value.matches(regex)) {
+                hasMatch = true;
+                break;
+            }
+        }
+
+        if (hasMatch) {
+            return (!negativeMode);
+        }
+
+        // no negative rule matching
+        if (negativeMode)
+            return true;
+
+        // no positive rule matching
+        return false;
+    }
 
 }
