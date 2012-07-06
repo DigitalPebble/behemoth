@@ -127,7 +127,8 @@ public class GATEDriver extends Configured implements Tool {
             JobClient.runJob(job);
         } catch (Exception e) {
             e.printStackTrace();
-            fs.delete(outputPath, true);
+            // leave even partial output
+            // fs.delete(outputPath, true);
         } finally {
         }
 
