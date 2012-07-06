@@ -41,113 +41,119 @@ import org.slf4j.LoggerFactory;
 
 import com.digitalpebble.behemoth.BehemothConfiguration;
 import com.digitalpebble.behemoth.BehemothDocument;
+import com.digitalpebble.behemoth.DocumentFilter;
 
 /**
  * Stores the content from Behemoth documents into a local directory
  **/
 public class ContentExtractor extends Configured implements Tool {
 
-	private static final Logger LOG = LoggerFactory
-			.getLogger(ContentExtractor.class);
+    private static final Logger LOG = LoggerFactory
+            .getLogger(ContentExtractor.class);
 
-	public ContentExtractor() {
-	}
+    public ContentExtractor() {
+    }
 
-	public static void main(String[] args) throws Exception {
-		int res = ToolRunner.run(BehemothConfiguration.create(),
-				new ContentExtractor(), args);
-		System.exit(res);
-	}
+    public static void main(String[] args) throws Exception {
+        int res = ToolRunner.run(BehemothConfiguration.create(),
+                new ContentExtractor(), args);
+        System.exit(res);
+    }
 
-	public int run(String[] args) throws Exception {
+    public int run(String[] args) throws Exception {
 
-		Options options = new Options();
-		// automatically generate the help statement
-		HelpFormatter formatter = new HelpFormatter();
-		// create the parser
-		CommandLineParser parser = new GnuParser();
+        Options options = new Options();
+        // automatically generate the help statement
+        HelpFormatter formatter = new HelpFormatter();
+        // create the parser
+        CommandLineParser parser = new GnuParser();
 
-		options.addOption("h", "help", false, "print this message");
-		options.addOption("i", "input", true, "Behemoth corpus");
-		options.addOption("o", "output", true, "local corpus dir");
+        options.addOption("h", "help", false, "print this message");
+        options.addOption("i", "input", true, "Behemoth corpus");
+        options.addOption("o", "output", true, "local corpus dir");
 
-		// parse the command line arguments
-		try {
-			CommandLine line = parser.parse(options, args);
-			String input = line.getOptionValue("i");
-			String output = line.getOptionValue("o");
-			if (line.hasOption("help")) {
-				formatter.printHelp("ContentExtractor", options);
-				return 0;
-			}
-			if (input == null || output == null) {
-				formatter.printHelp("ContentExtractor", options);
-				return -1;
-			}
-			generateDocs(input, output);
+        // parse the command line arguments
+        try {
+            CommandLine line = parser.parse(options, args);
+            String input = line.getOptionValue("i");
+            String output = line.getOptionValue("o");
+            if (line.hasOption("help")) {
+                formatter.printHelp("ContentExtractor", options);
+                return 0;
+            }
+            if (input == null || output == null) {
+                formatter.printHelp("ContentExtractor", options);
+                return -1;
+            }
+            generateDocs(input, output);
 
-		} catch (ParseException e) {
-			formatter.printHelp("ContentExtractor", options);
-		}
-		return 0;
-	}
+        } catch (ParseException e) {
+            formatter.printHelp("ContentExtractor", options);
+        }
+        return 0;
+    }
 
-	private void generateDocs(String inputf, String outputf) throws IOException {
-		Path input = new Path(inputf);
+    private void generateDocs(String inputf, String outputf) throws IOException {
+        Path input = new Path(inputf);
 
-		File output = new File(outputf);
-		if (output.exists() && output.isFile()) {
-			System.err.println("Output " + outputf + " already exists");
-			return;
-		}
-		if (output.exists() == false)
-			output.mkdirs();
+        File output = new File(outputf);
+        if (output.exists() && output.isFile()) {
+            System.err.println("Output " + outputf + " already exists");
+            return;
+        }
+        if (output.exists() == false)
+            output.mkdirs();
 
-		FileSystem fs = input.getFileSystem(getConf());
-		FileStatus[] statuses = fs.listStatus(input);
-		int count[] = { 0 };
-		for (int i = 0; i < statuses.length; i++) {
-			FileStatus status = statuses[i];
-			Path suPath = status.getPath();
-			if (suPath.getName().equals("_SUCCESS"))
-				continue;
-			generateDocs(suPath, output, count);
-		}
-	}
+        FileSystem fs = input.getFileSystem(getConf());
+        FileStatus[] statuses = fs.listStatus(input);
+        int count[] = { 0 };
+        for (int i = 0; i < statuses.length; i++) {
+            FileStatus status = statuses[i];
+            Path suPath = status.getPath();
+            if (suPath.getName().equals("_SUCCESS"))
+                continue;
+            generateDocs(suPath, output, count);
+        }
+    }
 
-	private void generateDocs(Path input, File dir, int[] count)
-			throws IOException {
+    private void generateDocs(Path input, File dir, int[] count)
+            throws IOException {
 
-		Reader[] cacheReaders = SequenceFileOutputFormat.getReaders(getConf(),
-				input);
-		for (Reader current : cacheReaders) {
-			// read the key + values in that file
-			Text key = new Text();
-			BehemothDocument inputDoc = new BehemothDocument();
-			FileOutputStream writer = null;
-			while (current.next(key, inputDoc)) {
-				count[0]++;
-				if (inputDoc.getContent() == null)
-					continue;
-				try {
-					File outputFile = new File(dir, Integer.toString(count[0]));
-					if (outputFile.exists() == false)
-						outputFile.createNewFile();
+        DocumentFilter docFilter = DocumentFilter.getFilters(getConf());
 
-					writer = new FileOutputStream(outputFile);
-					writer.write(inputDoc.getContent());
+        Reader[] cacheReaders = SequenceFileOutputFormat.getReaders(getConf(),
+                input);
+        for (Reader current : cacheReaders) {
+            // read the key + values in that file
+            Text key = new Text();
+            BehemothDocument inputDoc = new BehemothDocument();
+            FileOutputStream writer = null;
+            while (current.next(key, inputDoc)) {
+                count[0]++;
+                // filter the doc?
+                if (!docFilter.keep(inputDoc))
+                    continue;
+                if (inputDoc.getContent() == null)
+                    continue;
+                try {
+                    File outputFile = new File(dir, Integer.toString(count[0]));
+                    if (outputFile.exists() == false)
+                        outputFile.createNewFile();
 
-				} catch (Exception e) {
-					LOG.error(
-							"Exception on doc [" + count[0] + "] "
-									+ key.toString(), e);
-				} finally {
-					if (writer != null)
-						writer.close();
-				}
-			}
-			current.close();
-		}
-	}
+                    writer = new FileOutputStream(outputFile);
+                    writer.write(inputDoc.getContent());
+
+                } catch (Exception e) {
+                    LOG.error(
+                            "Exception on doc [" + count[0] + "] "
+                                    + key.toString(), e);
+                } finally {
+                    if (writer != null)
+                        writer.close();
+                }
+            }
+            current.close();
+        }
+    }
 
 }
