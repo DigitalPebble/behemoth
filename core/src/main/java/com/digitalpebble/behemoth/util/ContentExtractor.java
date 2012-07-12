@@ -20,6 +20,7 @@ package com.digitalpebble.behemoth.util;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.net.URLEncoder;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -50,6 +51,8 @@ public class ContentExtractor extends Configured implements Tool {
 
     private static final Logger LOG = LoggerFactory
             .getLogger(ContentExtractor.class);
+
+    private boolean useURLforFileName = true;
 
     public ContentExtractor() {
     }
@@ -136,9 +139,24 @@ public class ContentExtractor extends Configured implements Tool {
                 if (inputDoc.getContent() == null)
                     continue;
                 try {
-                    File outputFile = new File(dir, Integer.toString(count[0]));
+                    String fileName = Integer.toString(count[0]);
+                    String urldoc = inputDoc.getUrl();
+                    if (useURLforFileName && urldoc != null
+                            && urldoc.length() > 0) {
+                        fileName = URLEncoder.encode(urldoc, "UTF-8");
+                    } else
+                        fileName = Integer.toString(count[0]);
+
+                    File outputFile = new File(dir, fileName);
                     if (outputFile.exists() == false)
                         outputFile.createNewFile();
+                    else {
+                        // already there! prefix with global counter
+                        outputFile = new File(dir, Integer.toString(count[0])
+                                + "_" + fileName);
+                        if (outputFile.exists() == false)
+                            outputFile.createNewFile();
+                    }
 
                     writer = new FileOutputStream(outputFile);
                     writer.write(inputDoc.getContent());
