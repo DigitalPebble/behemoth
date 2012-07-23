@@ -154,6 +154,12 @@ public class LucidWorksWriter {
   public void close() throws IOException {
     try {
       solr.commit(false, false);
+      if(solr instanceof StreamingUpdateSolrServer) {
+        ((StreamingUpdateSolrServer)solr).shutdown();
+      }
+      if(solr instanceof CloudSolrServer) {
+        ((CloudSolrServer)solr).close();
+      }
     } catch (final SolrServerException e) {
       throw makeIOException(e);
     }
