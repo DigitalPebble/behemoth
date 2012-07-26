@@ -44,10 +44,10 @@ public class LucidWorksWriter {
   private SolrServer solr;
 
   // key = Annotation type ; value = feature name / SOLR field
-  private Map<String, Map<String, String>> fieldMapping = new HashMap<String, Map<String, String>>();
+  protected Map<String, Map<String, String>> fieldMapping = new HashMap<String, Map<String, String>>();
   private Progressable progress;
   private boolean includeMetadata = false;
-  private boolean includeAnnotations = false;
+  protected boolean includeAnnotations = false;
 
   public LucidWorksWriter(Progressable progress) {
     this.progress = progress;
@@ -69,6 +69,10 @@ public class LucidWorksWriter {
     includeMetadata = job.getBoolean("lw.metadata", false);
     includeAnnotations = job.getBoolean("lw.annotations", false);
 
+    populateSolrFieldMappingsFromBehemothAnnotationsTypesAndFeatures(job);
+  }
+
+  protected void populateSolrFieldMappingsFromBehemothAnnotationsTypesAndFeatures(JobConf job) {
     // get the Behemoth annotations types and features
     // to store as SOLR fields
     // solr.f.name = BehemothType.featureName
