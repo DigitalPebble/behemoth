@@ -76,26 +76,43 @@ public class LucidWorksWriter {
     // get the Behemoth annotations types and features
     // to store as SOLR fields
     // solr.f.name = BehemothType.featureName
-    // e.g. solr.f.person = Person.string
+    // e.g. solr.f.person = Person.string will map the "string" feature of "Person" annotations onto the Solr field "person"
     Iterator<Entry<String, String>> iterator = job.iterator();
     while (iterator.hasNext()) {
       Entry<String, String> entry = iterator.next();
       if (entry.getKey().startsWith("solr.f.") == false)
         continue;
-      String fieldName = entry.getKey().substring("solr.f.".length());
-      String val = entry.getValue();
+      String solrFieldName = entry.getKey().substring("solr.f.".length());
       // see if a feature has been specified
       // if not we'll use '*' to indicate that we want
       // the text covered by the annotation
-      HashMap<String, String> featureValMap = new HashMap<String, String>();
-      int separator = val.indexOf(".");
-      String featureName = "*";
-      if (separator != -1)
-        featureName = val.substring(separator + 1);
-      featureValMap.put(featureName, fieldName);
-      fieldMapping.put(entry.getValue(), featureValMap);
-      LOG.debug("Adding to mapping " + entry.getValue() + " "
-              + featureName + " " + fieldName);
+      //HashMap<String, String> featureValMap = new HashMap<String, String>();
+
+      String[] toks = entry.getValue().split("\\.");
+      String annotationName = null;
+      String featureName = null;
+      if(toks.length == 1) {
+        annotationName = toks[0];
+      } else if(toks.length == 2) {
+        annotationName = toks[0];
+        featureName = toks[1];
+      } else {
+        LOG.warn("Invalid annotation field mapping: " + entry.getValue());
+      }
+      
+      Map<String, String> featureMap = fieldMapping.get(annotationName);
+      if(featureMap == null) {
+        featureMap = new HashMap<String, String>();
+      }
+      
+      if(featureName == null)
+        featureName = "*";
+
+      featureMap.put(featureName, solrFieldName);
+      fieldMapping.put(annotationName, featureMap);
+
+      LOG.info("Adding mapping for annotation " + annotationName + 
+               ", feature '" + featureName + "' to  Solr field '" + solrFieldName + "'");
     }
   }
 
@@ -118,7 +135,6 @@ public class LucidWorksWriter {
     inputDoc.setField("text", doc.getText());
 
     LOG.debug("Adding field : id\t" + doc.getUrl());
-    //LOG.debug("Adding field : text\t" + doc.getText());
 
     //Rely on LucidWorks field mapping to handle this, or the dynamic fields
     MapWritable metadata = doc.getMetadata();
@@ -162,7 +178,7 @@ public class LucidWorksWriter {
           LOG.debug("Adding field : " + SOLRFieldName + "\t" + value);
           // skip if no value has been found
           if (value != null)
-            inputDoc.setField(SOLRFieldName, value);
+            inputDoc.addField(SOLRFieldName, value);
         }
       }
     }
