@@ -49,7 +49,12 @@ public class TikaMapper extends MapReduceBase implements
         BehemothDocument[] documents = processor.process(inputDoc, reporter);
         if (documents != null) {
             for (int i = 0; i < documents.length; i++) {
+            	try {
                 outputCollector.collect(text, documents[i]);
+            	}
+            	catch (Error e){
+            		LOG.error("Error with writing doc", inputDoc.getUrl());
+            	}
             }
         }
     }

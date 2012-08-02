@@ -34,7 +34,7 @@ import com.digitalpebble.behemoth.Annotation;
  * 
  ******************************************************************************/
 
-public class TikaMarkupHandler implements ContentHandler {
+public class TikaMarkupHandler implements BehemothHandler {
 
     private StringBuffer textBuffer;
 

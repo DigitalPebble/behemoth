@@ -38,6 +38,7 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.html.HtmlMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.xml.sax.ContentHandler;
 
 import com.digitalpebble.behemoth.BehemothDocument;
 import com.digitalpebble.behemoth.DocumentProcessor;
@@ -168,7 +169,14 @@ public class TikaProcessor implements DocumentProcessor, TikaConstants {
 
         // TODO check config whether want the markup or just the text and
         // metadata?
-        TikaMarkupHandler handler = new TikaMarkupHandler();
+        BehemothHandler handler = new TikaMarkupHandler();
+        
+        boolean doMarkup = config.getBoolean("tika.convert.markup", true);
+        
+        if (doMarkup){
+            handler = new TikaTextHandler();
+        }
+        
         ParseContext context = new ParseContext();
 
         // TODO generalise the approach so that can set any class via context        
@@ -187,8 +195,8 @@ public class TikaProcessor implements DocumentProcessor, TikaConstants {
 
         try {
             parser.parse(is, handler, metadata, context);
-            processText(inputDoc, handler.getText());
             processMetadata(inputDoc, metadata);
+            processText(inputDoc, handler.getText());
             processMarkupAnnotations(inputDoc, handler.getAnnotations());
             if (reporter != null)
                 reporter.getCounter("TIKA", "ANNOTATIONS ADDED").increment(
