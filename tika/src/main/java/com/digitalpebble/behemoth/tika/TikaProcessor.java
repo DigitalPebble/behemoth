@@ -61,8 +61,11 @@ public class TikaProcessor implements DocumentProcessor, TikaConstants {
             .getMimeRepository();
     private Detector detector = TikaConfig.getDefaultConfig().getDetector();
 
-    private int contentLengthThresholdFilter = -1;
     private static String contentLengthThresholdFilterParamName = "tika.filter.content.byte";
+    private static String forceMTDetectionParamName = "tika.forceMimetypeDetection";
+
+    private int contentLengthThresholdFilter = -1;
+    private boolean forceMTDetection = false;
 
     public Configuration getConf() {
         return config;
@@ -73,6 +76,7 @@ public class TikaProcessor implements DocumentProcessor, TikaConstants {
         mimeType = config.get(TIKA_MIME_TYPE_KEY);
         contentLengthThresholdFilter = config.getInt(
                 contentLengthThresholdFilterParamName, -1);
+        forceMTDetection = config.getBoolean(forceMTDetectionParamName, false);
     }
 
     public void close() {
@@ -99,9 +103,8 @@ public class TikaProcessor implements DocumentProcessor, TikaConstants {
                 || inputDoc.getContentType().equals("") == true) {
             String mt = null;
             // using the original content
-            if (mimeType == null) {
+            if (mimeType == null | forceMTDetection) {
                 if (inputDoc.getContent() != null) {
-
                     Metadata meta = new Metadata();
                     meta.set(Metadata.RESOURCE_NAME_KEY, inputDoc.getUrl());
                     MimeType mimetype = null;
@@ -117,7 +120,7 @@ public class TikaProcessor implements DocumentProcessor, TikaConstants {
                         LOG.error("Exception", e);
                     }
                     mt = mimetype.getName();
-                } else if (inputDoc.getText() != null) {
+                } else if (mimeType == null && inputDoc.getText() != null) {
                     // force it to text
                     mt = "text/plain";
                 }
@@ -170,16 +173,16 @@ public class TikaProcessor implements DocumentProcessor, TikaConstants {
         // TODO check config whether want the markup or just the text and
         // metadata?
         BehemothHandler handler = new TikaMarkupHandler();
-        
+
         boolean doMarkup = config.getBoolean("tika.convert.markup", true);
-        
-        if (!doMarkup){
+
+        if (!doMarkup) {
             handler = new TikaTextHandler();
         }
-        
+
         ParseContext context = new ParseContext();
 
-        // TODO generalise the approach so that can set any class via context        
+        // TODO generalise the approach so that can set any class via context
         String customMapper = config.get("tika.context.HtmlMapper.class");
         if (customMapper != null) {
             try {
