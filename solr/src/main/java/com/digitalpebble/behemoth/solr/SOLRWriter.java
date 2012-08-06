@@ -39,36 +39,54 @@ public class SOLRWriter {
     private StreamingUpdateSolrServer solr;
 
     // key = Annotation type ; value = feature name / SOLR field
-    private Map<String, Map<String, String>> fieldMapping = new HashMap<String, Map<String, String>>();
+    Map<String, Map<String, String>> fieldMapping = new HashMap<String, Map<String, String>>();
 
     public void open(JobConf job, String name) throws IOException {
         String solrURL = job.get("solr.server.url");
         int queueSize = job.getInt("solr.client.queue.size", 100);
         int threadCount = job.getInt("solr.client.threads", 1);
         solr = new StreamingUpdateSolrServer(solrURL, queueSize, threadCount);
-        // get the Behemoth annotations types and features
-        // to store as SOLR fields
-        // solr.f.name = BehemothType.featureName
-        // e.g. solr.f.person = Person.string
+        /* Generate mapping for Behemoth annotations/features to Solr fields
+         * config values look like solr.f.<solr field> = <annotation type>.<feature>
+         * E.g.,
+         *   solr.f.foo = bar
+         *   solr.f.foo = spam.eggs
+         * generates the mapping {"bar":{"*","foo"}, "spam":{"eggs":"foo"}}
+         */
         Iterator<Entry<String, String>> iterator = job.iterator();
         while (iterator.hasNext()) {
             Entry<String, String> entry = iterator.next();
             if (entry.getKey().startsWith("solr.f.") == false)
                 continue;
-            String fieldName = entry.getKey().substring("solr.f.".length());
-            String val = entry.getValue();
-            // see if a feature has been specified
-            // if not we'll use '*' to indicate that we want
-            // the text covered by the annotation
-            HashMap<String, String> featureValMap = new HashMap<String, String>();
-            int separator = val.indexOf(".");
-            String featureName = "*";
-            if (separator != -1)
-                featureName = val.substring(separator + 1);
-            featureValMap.put(featureName, fieldName);
-            fieldMapping.put(entry.getValue(), featureValMap);
-            LOG.debug("Adding to mapping " + entry.getValue() + " "
-                    + featureName + " " + fieldName);
+            String solrFieldName = entry.getKey().substring("solr.f.".length());
+
+            // Split the annotation type and feature name (e.g., Person.string)
+            String[] toks = entry.getValue().split("\\.");
+            String annotationName = null;
+            String featureName = null;
+            if(toks.length == 1) {
+              annotationName = toks[0];
+            } else if(toks.length == 2) {
+              annotationName = toks[0];
+              featureName = toks[1];
+            } else {
+              LOG.warn("Invalid annotation field mapping: " + entry.getValue());
+            }
+
+            Map<String, String> featureMap = fieldMapping.get(annotationName);
+            if(featureMap == null) {
+              featureMap = new HashMap<String, String>();
+            }
+
+            // If not feature name is given (e.g., Person instead of Person.string), infer a *
+            if(featureName == null)
+              featureName = "*";
+
+            featureMap.put(featureName, solrFieldName);
+            fieldMapping.put(annotationName, featureMap);
+
+            LOG.debug("Adding mapping for annotation " + annotationName +
+                     ", feature '" + featureName + "' to  Solr field '" + solrFieldName + "'");
         }
     }
 
@@ -88,9 +106,7 @@ public class SOLRWriter {
         // to match the SOLR schema
         inputDoc.setField("id", doc.getUrl());
         inputDoc.setField("text", doc.getText());
-
-        LOG.info("Adding field : id\t" + doc.getUrl());
-        LOG.info("Adding field : text\t" + doc.getText());
+        LOG.debug("Adding field id: " + doc.getUrl());
 
         // iterate on the annotations of interest and
         // create a new field for each one
@@ -126,7 +142,7 @@ public class SOLRWriter {
                 LOG.debug("Adding field : " + SOLRFieldName + "\t" + value);
                 // skip if no value has been found
                 if (value != null)
-                    inputDoc.setField(SOLRFieldName, value);
+                    inputDoc.addField(SOLRFieldName, value);
             }
         }
 
