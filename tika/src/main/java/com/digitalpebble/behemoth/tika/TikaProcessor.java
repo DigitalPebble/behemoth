@@ -173,7 +173,7 @@ public class TikaProcessor implements DocumentProcessor, TikaConstants {
         
         boolean doMarkup = config.getBoolean("tika.convert.markup", true);
         
-        if (doMarkup){
+        if (!doMarkup){
             handler = new TikaTextHandler();
         }
         
