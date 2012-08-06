@@ -1,4 +1,4 @@
-/*
+/**
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -13,7 +13,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- */
+ **/
 package com.digitalpebble.behemoth.solr;
 
 import java.io.IOException;
@@ -39,19 +39,24 @@ public class SOLRWriter {
     private StreamingUpdateSolrServer solr;
 
     // key = Annotation type ; value = feature name / SOLR field
-    Map<String, Map<String, String>> fieldMapping = new HashMap<String, Map<String, String>>();
+    private Map<String, Map<String, String>> fieldMapping = new HashMap<String, Map<String, String>>();
+
+    public Map<String, Map<String, String>> getFieldMapping() {
+        return fieldMapping;
+    }
 
     public void open(JobConf job, String name) throws IOException {
         String solrURL = job.get("solr.server.url");
         int queueSize = job.getInt("solr.client.queue.size", 100);
         int threadCount = job.getInt("solr.client.threads", 1);
         solr = new StreamingUpdateSolrServer(solrURL, queueSize, threadCount);
-        /* Generate mapping for Behemoth annotations/features to Solr fields
-         * config values look like solr.f.<solr field> = <annotation type>.<feature>
-         * E.g.,
-         *   solr.f.foo = bar
-         *   solr.f.foo = spam.eggs
-         * generates the mapping {"bar":{"*","foo"}, "spam":{"eggs":"foo"}}
+        /*
+         * Generate mapping for Behemoth annotations/features to Solr fields
+         * config values look like 
+         * solr.f.<solr field> = <annotationtype>.<feature>
+         * E.g., solr.f.foo = bar solr.f.foo = spam.eggs
+         * generates the mapping
+         * {"bar":{"*","foo"}, "spam":{"eggs":"foo"}}
          */
         Iterator<Entry<String, String>> iterator = job.iterator();
         while (iterator.hasNext()) {
@@ -64,29 +69,32 @@ public class SOLRWriter {
             String[] toks = entry.getValue().split("\\.");
             String annotationName = null;
             String featureName = null;
-            if(toks.length == 1) {
-              annotationName = toks[0];
-            } else if(toks.length == 2) {
-              annotationName = toks[0];
-              featureName = toks[1];
+            if (toks.length == 1) {
+                annotationName = toks[0];
+            } else if (toks.length == 2) {
+                annotationName = toks[0];
+                featureName = toks[1];
             } else {
-              LOG.warn("Invalid annotation field mapping: " + entry.getValue());
+                LOG.warn("Invalid annotation field mapping: "
+                        + entry.getValue());
             }
 
             Map<String, String> featureMap = fieldMapping.get(annotationName);
-            if(featureMap == null) {
-              featureMap = new HashMap<String, String>();
+            if (featureMap == null) {
+                featureMap = new HashMap<String, String>();
             }
 
-            // If not feature name is given (e.g., Person instead of Person.string), infer a *
-            if(featureName == null)
-              featureName = "*";
+            // If not feature name is given (e.g., Person instead of
+            // Person.string), infer a *
+            if (featureName == null)
+                featureName = "*";
 
             featureMap.put(featureName, solrFieldName);
             fieldMapping.put(annotationName, featureMap);
 
-            LOG.debug("Adding mapping for annotation " + annotationName +
-                     ", feature '" + featureName + "' to  Solr field '" + solrFieldName + "'");
+            LOG.debug("Adding mapping for annotation " + annotationName
+                    + ", feature '" + featureName + "' to  Solr field '"
+                    + solrFieldName + "'");
         }
     }
 
