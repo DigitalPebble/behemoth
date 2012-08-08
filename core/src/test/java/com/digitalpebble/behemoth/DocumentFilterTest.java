@@ -24,82 +24,87 @@ import junit.framework.TestCase;
 
 public class DocumentFilterTest extends TestCase {
 
-	protected void setUp() throws Exception {
-		super.setUp();
-	}
+    protected void setUp() throws Exception {
+        super.setUp();
+    }
 
-	public void testPositiveFilter() {
-		Configuration config = BehemothConfiguration.create();
-		config.set(DocumentFilter.DocumentFilterParamNamePrefixKeep + "lang",
-				"en");
+    public void testPositiveFilter() {
+        Configuration config = BehemothConfiguration.create();
+        config.set(DocumentFilter.DocumentFilterParamNamePrefixKeep + "lang",
+                "en");
 
-		DocumentFilter filter = DocumentFilter.getFilters(config);
+        DocumentFilter filter = DocumentFilter.getFilters(config);
 
-		BehemothDocument doc = new BehemothDocument();
-		doc.getMetadata(true).put(new Text("lang"), new Text("en"));
-		boolean kept = filter.keep(doc);
-		assertEquals(true, kept);
+        BehemothDocument doc = new BehemothDocument();
+        doc.getMetadata(true).put(new Text("lang"), new Text("en"));
+        boolean kept = filter.keep(doc);
+        assertEquals(true, kept);
 
-		doc.getMetadata(true).put(new Text("lang"), new Text("fr"));
-		kept = filter.keep(doc);
-		assertEquals(false, kept);
+        doc.getMetadata(true).put(new Text("lang"), new Text("fr"));
+        kept = filter.keep(doc);
+        assertEquals(false, kept);
 
-		// negative filters
+        doc.getMetadata(true).remove(new Text("lang"));
+        kept = filter.keep(doc);
+        assertEquals(false, kept);
 
-		config = BehemothConfiguration.create();
-		config.set(DocumentFilter.DocumentFilterParamNamePrefixSkip + "lang",
-				".+");
+        // negative filters
 
-		filter = DocumentFilter.getFilters(config);
-		kept = filter.keep(doc);
-		assertEquals(false, kept);
+        config = BehemothConfiguration.create();
+        config.set(DocumentFilter.DocumentFilterParamNamePrefixSkip + "lang",
+                ".+");
 
-		doc = new BehemothDocument();
-		kept = filter.keep(doc);
-		assertEquals(true, kept);
+        filter = DocumentFilter.getFilters(config);
+        doc.getMetadata(true).put(new Text("lang"), new Text("fr"));
+        kept = filter.keep(doc);
+        assertEquals(false, kept);
 
-	}
+        doc = new BehemothDocument();
+        kept = filter.keep(doc);
+        assertEquals(true, kept);
 
-	public void testNegativeFilter() {
-		Configuration config = BehemothConfiguration.create();
-		config.set(DocumentFilter.DocumentFilterParamNamePrefixSkip + "lang",
-				".+");
+    }
 
-		DocumentFilter filter = DocumentFilter.getFilters(config);
-		BehemothDocument doc = new BehemothDocument();
-		doc.getMetadata(true).put(new Text("lang"), new Text("en"));
-		boolean kept = filter.keep(doc);
-		assertEquals(false, kept);
+    public void testNegativeFilter() {
+        Configuration config = BehemothConfiguration.create();
+        config.set(DocumentFilter.DocumentFilterParamNamePrefixSkip + "lang",
+                ".+");
 
-		doc = new BehemothDocument();
-		kept = filter.keep(doc);
-		assertEquals(true, kept);
+        DocumentFilter filter = DocumentFilter.getFilters(config);
+        BehemothDocument doc = new BehemothDocument();
+        doc.getMetadata(true).put(new Text("lang"), new Text("en"));
+        boolean kept = filter.keep(doc);
+        assertEquals(false, kept);
 
-	}
+        doc = new BehemothDocument();
+        kept = filter.keep(doc);
+        assertEquals(true, kept);
 
-	public void testURLFilter() {
-		Configuration config = BehemothConfiguration.create();
-		config.set(DocumentFilter.DocumentFilterParamNameURLFilterKeep, ".+");
+    }
 
-		// no URL set - must fail
-		DocumentFilter filter = DocumentFilter.getFilters(config);
-		BehemothDocument doc = new BehemothDocument();
-		doc.getMetadata(true).put(new Text("lang"), new Text("en"));
-		boolean kept = filter.keep(doc);
-		assertEquals(false, kept);
+    public void testURLFilter() {
+        Configuration config = BehemothConfiguration.create();
+        config.set(DocumentFilter.DocumentFilterParamNameURLFilterKeep, ".+");
 
-		doc = new BehemothDocument();
-		doc.setUrl("any random rubbish will do");
-		kept = filter.keep(doc);
-		assertEquals(true, kept);
-	}
-	
-	public void testURLFilterRequired() {
-		Configuration config = BehemothConfiguration.create();
-		// no filters set : must fail
-		assertEquals(false, DocumentFilter.isRequired(config));
-		config.set(DocumentFilter.DocumentFilterParamNameURLFilterKeep, ".+");
-		assertEquals(true, DocumentFilter.isRequired(config));
-	}
+        // no URL set - must fail
+        DocumentFilter filter = DocumentFilter.getFilters(config);
+        BehemothDocument doc = new BehemothDocument();
+        doc.getMetadata(true).put(new Text("lang"), new Text("en"));
+        boolean kept = filter.keep(doc);
+        assertEquals(false, kept);
+
+        doc = new BehemothDocument();
+        doc.setUrl("any random rubbish will do");
+        kept = filter.keep(doc);
+        assertEquals(true, kept);
+    }
+
+    public void testURLFilterRequired() {
+        Configuration config = BehemothConfiguration.create();
+        // no filters set : must fail
+        assertEquals(false, DocumentFilter.isRequired(config));
+        config.set(DocumentFilter.DocumentFilterParamNameURLFilterKeep, ".+");
+        assertEquals(true, DocumentFilter.isRequired(config));
+    }
 
 }
