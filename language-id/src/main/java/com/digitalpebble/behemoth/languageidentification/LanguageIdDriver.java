@@ -109,7 +109,7 @@ public class LanguageIdDriver extends Configured implements Tool {
         }
 
         // check whether needs overwriting
-        if (fs.exists(outputPath)) {
+        if (FileSystem.get(outputPath.toUri(), getConf()).exists(outputPath)) {
             if (!overWrite) {
                 System.out.println("Output path " + outputPath
                         + " already exists. Use option -w to overwrite.");
