@@ -31,30 +31,36 @@ import org.slf4j.LoggerFactory;
 import com.digitalpebble.behemoth.BehemothDocument;
 
 public class LanguageIdMapper extends MapReduceBase implements
-		Mapper<Text, BehemothDocument, Text, BehemothDocument> {
-	
-	private static final Logger LOG = LoggerFactory
-			.getLogger(LanguageIdMapper.class);
+        Mapper<Text, BehemothDocument, Text, BehemothDocument> {
 
-	protected LanguageIdProcessor processor;
+    private static final Logger LOG = LoggerFactory
+            .getLogger(LanguageIdMapper.class);
 
-	public void map(Text text, BehemothDocument inputDoc,
-			OutputCollector<Text, BehemothDocument> outputCollector,
-			Reporter reporter) throws IOException {
+    protected static LanguageIdProcessor processor;
 
-		BehemothDocument[] documents = processor.process(inputDoc, reporter);
-		if (documents != null) {
-			for (int i = 0; i < documents.length; i++) {
-				outputCollector.collect(text, documents[i]);
-			}
-		}
-	}
+    public void map(Text text, BehemothDocument inputDoc,
+            OutputCollector<Text, BehemothDocument> outputCollector,
+            Reporter reporter) throws IOException {
 
-	@Override
-	public void configure(JobConf job) {
-		if (processor == null) {
-			processor = new LanguageIdProcessor();
-		}
-		processor.setConf(job);
-	}
+        BehemothDocument[] documents = processor.process(inputDoc, reporter);
+        if (documents != null) {
+            for (int i = 0; i < documents.length; i++) {
+                outputCollector.collect(text, documents[i]);
+            }
+        }
+    }
+
+    @Override
+    public void configure(JobConf job) {
+        if (processor == null) {
+            long start = System.currentTimeMillis();
+            processor = new LanguageIdProcessor();
+            processor.setConf(job);
+            long end = System.currentTimeMillis();
+            LOG.info("LanguageIdProcessor initialised in " + (end - start)
+                    + " msec");
+        } else
+            LOG.info("Reusing existing language processor");
+
+    }
 }

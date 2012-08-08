@@ -45,108 +45,112 @@ import org.slf4j.LoggerFactory;
 import com.digitalpebble.behemoth.BehemothConfiguration;
 import com.digitalpebble.behemoth.BehemothDocument;
 import com.digitalpebble.behemoth.BehemothReducer;
+import com.digitalpebble.behemoth.DocumentFilter;
 
 public class LanguageIdDriver extends Configured implements Tool {
-	private transient static Logger log = LoggerFactory
-			.getLogger(LanguageIdDriver.class);
+    private transient static Logger log = LoggerFactory
+            .getLogger(LanguageIdDriver.class);
 
-	public LanguageIdDriver() {
-		super(null);
-	}
+    public LanguageIdDriver() {
+        super(null);
+    }
 
-	public LanguageIdDriver(Configuration conf) {
-		super(conf);
-	}
+    public LanguageIdDriver(Configuration conf) {
+        super(conf);
+    }
 
-	public static void main(String args[]) throws Exception {
-		int res = ToolRunner.run(BehemothConfiguration.create(),
-				new LanguageIdDriver(), args);
-		System.exit(res);
-	}
+    public static void main(String args[]) throws Exception {
+        int res = ToolRunner.run(BehemothConfiguration.create(),
+                new LanguageIdDriver(), args);
+        System.exit(res);
+    }
 
-	public int run(String[] args) throws Exception {
+    public int run(String[] args) throws Exception {
 
-		final FileSystem fs = FileSystem.get(getConf());
+        final FileSystem fs = FileSystem.get(getConf());
 
-		Options options = new Options();
-		// automatically generate the help statement
-		HelpFormatter formatter = new HelpFormatter();
-		// create the parser
-		CommandLineParser parser = new GnuParser();
+        Options options = new Options();
+        // automatically generate the help statement
+        HelpFormatter formatter = new HelpFormatter();
+        // create the parser
+        CommandLineParser parser = new GnuParser();
 
-		options.addOption("h", "help", false, "print this message");
-		options.addOption("i", "input", true, "input file or directory");
-		options.addOption("o", "output", true, "output Behemoth corpus");
-		options.addOption("w", "overwrite", false, "overwrite the output");
+        options.addOption("h", "help", false, "print this message");
+        options.addOption("i", "input", true, "input file or directory");
+        options.addOption("o", "output", true, "output Behemoth corpus");
+        options.addOption("w", "overwrite", false, "overwrite the output");
 
-		Path inputPath = null;
-		Path outputPath = null;
+        Path inputPath = null;
+        Path outputPath = null;
 
-		boolean overWrite = false;
+        boolean overWrite = false;
 
-		// parse the command line arguments
-		CommandLine cmdLine = null;
-		try {
-			cmdLine = parser.parse(options, args);
-			String input = cmdLine.getOptionValue("i");
-			String output = cmdLine.getOptionValue("o");
-			if (cmdLine.hasOption("help")) {
-				formatter.printHelp("LanguageIdDriver", options);
-				return 0;
-			}
-			if (input == null | output == null) {
-				formatter.printHelp("LanguageIdDriver", options);
-				return -1;
-			}
-			inputPath = new Path(input);
-			outputPath = new Path(output);
-			if (cmdLine.hasOption("overwrite")) {
-				overWrite = true;
-			}
-		} catch (ParseException e) {
-			formatter.printHelp("LanguageIdDriver", options);
-		}
+        // parse the command line arguments
+        CommandLine cmdLine = null;
+        try {
+            cmdLine = parser.parse(options, args);
+            String input = cmdLine.getOptionValue("i");
+            String output = cmdLine.getOptionValue("o");
+            if (cmdLine.hasOption("help")) {
+                formatter.printHelp("LanguageIdDriver", options);
+                return 0;
+            }
+            if (input == null | output == null) {
+                formatter.printHelp("LanguageIdDriver", options);
+                return -1;
+            }
+            inputPath = new Path(input);
+            outputPath = new Path(output);
+            if (cmdLine.hasOption("overwrite")) {
+                overWrite = true;
+            }
+        } catch (ParseException e) {
+            formatter.printHelp("LanguageIdDriver", options);
+        }
 
-		// check whether needs overwriting
-		if (fs.exists(outputPath)) {
-			if (!overWrite) {
-				System.out.println("Output path " + outputPath
-						+ " already exists. Use option -w to overwrite.");
-				return 0;
-			} else
-				fs.delete(outputPath, true);
-		}
+        // check whether needs overwriting
+        if (fs.exists(outputPath)) {
+            if (!overWrite) {
+                System.out.println("Output path " + outputPath
+                        + " already exists. Use option -w to overwrite.");
+                return 0;
+            } else
+                fs.delete(outputPath, true);
+        }
 
-		JobConf job = new JobConf(getConf());
-		job.setJarByClass(this.getClass());
+        JobConf job = new JobConf(getConf());
+        job.setJarByClass(this.getClass());
 
-		job.setJobName("Processing with Language Identifier");
+        job.setJobName("Processing with Language Identifier");
 
-		job.setInputFormat(SequenceFileInputFormat.class);
-		job.setOutputFormat(SequenceFileOutputFormat.class);
+        job.setInputFormat(SequenceFileInputFormat.class);
+        job.setOutputFormat(SequenceFileOutputFormat.class);
 
-		job.setMapOutputKeyClass(Text.class);
-		job.setMapOutputValueClass(BehemothDocument.class);
-		job.setOutputKeyClass(Text.class);
-		job.setOutputValueClass(BehemothDocument.class);
+        job.setMapOutputKeyClass(Text.class);
+        job.setMapOutputValueClass(BehemothDocument.class);
+        job.setOutputKeyClass(Text.class);
+        job.setOutputValueClass(BehemothDocument.class);
 
-		job.setMapperClass(LanguageIdMapper.class);
+        job.setMapperClass(LanguageIdMapper.class);
 
-		// TODO make this optional based on presence of parameters
-		job.setReducerClass(BehemothReducer.class);
+        if (DocumentFilter.isRequired(job))
+            job.setReducerClass(BehemothReducer.class);
+        else
+            job.setNumReduceTasks(0);
 
-		FileInputFormat.addInputPath(job, inputPath);
-		FileOutputFormat.setOutputPath(job, outputPath);
+        FileInputFormat.addInputPath(job, inputPath);
+        FileOutputFormat.setOutputPath(job, outputPath);
 
-		try {
-			JobClient.runJob(job);
-		} catch (Exception e) {
-			e.printStackTrace();
-			fs.delete(outputPath, true);
-		} finally {
-		}
+        try {
+            JobClient.runJob(job);
+        } catch (Exception e) {
+            e.printStackTrace();
+            fs.delete(outputPath, true);
+            return -1;
+        } finally {
+        }
 
-		return 0;
-	}
+        return 0;
+    }
 
 }
