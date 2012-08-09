@@ -25,6 +25,7 @@ import java.util.regex.PatternSyntaxException;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.MapWritable;
+import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,7 +34,8 @@ import org.slf4j.LoggerFactory;
  * Filters used by Mappers / Reducers to skip Behemoth documents based on their
  * metadata. Can have either positive or negative filters but not both. The
  * filters values are regular expressions and the document will be kept or
- * skipped if it matches ANY of the filters. It can filter based on the document
+ * skipped if it matches ANY of the filters in OR mode or all the constraints if
+ * document.filter.md.mode is set to 'AND'. It can filter based on the document
  * URL and or mime-type using regular expressions.
  **/
 public class DocumentFilter {
@@ -42,6 +44,7 @@ public class DocumentFilter {
             .getLogger(DocumentFilter.class);
 
     public static final String DocumentFilterParamNamePrefixKeep = "document.filter.md.keep.";
+    public static final String DocumentFilterParamNameMode = "document.filter.md.mode";
     public static final String DocumentFilterParamNamePrefixSkip = "document.filter.md.skip.";
     public static final String DocumentFilterParamNameURLFilterKeep = "document.filter.url.keep";
     public static final String DocumentFilterParamNameMimeTypeFilterKeep = "document.filter.mimetype.keep";
@@ -56,6 +59,8 @@ public class DocumentFilter {
     private Pattern MimetypeRegex;
 
     private int maxContentLength = -1;
+
+    private String medataMode = "AND";
 
     /**
      * Checks whether any splitters have been specified in the configuration
@@ -84,6 +89,8 @@ public class DocumentFilter {
         Map<String, String> tmpMap;
 
         DocumentFilter filter = new DocumentFilter();
+
+        filter.medataMode = conf.get(DocumentFilterParamNameMode, "AND");
 
         // has to be either prositive or negative but not both
         if (PositiveKVpatterns.size() > 0 && NegativeKVpatterns.size() > 0) {
@@ -192,20 +199,32 @@ public class DocumentFilter {
         boolean hasMatch = false;
 
         // find common keys between filters and content of doc
-        for (Writable wkey : metadata.keySet()) {
-            String key = wkey.toString();
-            String value = metadata.get(wkey).toString();
-            // see if it matches
-            String regex = KVpatterns.get(key);
-            if (regex == null)
+        boolean matchesAll = true;
+        Iterator<String> kiter = KVpatterns.keySet().iterator();
+        while (kiter.hasNext()) {
+            String k = kiter.next();
+            String regex = KVpatterns.get(k);
+            // see if we have a metadata for that key
+            Writable value = metadata.get(new Text(k));
+            if (value == null) {
+                matchesAll = false;
                 continue;
-            if (value.matches(regex)) {
-                hasMatch = true;
-                break;
             }
+            if (value.toString().matches(regex)) {
+                hasMatch = true;
+            } else
+                matchesAll = false;
         }
 
-        if (hasMatch) {
+        boolean successMatching = false;
+
+        if (medataMode.equalsIgnoreCase("AND")) {
+            if (matchesAll)
+                successMatching = true;
+        } else if (hasMatch)
+            successMatching = true;
+
+        if (successMatching) {
             return (!negativeMode);
         }
 
