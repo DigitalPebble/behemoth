@@ -17,10 +17,9 @@
 
 package com.digitalpebble.behemoth.util;
 
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.URLEncoder;
+import java.util.UUID;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -29,6 +28,7 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.hadoop.conf.Configured;
+import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -52,7 +52,14 @@ public class ContentExtractor extends Configured implements Tool {
     private static final Logger LOG = LoggerFactory
             .getLogger(ContentExtractor.class);
 
-    private boolean useURLforFileName = true;
+    public enum FileNamingMode {
+        URL, UUID, NUM
+    }
+
+    private FileNamingMode mode = FileNamingMode.UUID;
+
+    // dump the text otherwise
+    private boolean dumpBinary = false;
 
     public ContentExtractor() {
     }
@@ -74,6 +81,7 @@ public class ContentExtractor extends Configured implements Tool {
         options.addOption("h", "help", false, "print this message");
         options.addOption("i", "input", true, "Behemoth corpus");
         options.addOption("o", "output", true, "local corpus dir");
+        options.addOption("b", "binary", false, "dumps binary content, text otherwise");
 
         // parse the command line arguments
         try {
@@ -88,6 +96,7 @@ public class ContentExtractor extends Configured implements Tool {
                 formatter.printHelp("ContentExtractor", options);
                 return -1;
             }
+            dumpBinary = line.hasOption("binary");
             generateDocs(input, output);
 
         } catch (ParseException e) {
@@ -97,15 +106,19 @@ public class ContentExtractor extends Configured implements Tool {
     }
 
     private void generateDocs(String inputf, String outputf) throws IOException {
+        
         Path input = new Path(inputf);
+        Path dirPath = new Path(outputf);
 
-        File output = new File(outputf);
-        if (output.exists() && output.isFile()) {
-            System.err.println("Output " + outputf + " already exists");
+        FileSystem fsout = FileSystem.get(dirPath.toUri(), getConf());
+
+        if (fsout.exists(dirPath) == false)
+            fsout.mkdirs(dirPath);
+        else if (fsout.isFile(dirPath)) {
+            System.err.println("Output " + outputf
+                    + " already exists as a file!");
             return;
         }
-        if (output.exists() == false)
-            output.mkdirs();
 
         FileSystem fs = input.getFileSystem(getConf());
         FileStatus[] statuses = fs.listStatus(input);
@@ -115,14 +128,16 @@ public class ContentExtractor extends Configured implements Tool {
             Path suPath = status.getPath();
             if (suPath.getName().equals("_SUCCESS"))
                 continue;
-            generateDocs(suPath, output, count);
+            generateDocs(suPath, dirPath, count);
         }
     }
 
-    private void generateDocs(Path input, File dir, int[] count)
+    private void generateDocs(Path input, Path dir, int[] count)
             throws IOException {
 
         DocumentFilter docFilter = DocumentFilter.getFilters(getConf());
+
+        FileSystem fsout = FileSystem.get(dir.toUri(), getConf());
 
         Reader[] cacheReaders = SequenceFileOutputFormat.getReaders(getConf(),
                 input);
@@ -130,48 +145,66 @@ public class ContentExtractor extends Configured implements Tool {
             // read the key + values in that file
             Text key = new Text();
             BehemothDocument inputDoc = new BehemothDocument();
-            FileOutputStream writer = null;
+            FSDataOutputStream out = null;
             while (current.next(key, inputDoc)) {
                 count[0]++;
                 // filter the doc?
                 if (!docFilter.keep(inputDoc))
                     continue;
-                if (inputDoc.getContent() == null)
+                if (dumpBinary && inputDoc.getContent() == null)
+                    continue;
+                else if (!dumpBinary && inputDoc.getText() == null)
                     continue;
                 try {
                     String fileName = Integer.toString(count[0]);
                     String urldoc = inputDoc.getUrl();
-                    if (useURLforFileName && urldoc != null
+                    if (mode.equals(FileNamingMode.URL) && urldoc != null
                             && urldoc.length() > 0) {
                         fileName = URLEncoder.encode(urldoc, "UTF-8");
-                    } else
-                        fileName = Integer.toString(count[0]);
-
-                    File outputFile = new File(dir, fileName);
-                    if (outputFile.exists() == false)
-                        outputFile.createNewFile();
-                    else {
-                        // already there! prefix with global counter
-                        outputFile = new File(dir, Integer.toString(count[0])
-                                + "_" + fileName);
-                        if (outputFile.exists() == false)
-                            outputFile.createNewFile();
+                    }
+                    if (mode.equals(FileNamingMode.UUID) && urldoc != null
+                            && urldoc.length() > 0) {
+                        fileName = UUID.nameUUIDFromBytes(urldoc.getBytes())
+                                .toString();
+                    } else {
+                        fileName = String.format("%08d", count[0]);
                     }
 
-                    writer = new FileOutputStream(outputFile);
-                    writer.write(inputDoc.getContent());
+                    if (!dumpBinary)
+                        fileName += ".txt";
+
+                    Path outFilePath = new Path(dir, fileName);
+                    if (fsout.exists(outFilePath) == false) {
+                        fsout.createNewFile(outFilePath);
+                    } else {
+                        // already there! prefix with global counter
+                        outFilePath = new Path(dir, Integer.toString(count[0])
+                                + "_" + fileName);
+                        if (fsout.exists(outFilePath) == false) {
+                            fsout.createNewFile(outFilePath);
+                        }
+                    }
+
+                    out = fsout.create(outFilePath);
+
+                    byte[] contentBytes;
+                    if (dumpBinary)
+                        contentBytes = inputDoc.getContent();
+                    else
+                        contentBytes = inputDoc.getText().getBytes("UTF-8");
+
+                    out.write(contentBytes, 0, contentBytes.length);
 
                 } catch (Exception e) {
                     LOG.error(
                             "Exception on doc [" + count[0] + "] "
                                     + key.toString(), e);
                 } finally {
-                    if (writer != null)
-                        writer.close();
+                    if (out != null)
+                        out.close();
                 }
             }
             current.close();
         }
     }
-
 }
