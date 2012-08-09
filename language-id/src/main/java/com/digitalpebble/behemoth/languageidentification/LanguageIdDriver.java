@@ -133,10 +133,7 @@ public class LanguageIdDriver extends Configured implements Tool {
 
         job.setMapperClass(LanguageIdMapper.class);
 
-        if (DocumentFilter.isRequired(job))
-            job.setReducerClass(BehemothReducer.class);
-        else
-            job.setNumReduceTasks(0);
+        job.setNumReduceTasks(0);
 
         FileInputFormat.addInputPath(job, inputPath);
         FileOutputFormat.setOutputPath(job, outputPath);
