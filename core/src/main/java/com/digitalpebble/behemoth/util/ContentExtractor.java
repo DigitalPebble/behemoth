@@ -53,7 +53,15 @@ public class ContentExtractor extends Configured implements Tool {
             .getLogger(ContentExtractor.class);
 
     public enum FileNamingMode {
-        URL, UUID, NUM
+        URL, UUID, NUM;
+
+        public static FileNamingMode toMode(String str) {
+            try {
+                return valueOf(str);
+            } catch (Exception ex) {
+                return UUID;
+            }
+        }
     }
 
     private FileNamingMode mode = FileNamingMode.UUID;
@@ -81,7 +89,10 @@ public class ContentExtractor extends Configured implements Tool {
         options.addOption("h", "help", false, "print this message");
         options.addOption("i", "input", true, "Behemoth corpus");
         options.addOption("o", "output", true, "local corpus dir");
-        options.addOption("b", "binary", false, "dumps binary content, text otherwise");
+        options.addOption("b", "binary", false,
+                "dumps binary content, text otherwise");
+        options.addOption("n", "filenaming", true,
+                "whether to name files based on URL, UUID (default) or NUM");
 
         // parse the command line arguments
         try {
@@ -97,6 +108,12 @@ public class ContentExtractor extends Configured implements Tool {
                 return -1;
             }
             dumpBinary = line.hasOption("binary");
+
+            if (line.hasOption("filenaming")) {
+                String naming = line.getOptionValue("n");
+                mode = FileNamingMode.toMode(naming);
+            }
+
             generateDocs(input, output);
 
         } catch (ParseException e) {
@@ -106,7 +123,7 @@ public class ContentExtractor extends Configured implements Tool {
     }
 
     private void generateDocs(String inputf, String outputf) throws IOException {
-        
+
         Path input = new Path(inputf);
         Path dirPath = new Path(outputf);
 
@@ -114,11 +131,18 @@ public class ContentExtractor extends Configured implements Tool {
 
         if (fsout.exists(dirPath) == false)
             fsout.mkdirs(dirPath);
-        else if (fsout.isFile(dirPath)) {
-            System.err.println("Output " + outputf
-                    + " already exists as a file!");
+        else {
+            System.err.println("Output " + outputf + " already exists");
             return;
         }
+
+        // index file
+        Path indexPath = new Path(dirPath, "index");
+        if (fsout.exists(indexPath) == false) {
+            fsout.createNewFile(indexPath);
+        }
+
+        FSDataOutputStream index = fsout.create(indexPath);
 
         FileSystem fs = input.getFileSystem(getConf());
         FileStatus[] statuses = fs.listStatus(input);
@@ -128,12 +152,15 @@ public class ContentExtractor extends Configured implements Tool {
             Path suPath = status.getPath();
             if (suPath.getName().equals("_SUCCESS"))
                 continue;
-            generateDocs(suPath, dirPath, count);
+            generateDocs(suPath, dirPath, count, index);
         }
+
+        if (index != null)
+            index.close();
     }
 
-    private void generateDocs(Path input, Path dir, int[] count)
-            throws IOException {
+    private void generateDocs(Path input, Path dir, int[] count,
+            FSDataOutputStream index) throws IOException {
 
         DocumentFilter docFilter = DocumentFilter.getFilters(getConf());
 
@@ -161,25 +188,27 @@ public class ContentExtractor extends Configured implements Tool {
                     if (mode.equals(FileNamingMode.URL) && urldoc != null
                             && urldoc.length() > 0) {
                         fileName = URLEncoder.encode(urldoc, "UTF-8");
-                    }
-                    if (mode.equals(FileNamingMode.UUID) && urldoc != null
-                            && urldoc.length() > 0) {
+                    } else if (mode.equals(FileNamingMode.UUID)
+                            && urldoc != null && urldoc.length() > 0) {
                         fileName = UUID.nameUUIDFromBytes(urldoc.getBytes())
                                 .toString();
                     } else {
-                        fileName = String.format("%08d", count[0]);
+                        fileName = String.format("%09d", count[0]);
                     }
 
                     if (!dumpBinary)
                         fileName += ".txt";
+
+                    // TODO add suffix based on mimetype when dumping binary
+                    // content
 
                     Path outFilePath = new Path(dir, fileName);
                     if (fsout.exists(outFilePath) == false) {
                         fsout.createNewFile(outFilePath);
                     } else {
                         // already there! prefix with global counter
-                        outFilePath = new Path(dir, Integer.toString(count[0])
-                                + "_" + fileName);
+                        fileName = Integer.toString(count[0]) + "_" + fileName;
+                        outFilePath = new Path(dir, fileName);
                         if (fsout.exists(outFilePath) == false) {
                             fsout.createNewFile(outFilePath);
                         }
@@ -194,6 +223,9 @@ public class ContentExtractor extends Configured implements Tool {
                         contentBytes = inputDoc.getText().getBytes("UTF-8");
 
                     out.write(contentBytes, 0, contentBytes.length);
+
+                    // add the mapping URL->filename in the index
+                    index.writeBytes(urldoc + "\t" + fileName + "\n");
 
                 } catch (Exception e) {
                     LOG.error(
