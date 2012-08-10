@@ -76,6 +76,8 @@ public class ContentExtractor extends Configured implements Tool {
     private boolean dumpBinary = false;
 
     private ArchiveOutputStream currentArchive = null;
+    
+    private FSDataOutputStream index = null;
 
     private int partNum = 0;
     private int numEntriesInCurrentArchive = 0;
@@ -158,7 +160,7 @@ public class ContentExtractor extends Configured implements Tool {
         maxNumEntriesInArchive = getConf().getInt(
                 numEntriesPerArchiveParamName, 10000);
 
-        FSDataOutputStream index = fsout.create(indexPath);
+        index = fsout.create(indexPath);
 
         createArchive(dirPath);
 
@@ -170,7 +172,7 @@ public class ContentExtractor extends Configured implements Tool {
             Path suPath = status.getPath();
             if (suPath.getName().equals("_SUCCESS"))
                 continue;
-            generateDocs(suPath, dirPath, count, index);
+            generateDocs(suPath, dirPath, count);
         }
 
         if (index != null)
@@ -202,6 +204,7 @@ public class ContentExtractor extends Configured implements Tool {
         currentArchive.putArchiveEntry(new ZipArchiveEntry(fileName));
         currentArchive.write(content);
         currentArchive.closeArchiveEntry();
+        index.flush();
         if (numEntriesInCurrentArchive == maxNumEntriesInArchive) {
             currentArchive.finish();
             currentArchive.close();
@@ -209,8 +212,7 @@ public class ContentExtractor extends Configured implements Tool {
         }
     }
 
-    private void generateDocs(Path input, Path dir, int[] count,
-            FSDataOutputStream index) throws IOException, ArchiveException {
+    private void generateDocs(Path input, Path dir, int[] count) throws IOException, ArchiveException {
 
         DocumentFilter docFilter = DocumentFilter.getFilters(getConf());
 
