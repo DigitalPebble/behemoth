@@ -33,6 +33,12 @@ hadoop jar $behe_home/$module/target/behemoth-$module-1.0-SNAPSHOT-job.jar com.d
 # same but filter on language 
 hadoop jar $behe_home/$module/target/behemoth-$module-1.0-SNAPSHOT-job.jar com.digitalpebble.behemoth.languageidentification.LanguageIdDriver -D document.filter.md.keep.lang=en -i textcorpusTika -o -o textcorpusTika-EN
 
+#filter on mime type
+hadoop jar $behe_home/$module/target/behemoth-$module-1.0-SNAPSHOT-job.jar com.digitalpebble.behemoth.util.CorpusFilter -D document.filter.mimetype.keep=.+html.* -i textcorpusTika -o textcorpusTika-html
+
+#filter on url
+hadoop jar $behe_home/$module/target/behemoth-$module-1.0-SNAPSHOT-job.jar com.digitalpebble.behemoth.util.CorpusFilter -D document.filter.url.keep=.+13.* -i textcorpusTika -o textcorpusTika-13
+
 # process with UIMA
 module=uima
 hadoop fs -copyFromLocal $behe_home/$module/src/test/resources/WhitespaceTokenizer.pear WhitespaceTokenizer.pear
