@@ -46,6 +46,7 @@ import org.apache.mahout.vectorizer.HighDFWordsPruner;
 import org.apache.mahout.vectorizer.collocations.llr.LLRReducer;
 import org.apache.mahout.vectorizer.common.PartialVectorMerger;
 import org.apache.mahout.vectorizer.tfidf.TFIDFConverter;
+import org.jfree.util.Log;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -54,436 +55,441 @@ import org.slf4j.LoggerFactory;
  * corpus Converts a given set of sequence files into SparseVectors
  */
 public final class SparseVectorsFromBehemoth extends AbstractJob implements
-		Tool {
+        Tool {
 
-	private static final Logger log = LoggerFactory
-			.getLogger(SparseVectorsFromBehemoth.class);
+    private static final Logger log = LoggerFactory
+            .getLogger(SparseVectorsFromBehemoth.class);
 
-	public static void main(String[] args) throws Exception {
-		ToolRunner.run(new SparseVectorsFromBehemoth(), args);
-	}
+    public static void main(String[] args) throws Exception {
+        ToolRunner.run(new SparseVectorsFromBehemoth(), args);
+    }
 
-	public int run(String[] args) throws Exception {
-		DefaultOptionBuilder obuilder = new DefaultOptionBuilder();
-		ArgumentBuilder abuilder = new ArgumentBuilder();
-		GroupBuilder gbuilder = new GroupBuilder();
+    public int run(String[] args) throws Exception {
+        DefaultOptionBuilder obuilder = new DefaultOptionBuilder();
+        ArgumentBuilder abuilder = new ArgumentBuilder();
+        GroupBuilder gbuilder = new GroupBuilder();
 
-		Option inputDirOpt = DefaultOptionCreator.inputOption().create();
+        Option inputDirOpt = DefaultOptionCreator.inputOption().create();
 
-		Option outputDirOpt = DefaultOptionCreator.outputOption().create();
+        Option outputDirOpt = DefaultOptionCreator.outputOption().create();
 
-		Option minSupportOpt = obuilder
-				.withLongName("minSupport")
-				.withArgument(
-						abuilder.withName("minSupport").withMinimum(1)
-								.withMaximum(1).create())
-				.withDescription("(Optional) Minimum Support. Default Value: 2")
-				.withShortName("s").create();
+        Option minSupportOpt = obuilder
+                .withLongName("minSupport")
+                .withArgument(
+                        abuilder.withName("minSupport").withMinimum(1)
+                                .withMaximum(1).create())
+                .withDescription("(Optional) Minimum Support. Default Value: 2")
+                .withShortName("s").create();
 
-		Option typeNameOpt = obuilder
-				.withLongName("typeToken")
-				.withRequired(false)
-				.withArgument(
-						abuilder.withName("typeToken").withMinimum(1)
-								.withMaximum(1).create())
-				.withDescription("The annotation type for Tokens")
-				.withShortName("t").create();
+        Option typeNameOpt = obuilder
+                .withLongName("typeToken")
+                .withRequired(false)
+                .withArgument(
+                        abuilder.withName("typeToken").withMinimum(1)
+                                .withMaximum(1).create())
+                .withDescription("The annotation type for Tokens")
+                .withShortName("t").create();
 
-		Option featureNameOpt = obuilder
-				.withLongName("featureName")
-				.withRequired(false)
-				.withArgument(
-						abuilder.withName("featureName").withMinimum(1)
-								.withMaximum(1).create())
-				.withDescription(
-						"The name of the feature containing the token values, uses the text if unspecified")
-				.withShortName("f").create();
+        Option featureNameOpt = obuilder
+                .withLongName("featureName")
+                .withRequired(false)
+                .withArgument(
+                        abuilder.withName("featureName").withMinimum(1)
+                                .withMaximum(1).create())
+                .withDescription(
+                        "The name of the feature containing the token values, uses the text if unspecified")
+                .withShortName("f").create();
 
-		Option analyzerNameOpt = obuilder
-				.withLongName("analyzerName")
-				.withArgument(
-						abuilder.withName("analyzerName").withMinimum(1)
-								.withMaximum(1).create())
-				.withDescription("The class name of the analyzer")
-				.withShortName("a").create();
+        Option analyzerNameOpt = obuilder
+                .withLongName("analyzerName")
+                .withArgument(
+                        abuilder.withName("analyzerName").withMinimum(1)
+                                .withMaximum(1).create())
+                .withDescription("The class name of the analyzer")
+                .withShortName("a").create();
 
-		Option chunkSizeOpt = obuilder
-				.withLongName("chunkSize")
-				.withArgument(
-						abuilder.withName("chunkSize").withMinimum(1)
-								.withMaximum(1).create())
-				.withDescription("The chunkSize in MegaBytes. 100-10000 MB")
-				.withShortName("chunk").create();
+        Option chunkSizeOpt = obuilder
+                .withLongName("chunkSize")
+                .withArgument(
+                        abuilder.withName("chunkSize").withMinimum(1)
+                                .withMaximum(1).create())
+                .withDescription("The chunkSize in MegaBytes. 100-10000 MB")
+                .withShortName("chunk").create();
 
-		Option weightOpt = obuilder
-				.withLongName("weight")
-				.withRequired(false)
-				.withArgument(
-						abuilder.withName("weight").withMinimum(1)
-								.withMaximum(1).create())
-				.withDescription(
-						"The kind of weight to use. Currently TF or TFIDF")
-				.withShortName("wt").create();
+        Option weightOpt = obuilder
+                .withLongName("weight")
+                .withRequired(false)
+                .withArgument(
+                        abuilder.withName("weight").withMinimum(1)
+                                .withMaximum(1).create())
+                .withDescription(
+                        "The kind of weight to use. Currently TF or TFIDF")
+                .withShortName("wt").create();
 
-		Option minDFOpt = obuilder
-				.withLongName("minDF")
-				.withRequired(false)
-				.withArgument(
-						abuilder.withName("minDF").withMinimum(1)
-								.withMaximum(1).create())
-				.withDescription(
-						"The minimum document frequency.  Default is 1")
-				.withShortName("md").create();
+        Option minDFOpt = obuilder
+                .withLongName("minDF")
+                .withRequired(false)
+                .withArgument(
+                        abuilder.withName("minDF").withMinimum(1)
+                                .withMaximum(1).create())
+                .withDescription(
+                        "The minimum document frequency.  Default is 1")
+                .withShortName("md").create();
 
-		Option maxDFPercentOpt = obuilder
-				.withLongName("maxDFPercent")
-				.withRequired(false)
-				.withArgument(
-						abuilder.withName("maxDFPercent").withMinimum(1)
-								.withMaximum(1).create())
-				.withDescription(
-						"The max percentage of docs for the DF.  Can be used to remove really high frequency terms."
-								+ " Expressed as an integer between 0 and 100. Default is 99.  If maxDFSigma is also set, it will override this value.")
-				.withShortName("x").create();
+        Option maxDFPercentOpt = obuilder
+                .withLongName("maxDFPercent")
+                .withRequired(false)
+                .withArgument(
+                        abuilder.withName("maxDFPercent").withMinimum(1)
+                                .withMaximum(1).create())
+                .withDescription(
+                        "The max percentage of docs for the DF.  Can be used to remove really high frequency terms."
+                                + " Expressed as an integer between 0 and 100. Default is 99.  If maxDFSigma is also set, it will override this value.")
+                .withShortName("x").create();
 
-		Option maxDFSigmaOpt = obuilder
-				.withLongName("maxDFSigma")
-				.withRequired(false)
-				.withArgument(
-						abuilder.withName("maxDFSigma").withMinimum(1)
-								.withMaximum(1).create())
-				.withDescription(
-						"What portion of the tf (tf-idf) vectors to be used, expressed in times the standard deviation (sigma) of the document frequencies of these vectors."
-								+ "  Can be used to remove really high frequency terms."
-								+ " Expressed as a double value. Good value to be specified is 3.0. In case the value is less then 0 no vectors "
-								+ "will be filtered out. Default is -1.0.  Overrides maxDFPercent")
-				.withShortName("xs").create();
+        Option maxDFSigmaOpt = obuilder
+                .withLongName("maxDFSigma")
+                .withRequired(false)
+                .withArgument(
+                        abuilder.withName("maxDFSigma").withMinimum(1)
+                                .withMaximum(1).create())
+                .withDescription(
+                        "What portion of the tf (tf-idf) vectors to be used, expressed in times the standard deviation (sigma) of the document frequencies of these vectors."
+                                + "  Can be used to remove really high frequency terms."
+                                + " Expressed as a double value. Good value to be specified is 3.0. In case the value is less then 0 no vectors "
+                                + "will be filtered out. Default is -1.0.  Overrides maxDFPercent")
+                .withShortName("xs").create();
 
-		Option minLLROpt = obuilder
-				.withLongName("minLLR")
-				.withRequired(false)
-				.withArgument(
-						abuilder.withName("minLLR").withMinimum(1)
-								.withMaximum(1).create())
-				.withDescription(
-						"(Optional)The minimum Log Likelihood Ratio(Float)  Default is "
-								+ LLRReducer.DEFAULT_MIN_LLR)
-				.withShortName("ml").create();
+        Option minLLROpt = obuilder
+                .withLongName("minLLR")
+                .withRequired(false)
+                .withArgument(
+                        abuilder.withName("minLLR").withMinimum(1)
+                                .withMaximum(1).create())
+                .withDescription(
+                        "(Optional)The minimum Log Likelihood Ratio(Float)  Default is "
+                                + LLRReducer.DEFAULT_MIN_LLR)
+                .withShortName("ml").create();
 
-		Option numReduceTasksOpt = obuilder
-				.withLongName("numReducers")
-				.withArgument(
-						abuilder.withName("numReducers").withMinimum(1)
-								.withMaximum(1).create())
-				.withDescription(
-						"(Optional) Number of reduce tasks. Default Value: 1")
-				.withShortName("nr").create();
+        Option numReduceTasksOpt = obuilder
+                .withLongName("numReducers")
+                .withArgument(
+                        abuilder.withName("numReducers").withMinimum(1)
+                                .withMaximum(1).create())
+                .withDescription(
+                        "(Optional) Number of reduce tasks. Default Value: 1")
+                .withShortName("nr").create();
 
-		Option powerOpt = obuilder
-				.withLongName("norm")
-				.withRequired(false)
-				.withArgument(
-						abuilder.withName("norm").withMinimum(1).withMaximum(1)
-								.create())
-				.withDescription(
-						"The norm to use, expressed as either a float or \"INF\" if you want to use the Infinite norm.  "
-								+ "Must be greater or equal to 0.  The default is not to normalize")
-				.withShortName("n").create();
+        Option powerOpt = obuilder
+                .withLongName("norm")
+                .withRequired(false)
+                .withArgument(
+                        abuilder.withName("norm").withMinimum(1).withMaximum(1)
+                                .create())
+                .withDescription(
+                        "The norm to use, expressed as either a float or \"INF\" if you want to use the Infinite norm.  "
+                                + "Must be greater or equal to 0.  The default is not to normalize")
+                .withShortName("n").create();
 
-		Option logNormalizeOpt = obuilder
-				.withLongName("logNormalize")
-				.withRequired(false)
-				.withDescription(
-						"(Optional) Whether output vectors should be logNormalize. If set true else false")
-				.withShortName("lnorm").create();
+        Option logNormalizeOpt = obuilder
+                .withLongName("logNormalize")
+                .withRequired(false)
+                .withDescription(
+                        "(Optional) Whether output vectors should be logNormalize. If set true else false")
+                .withShortName("lnorm").create();
 
-		Option maxNGramSizeOpt = obuilder
-				.withLongName("maxNGramSize")
-				.withRequired(false)
-				.withArgument(
-						abuilder.withName("ngramSize").withMinimum(1)
-								.withMaximum(1).create())
-				.withDescription(
-						"(Optional) The maximum size of ngrams to create"
-								+ " (2 = bigrams, 3 = trigrams, etc) Default Value:1")
-				.withShortName("ng").create();
+        Option maxNGramSizeOpt = obuilder
+                .withLongName("maxNGramSize")
+                .withRequired(false)
+                .withArgument(
+                        abuilder.withName("ngramSize").withMinimum(1)
+                                .withMaximum(1).create())
+                .withDescription(
+                        "(Optional) The maximum size of ngrams to create"
+                                + " (2 = bigrams, 3 = trigrams, etc) Default Value:1")
+                .withShortName("ng").create();
 
-		Option sequentialAccessVectorOpt = obuilder
-				.withLongName("sequentialAccessVector")
-				.withRequired(false)
-				.withDescription(
-						"(Optional) Whether output vectors should be SequentialAccessVectors. If set true else false")
-				.withShortName("seq").create();
+        Option sequentialAccessVectorOpt = obuilder
+                .withLongName("sequentialAccessVector")
+                .withRequired(false)
+                .withDescription(
+                        "(Optional) Whether output vectors should be SequentialAccessVectors. If set true else false")
+                .withShortName("seq").create();
 
-		Option namedVectorOpt = obuilder
-				.withLongName("namedVector")
-				.withRequired(false)
-				.withDescription(
-						"(Optional) Whether output vectors should be NamedVectors. If set true else false")
-				.withShortName("nv").create();
+        Option namedVectorOpt = obuilder
+                .withLongName("namedVector")
+                .withRequired(false)
+                .withDescription(
+                        "(Optional) Whether output vectors should be NamedVectors. If set true else false")
+                .withShortName("nv").create();
 
-		Option overwriteOutput = obuilder.withLongName("overwrite")
-				.withRequired(false)
-				.withDescription("If set, overwrite the output directory")
-				.withShortName("ow").create();
+        Option overwriteOutput = obuilder.withLongName("overwrite")
+                .withRequired(false)
+                .withDescription("If set, overwrite the output directory")
+                .withShortName("ow").create();
 
-		Option labelMDOpt = obuilder
-				.withLongName("labelMDKey")
-				.withRequired(false)
-				.withArgument(
-						abuilder.withName("label_md_key").create())
-				.withDescription("Document metadata holding the label")
-				.withShortName("label").create();
+        Option labelMDOpt = obuilder.withLongName("labelMDKey")
+                .withRequired(false)
+                .withArgument(abuilder.withName("label_md_key").create())
+                .withDescription("Document metadata holding the label")
+                .withShortName("label").create();
 
-		Option helpOpt = obuilder.withLongName("help")
-				.withDescription("Print out help").withShortName("h").create();
+        Option helpOpt = obuilder.withLongName("help")
+                .withDescription("Print out help").withShortName("h").create();
 
-		Group group = gbuilder.withName("Options").withOption(minSupportOpt)
-				.withOption(typeNameOpt).withOption(featureNameOpt)
-				.withOption(analyzerNameOpt).withOption(chunkSizeOpt)
-				.withOption(outputDirOpt).withOption(inputDirOpt)
-				.withOption(minDFOpt).withOption(maxDFSigmaOpt)
-				.withOption(maxDFPercentOpt).withOption(weightOpt)
-				.withOption(powerOpt).withOption(minLLROpt)
-				.withOption(numReduceTasksOpt).withOption(maxNGramSizeOpt)
-				.withOption(overwriteOutput).withOption(helpOpt)
-				.withOption(sequentialAccessVectorOpt)
-				.withOption(namedVectorOpt).withOption(logNormalizeOpt)
-				.withOption(labelMDOpt).create();
-		try {
-			Parser parser = new Parser();
-			parser.setGroup(group);
-			parser.setHelpOption(helpOpt);
-			CommandLine cmdLine = parser.parse(args);
+        Group group = gbuilder.withName("Options").withOption(minSupportOpt)
+                .withOption(typeNameOpt).withOption(featureNameOpt)
+                .withOption(analyzerNameOpt).withOption(chunkSizeOpt)
+                .withOption(outputDirOpt).withOption(inputDirOpt)
+                .withOption(minDFOpt).withOption(maxDFSigmaOpt)
+                .withOption(maxDFPercentOpt).withOption(weightOpt)
+                .withOption(powerOpt).withOption(minLLROpt)
+                .withOption(numReduceTasksOpt).withOption(maxNGramSizeOpt)
+                .withOption(overwriteOutput).withOption(helpOpt)
+                .withOption(sequentialAccessVectorOpt)
+                .withOption(namedVectorOpt).withOption(logNormalizeOpt)
+                .withOption(labelMDOpt).create();
+        CommandLine cmdLine = null;
+        try {
+            Parser parser = new Parser();
+            parser.setGroup(group);
+            parser.setHelpOption(helpOpt);
+            cmdLine = parser.parse(args);
 
-			// check that we have an analyser or a token type
-			if (!cmdLine.hasOption(analyzerNameOpt) && !cmdLine.hasOption(typeNameOpt)) {
-				CommandLineUtil.printHelp(group);
-				return -1;
-			}
-			
-			
-			if (cmdLine.hasOption(helpOpt)) {
-				CommandLineUtil.printHelp(group);
-				return -1;
-			}
+            // check that we have an analyser or a token type
+            if (!cmdLine.hasOption(analyzerNameOpt)
+                    && !cmdLine.hasOption(typeNameOpt)) {
+                CommandLineUtil.printHelp(group);
+                return -1;
+            }
 
-			Path inputDir = new Path((String) cmdLine.getValue(inputDirOpt));
-			Path outputDir = new Path((String) cmdLine.getValue(outputDirOpt));
+            if (cmdLine.hasOption(helpOpt)) {
+                CommandLineUtil.printHelp(group);
+                return -1;
+            }
 
-			int chunkSize = 100;
-			if (cmdLine.hasOption(chunkSizeOpt)) {
-				chunkSize = Integer.parseInt((String) cmdLine
-						.getValue(chunkSizeOpt));
-			}
-			int minSupport = 2;
-			if (cmdLine.hasOption(minSupportOpt)) {
-				String minSupportString = (String) cmdLine
-						.getValue(minSupportOpt);
-				minSupport = Integer.parseInt(minSupportString);
-			}
+        } catch (OptionException e) {
+            log.error("Exception", e);
+            CommandLineUtil.printHelp(group);
+            return -1;
+        }
 
-			int maxNGramSize = 1;
+        Path inputDir = new Path((String) cmdLine.getValue(inputDirOpt));
+        Path outputDir = new Path((String) cmdLine.getValue(outputDirOpt));
 
-			if (cmdLine.hasOption(maxNGramSizeOpt)) {
-				try {
-					maxNGramSize = Integer.parseInt(cmdLine.getValue(
-							maxNGramSizeOpt).toString());
-				} catch (NumberFormatException ex) {
-					log.warn("Could not parse ngram size option");
-				}
-			}
-			log.info("Maximum n-gram size is: {}", maxNGramSize);
+        int chunkSize = 100;
+        if (cmdLine.hasOption(chunkSizeOpt)) {
+            chunkSize = Integer.parseInt((String) cmdLine
+                    .getValue(chunkSizeOpt));
+        }
+        int minSupport = 2;
+        if (cmdLine.hasOption(minSupportOpt)) {
+            String minSupportString = (String) cmdLine.getValue(minSupportOpt);
+            minSupport = Integer.parseInt(minSupportString);
+        }
 
-			if (cmdLine.hasOption(overwriteOutput)) {
-				HadoopUtil.delete(getConf(), outputDir);
-			}
+        int maxNGramSize = 1;
 
-			float minLLRValue = LLRReducer.DEFAULT_MIN_LLR;
-			if (cmdLine.hasOption(minLLROpt)) {
-				minLLRValue = Float.parseFloat(cmdLine.getValue(minLLROpt)
-						.toString());
-			}
-			log.info("Minimum LLR value: {}", minLLRValue);
+        if (cmdLine.hasOption(maxNGramSizeOpt)) {
+            try {
+                maxNGramSize = Integer.parseInt(cmdLine.getValue(
+                        maxNGramSizeOpt).toString());
+            } catch (NumberFormatException ex) {
+                log.warn("Could not parse ngram size option");
+            }
+        }
+        log.info("Maximum n-gram size is: {}", maxNGramSize);
 
-			int reduceTasks = 1;
-			if (cmdLine.hasOption(numReduceTasksOpt)) {
-				reduceTasks = Integer.parseInt(cmdLine.getValue(
-						numReduceTasksOpt).toString());
-			}
-			log.info("Number of reduce tasks: {}", reduceTasks);
+        if (cmdLine.hasOption(overwriteOutput)) {
+            HadoopUtil.delete(getConf(), outputDir);
+        }
 
-			Class<? extends Analyzer> analyzerClass = DefaultAnalyzer.class;
-			if (cmdLine.hasOption(analyzerNameOpt)) {
-				String className = cmdLine.getValue(analyzerNameOpt).toString();
-				analyzerClass = Class.forName(className).asSubclass(
-						Analyzer.class);
-				// try instantiating it, b/c there isn't any point in setting it
-				// if
-				// you can't instantiate it
-				ClassUtils.instantiateAs(analyzerClass, Analyzer.class);
-			}
-			String type = null;
-			String featureName = "";
-			if (cmdLine.hasOption(typeNameOpt)) {
-				type = cmdLine.getValue(typeNameOpt).toString();
-				Object tempFN = cmdLine.getValue(featureNameOpt);
-				if (tempFN != null) {
-					featureName = tempFN.toString();
-					log.info("Getting tokens from " + type + "."
-							+ featureName.toString());
-				} else
-					log.info("Getting tokens from " + type);
-			}
+        float minLLRValue = LLRReducer.DEFAULT_MIN_LLR;
+        if (cmdLine.hasOption(minLLROpt)) {
+            minLLRValue = Float.parseFloat(cmdLine.getValue(minLLROpt)
+                    .toString());
+        }
+        log.info("Minimum LLR value: {}", minLLRValue);
 
-			boolean processIdf;
+        int reduceTasks = 1;
+        if (cmdLine.hasOption(numReduceTasksOpt)) {
+            reduceTasks = Integer.parseInt(cmdLine.getValue(numReduceTasksOpt)
+                    .toString());
+        }
+        log.info("Number of reduce tasks: {}", reduceTasks);
 
-			if (cmdLine.hasOption(weightOpt)) {
-				String wString = cmdLine.getValue(weightOpt).toString();
-				if ("tf".equalsIgnoreCase(wString)) {
-					processIdf = false;
-				} else if ("tfidf".equalsIgnoreCase(wString)) {
-					processIdf = true;
-				} else {
-					throw new OptionException(weightOpt);
-				}
-			} else {
-				processIdf = true;
-			}
+        Class<? extends Analyzer> analyzerClass = DefaultAnalyzer.class;
+        if (cmdLine.hasOption(analyzerNameOpt)) {
+            String className = cmdLine.getValue(analyzerNameOpt).toString();
+            analyzerClass = Class.forName(className).asSubclass(Analyzer.class);
+            // try instantiating it, b/c there isn't any point in setting it
+            // if
+            // you can't instantiate it
+            ClassUtils.instantiateAs(analyzerClass, Analyzer.class);
+        }
 
-			int minDf = 1;
-			if (cmdLine.hasOption(minDFOpt)) {
-				minDf = Integer.parseInt(cmdLine.getValue(minDFOpt).toString());
-			}
-			int maxDFPercent = 99;
-			if (cmdLine.hasOption(maxDFPercentOpt)) {
-				maxDFPercent = Integer.parseInt(cmdLine.getValue(
-						maxDFPercentOpt).toString());
-			}
-			double maxDFSigma = -1.0;
-			if (cmdLine.hasOption(maxDFSigmaOpt)) {
-				maxDFSigma = Double.parseDouble(cmdLine.getValue(maxDFSigmaOpt)
-						.toString());
-			}
+        String type = null;
+        String featureName = "";
+        if (cmdLine.hasOption(typeNameOpt)) {
+            type = cmdLine.getValue(typeNameOpt).toString();
+            Object tempFN = cmdLine.getValue(featureNameOpt);
+            if (tempFN != null) {
+                featureName = tempFN.toString();
+                log.info("Getting tokens from " + type + "."
+                        + featureName.toString());
+            } else
+                log.info("Getting tokens from " + type);
+        }
 
-			float norm = PartialVectorMerger.NO_NORMALIZING;
-			if (cmdLine.hasOption(powerOpt)) {
-				String power = cmdLine.getValue(powerOpt).toString();
-				if ("INF".equals(power)) {
-					norm = Float.POSITIVE_INFINITY;
-				} else {
-					norm = Float.parseFloat(power);
-				}
-			}
+        boolean processIdf;
 
-			boolean logNormalize = false;
-			if (cmdLine.hasOption(logNormalizeOpt)) {
-				logNormalize = true;
-			}
+        if (cmdLine.hasOption(weightOpt)) {
+            String wString = cmdLine.getValue(weightOpt).toString();
+            if ("tf".equalsIgnoreCase(wString)) {
+                processIdf = false;
+            } else if ("tfidf".equalsIgnoreCase(wString)) {
+                processIdf = true;
+            } else {
+                throw new OptionException(weightOpt);
+            }
+        } else {
+            processIdf = true;
+        }
 
-			String labelMDKey = null;
-			if (cmdLine.hasOption(labelMDOpt)) {
-				labelMDKey = cmdLine.getValue(labelMDOpt).toString();
-			}
+        int minDf = 1;
+        if (cmdLine.hasOption(minDFOpt)) {
+            minDf = Integer.parseInt(cmdLine.getValue(minDFOpt).toString());
+        }
+        int maxDFPercent = 99;
+        if (cmdLine.hasOption(maxDFPercentOpt)) {
+            maxDFPercent = Integer.parseInt(cmdLine.getValue(maxDFPercentOpt)
+                    .toString());
+        }
+        double maxDFSigma = -1.0;
+        if (cmdLine.hasOption(maxDFSigmaOpt)) {
+            maxDFSigma = Double.parseDouble(cmdLine.getValue(maxDFSigmaOpt)
+                    .toString());
+        }
 
-			Configuration conf = getConf();
-			Path tokenizedPath = new Path(outputDir,
-					DocumentProcessor.TOKENIZED_DOCUMENT_OUTPUT_FOLDER);
+        float norm = PartialVectorMerger.NO_NORMALIZING;
+        if (cmdLine.hasOption(powerOpt)) {
+            String power = cmdLine.getValue(powerOpt).toString();
+            if ("INF".equals(power)) {
+                norm = Float.POSITIVE_INFINITY;
+            } else {
+                norm = Float.parseFloat(power);
+            }
+        }
 
-			// no annotation type degfin
-			if (type != null) {
-				BehemothDocumentProcessor.tokenizeDocuments(inputDir, type,
-						featureName, tokenizedPath);
-			}
-			// no annotation type defined : rely on Lucene's analysers
-			else {
-				BehemothDocumentProcessor.tokenizeDocuments(inputDir,
-						analyzerClass, tokenizedPath, conf);
-			}
-			boolean sequentialAccessOutput = false;
-			if (cmdLine.hasOption(sequentialAccessVectorOpt)) {
-				sequentialAccessOutput = true;
-			}
+        boolean logNormalize = false;
+        if (cmdLine.hasOption(logNormalizeOpt)) {
+            logNormalize = true;
+        }
 
-			boolean namedVectors = false;
-			if (cmdLine.hasOption(namedVectorOpt)) {
-				namedVectors = true;
-			}
-			boolean shouldPrune = maxDFSigma >= 0.0;
-			String tfDirName = shouldPrune ? DictionaryVectorizer.DOCUMENT_VECTOR_OUTPUT_FOLDER
-					+ "-toprune"
-					: DictionaryVectorizer.DOCUMENT_VECTOR_OUTPUT_FOLDER;
+        String labelMDKey = null;
+        if (cmdLine.hasOption(labelMDOpt)) {
+            labelMDKey = cmdLine.getValue(labelMDOpt).toString();
+        }
 
-			if (!processIdf) {
-				DictionaryVectorizer.createTermFrequencyVectors(tokenizedPath,
-						outputDir, tfDirName, conf, minSupport, maxNGramSize,
-						minLLRValue, norm, logNormalize, reduceTasks,
-						chunkSize, sequentialAccessOutput, namedVectors);
-			} else {
-				DictionaryVectorizer.createTermFrequencyVectors(tokenizedPath,
-						outputDir, tfDirName, conf, minSupport, maxNGramSize,
-						minLLRValue, -1.0f, false, reduceTasks, chunkSize,
-						sequentialAccessOutput, namedVectors);
-			}
-			Pair<Long[], List<Path>> docFrequenciesFeatures = null;
-			// Should document frequency features be processed
-			if (shouldPrune || processIdf) {
-				docFrequenciesFeatures = TFIDFConverter.calculateDF(new Path(
-						outputDir, tfDirName), outputDir, conf, chunkSize);
-			}
+        Configuration conf = getConf();
+        Path tokenizedPath = new Path(outputDir,
+                DocumentProcessor.TOKENIZED_DOCUMENT_OUTPUT_FOLDER);
 
-			long maxDF = maxDFPercent; // if we are pruning by std dev, then
-										// this will get changed
-			if (shouldPrune) {
-				Path dfDir = new Path(outputDir,
-						TFIDFConverter.WORDCOUNT_OUTPUT_FOLDER);
-				Path stdCalcDir = new Path(outputDir,
-						HighDFWordsPruner.STD_CALC_DIR);
+        // no annotation type degfin
+        if (type != null) {
+            BehemothDocumentProcessor.tokenizeDocuments(inputDir, type,
+                    featureName, tokenizedPath);
+        }
+        // no annotation type defined : rely on Lucene's analysers
+        else {
+            BehemothDocumentProcessor.tokenizeDocuments(inputDir,
+                    analyzerClass, tokenizedPath, conf);
+        }
+        boolean sequentialAccessOutput = false;
+        if (cmdLine.hasOption(sequentialAccessVectorOpt)) {
+            sequentialAccessOutput = true;
+        }
 
-				// Calculate the standard deviation
-				double stdDev = BasicStats.stdDevForGivenMean(dfDir,
-						stdCalcDir, 0.0, conf);
-				long vectorCount = docFrequenciesFeatures.getFirst()[1];
-				maxDF = (int) (100.0 * maxDFSigma * stdDev / vectorCount);
+        boolean namedVectors = false;
+        if (cmdLine.hasOption(namedVectorOpt)) {
+            namedVectors = true;
+        }
+        boolean shouldPrune = maxDFSigma >= 0.0;
+        String tfDirName = shouldPrune ? DictionaryVectorizer.DOCUMENT_VECTOR_OUTPUT_FOLDER
+                + "-toprune"
+                : DictionaryVectorizer.DOCUMENT_VECTOR_OUTPUT_FOLDER;
 
-				// Prune the term frequency vectors
-				Path tfDir = new Path(outputDir, tfDirName);
-				Path prunedTFDir = new Path(outputDir,
-						DictionaryVectorizer.DOCUMENT_VECTOR_OUTPUT_FOLDER);
-				Path prunedPartialTFDir = new Path(outputDir,
-						DictionaryVectorizer.DOCUMENT_VECTOR_OUTPUT_FOLDER
-								+ "-partial");
-				if (processIdf) {
-					HighDFWordsPruner.pruneVectors(tfDir, prunedTFDir,
-							prunedPartialTFDir, maxDF, conf,
-							docFrequenciesFeatures, -1.0f, false, reduceTasks);
-				} else {
-					HighDFWordsPruner.pruneVectors(tfDir, prunedTFDir,
-							prunedPartialTFDir, maxDF, conf,
-							docFrequenciesFeatures, norm, logNormalize,
-							reduceTasks);
-				}
-				HadoopUtil.delete(new Configuration(conf), tfDir);
-			}
-			if (processIdf) {
-				TFIDFConverter.processTfIdf(new Path(outputDir,
-						DictionaryVectorizer.DOCUMENT_VECTOR_OUTPUT_FOLDER),
-						outputDir, conf, docFrequenciesFeatures, minDf, maxDF,
-						norm, logNormalize, sequentialAccessOutput,
-						namedVectors, reduceTasks);
-			}
+        try {
+            if (!processIdf) {
+                DictionaryVectorizer.createTermFrequencyVectors(tokenizedPath,
+                        outputDir, tfDirName, conf, minSupport, maxNGramSize,
+                        minLLRValue, norm, logNormalize, reduceTasks,
+                        chunkSize, sequentialAccessOutput, namedVectors);
+            } else {
+                DictionaryVectorizer.createTermFrequencyVectors(tokenizedPath,
+                        outputDir, tfDirName, conf, minSupport, maxNGramSize,
+                        minLLRValue, -1.0f, false, reduceTasks, chunkSize,
+                        sequentialAccessOutput, namedVectors);
+            }
+            Pair<Long[], List<Path>> docFrequenciesFeatures = null;
+            // Should document frequency features be processed
+            if (shouldPrune || processIdf) {
+                docFrequenciesFeatures = TFIDFConverter.calculateDF(new Path(
+                        outputDir, tfDirName), outputDir, conf, chunkSize);
+            }
 
-			// dump labels?
-			if (labelMDKey != null) {
-				conf.set(BehemothDocumentProcessor.MD_LABEL, labelMDKey);
-				BehemothDocumentProcessor.dumpLabels(inputDir, new Path(
-						outputDir, "labels"), conf);
-			}
+            long maxDF = maxDFPercent; // if we are pruning by std dev, then
+                                       // this will get changed
+            if (shouldPrune) {
+                Path dfDir = new Path(outputDir,
+                        TFIDFConverter.WORDCOUNT_OUTPUT_FOLDER);
+                Path stdCalcDir = new Path(outputDir,
+                        HighDFWordsPruner.STD_CALC_DIR);
 
-		} catch (OptionException e) {
-			log.error("Exception", e);
-			CommandLineUtil.printHelp(group);
-		}
-		return 0;
-	}
+                // Calculate the standard deviation
+                double stdDev = BasicStats.stdDevForGivenMean(dfDir,
+                        stdCalcDir, 0.0, conf);
+                long vectorCount = docFrequenciesFeatures.getFirst()[1];
+                maxDF = (int) (100.0 * maxDFSigma * stdDev / vectorCount);
+
+                // Prune the term frequency vectors
+                Path tfDir = new Path(outputDir, tfDirName);
+                Path prunedTFDir = new Path(outputDir,
+                        DictionaryVectorizer.DOCUMENT_VECTOR_OUTPUT_FOLDER);
+                Path prunedPartialTFDir = new Path(outputDir,
+                        DictionaryVectorizer.DOCUMENT_VECTOR_OUTPUT_FOLDER
+                                + "-partial");
+                if (processIdf) {
+                    HighDFWordsPruner.pruneVectors(tfDir, prunedTFDir,
+                            prunedPartialTFDir, maxDF, conf,
+                            docFrequenciesFeatures, -1.0f, false, reduceTasks);
+                } else {
+                    HighDFWordsPruner.pruneVectors(tfDir, prunedTFDir,
+                            prunedPartialTFDir, maxDF, conf,
+                            docFrequenciesFeatures, norm, logNormalize,
+                            reduceTasks);
+                }
+                HadoopUtil.delete(new Configuration(conf), tfDir);
+            }
+            if (processIdf) {
+                TFIDFConverter.processTfIdf(new Path(outputDir,
+                        DictionaryVectorizer.DOCUMENT_VECTOR_OUTPUT_FOLDER),
+                        outputDir, conf, docFrequenciesFeatures, minDf, maxDF,
+                        norm, logNormalize, sequentialAccessOutput,
+                        namedVectors, reduceTasks);
+            }
+
+            // dump labels?
+            if (labelMDKey != null) {
+                conf.set(BehemothDocumentProcessor.MD_LABEL, labelMDKey);
+                BehemothDocumentProcessor.dumpLabels(inputDir, new Path(
+                        outputDir, "labels"), conf);
+            }
+        } catch (RuntimeException e) {
+            Log.error("Exception caught", e);
+            return -1;
+        }
+
+        return 0;
+    }
 }
