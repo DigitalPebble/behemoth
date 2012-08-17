@@ -48,6 +48,11 @@ hadoop jar $behe_home/$module/target/behemoth-$module-1.0-SNAPSHOT-job.jar com.d
 module=mahout
 hadoop jar $behe_home/$module/target/behemoth-$module-1.0-SNAPSHOT-job.jar com.digitalpebble.behemoth.mahout.SparseVectorsFromBehemoth -i textcorpusUIMA -o textcorpus-vectors -t org.apache.uima.TokenAnnotation 
 
+# Cluster/DocumentID dump
+hadoop jar ./behemoth-mahout*job.jar com.digitalpebble.behemoth.mahout.util.ClusterDocIDDumper -i  .../clusteredPoints -o cluster-mapping
+
+
+
 # processing a web archive
 module=io
 hadoop fs -copyFromLocal $behe_home/$module/src/test/resources/ClueWeb09_English_Sample.warc ClueWeb09.warc
