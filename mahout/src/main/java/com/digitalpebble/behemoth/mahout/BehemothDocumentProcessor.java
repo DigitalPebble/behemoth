@@ -138,7 +138,7 @@ public final class BehemothDocumentProcessor {
 		conf.set(ANALYZER_CLASS, analyzerClass.getName());
 
 		Job job = new Job(conf);
-		job.setJobName("DocumentProcessor::LucenTokenizer: input-folder: "
+		job.setJobName("DocumentProcessor::LuceneTokenizer: input-folder: "
 				+ input);
 		job.setJarByClass(BehemothDocumentProcessor.class);
 
