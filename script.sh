@@ -23,7 +23,7 @@ hadoop jar $behe_home/$module/target/behemoth-$module-1.0-SNAPSHOT-job.jar com.d
 hadoop fs -libjars $behe_home/core/target/behemoth-core-1.0-SNAPSHOT-job.jar -text textcorpusANNIE/part-*
 
 # extract content from seq files
-hadoop jar ./behemoth-core*job.jar com.digitalpebble.behemoth.util.ContentExtractor -i seq-directory/ -o seqdirectory-output
+hadoop jar ./behemoth-core*job.jar com.digitalpebble.behemoth.util.ContentExtractor -i seq-directory -o seqdirectory-output
 
 
 
@@ -50,7 +50,7 @@ hadoop jar $behe_home/$module/target/behemoth-$module-1.0-SNAPSHOT-job.jar com.d
 hadoop jar $behe_home/$module/target/behemoth-$module-1.0-SNAPSHOT-job.jar com.digitalpebble.behemoth.util.CorpusFilter -D document.filter.md.keep.label=contract -i textcorpusTika -o textcorpusTika-contracts
 
 #set filter mode
-hadoop jar $behe_home/$module/target/behemoth-$module-1.0-SNAPSHOT-job.jar com.digitalpebble.behemoth.util.CorpusFilter -D document.filter.md.mode=OR -i 
+hadoop jar $behe_home/$module/target/behemoth-$module-1.0-SNAPSHOT-job.jar com.digitalpebble.behemoth.util.CorpusFilter -D document.filter.md.mode=OR 
 
 # Cluster/DocumentID dump
 hadoop jar ./behemoth-mahout*job.jar com.digitalpebble.behemoth.mahout.util.ClusterDocIDDumper -i  .../clusteredPoints -o cluster-mapping
