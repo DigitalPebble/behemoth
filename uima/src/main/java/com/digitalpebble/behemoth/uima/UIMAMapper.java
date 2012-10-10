@@ -17,10 +17,8 @@
 
 package com.digitalpebble.behemoth.uima;
 
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -30,8 +28,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.filecache.DistributedCache;
 import org.apache.hadoop.fs.Path;
@@ -41,7 +37,7 @@ import org.apache.hadoop.mapred.MapReduceBase;
 import org.apache.hadoop.mapred.Mapper;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reporter;
-
+import org.apache.hadoop.mapred.TaskAttemptID;
 import org.apache.uima.UIMAFramework;
 import org.apache.uima.analysis_engine.AnalysisEngine;
 import org.apache.uima.cas.CAS;
@@ -52,7 +48,10 @@ import org.apache.uima.cas.impl.AnnotationImpl;
 import org.apache.uima.pear.tools.PackageBrowser;
 import org.apache.uima.pear.tools.PackageInstaller;
 import org.apache.uima.resource.ResourceSpecifier;
+import org.apache.uima.util.FileUtils;
 import org.apache.uima.util.XMLInputSource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.digitalpebble.behemoth.BehemothDocument;
 
@@ -72,6 +71,8 @@ public class UIMAMapper extends MapReduceBase implements
     private List<Type> uimatypes = new ArrayList<Type>();
 
     private Map<String, Set<Feature>> featfilts = new HashMap<String, Set<Feature>>();
+    
+    private File installDir;
 
     public void map(Text id, BehemothDocument behemoth,
             OutputCollector<Text, BehemothDocument> output, Reporter reporter)
@@ -141,8 +142,11 @@ public class UIMAMapper extends MapReduceBase implements
 
         File pearFile = new File(urlPEAR.getPath());
 
-        PackageBrowser instPear = PackageInstaller.installPackage(pearFile
-                .getParentFile(), pearFile, true);
+        // should check whether a different mapper has already unpacked it 
+        // but for now we just unpack in a different location for every mapper 
+        TaskAttemptID attempt = TaskAttemptID.forName(conf.get("mapred.task.id"));
+        installDir = new  File(pearFile.getParentFile(),attempt.toString());        
+        PackageBrowser instPear = PackageInstaller.installPackage(installDir, pearFile, true);
 
         // get the resources required for the AnalysisEngine
         org.apache.uima.resource.ResourceManager rsrcMgr = UIMAFramework
@@ -198,6 +202,9 @@ public class UIMAMapper extends MapReduceBase implements
             cas.release();
         if (tae != null)
             tae.destroy();
+        if (installDir != null) {
+            FileUtils.deleteRecursive(installDir);
+        }
     }
 
     /** convert the annotations from the CAS into the Behemoth format **/
