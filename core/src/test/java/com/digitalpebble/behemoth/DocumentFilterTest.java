@@ -48,21 +48,30 @@ public class DocumentFilterTest extends TestCase {
         kept = filter.keep(doc);
         assertEquals(false, kept);
 
-        // negative filters
-
+        // multiple constraints
         config = BehemothConfiguration.create();
-        config.set(DocumentFilter.DocumentFilterParamNamePrefixSkip + "lang",
-                ".+");
-
+        config.set(DocumentFilter.DocumentFilterParamNamePrefixKeep + "lang",
+                "en");
+        config.set(DocumentFilter.DocumentFilterParamNamePrefixKeep + "tc",
+                "true");
         filter = DocumentFilter.getFilters(config);
+
+        doc.getMetadata(true).put(new Text("lang"), new Text("en"));
+        doc.getMetadata(true).put(new Text("tc"), new Text("true"));
+        kept = filter.keep(doc);
+        assertEquals(true, kept);
+
+        doc = new BehemothDocument();
         doc.getMetadata(true).put(new Text("lang"), new Text("fr"));
+        doc.getMetadata(true).put(new Text("tc"), new Text("true"));
         kept = filter.keep(doc);
         assertEquals(false, kept);
 
         doc = new BehemothDocument();
+        doc.getMetadata(true).put(new Text("lang"), new Text("fr"));
+        doc.getMetadata(true).put(new Text("tc"), new Text("false"));
         kept = filter.keep(doc);
-        assertEquals(true, kept);
-
+        assertEquals(false, kept);
     }
 
     public void testNegativeFilter() {
@@ -77,6 +86,31 @@ public class DocumentFilterTest extends TestCase {
         assertEquals(false, kept);
 
         doc = new BehemothDocument();
+        kept = filter.keep(doc);
+        assertEquals(true, kept);
+
+        // multiple constraints
+        config = BehemothConfiguration.create();
+        config.set(DocumentFilter.DocumentFilterParamNamePrefixSkip + "lang",
+                "en");
+        config.set(DocumentFilter.DocumentFilterParamNamePrefixSkip + "tc",
+                "true");
+        filter = DocumentFilter.getFilters(config);
+
+        doc.getMetadata(true).put(new Text("lang"), new Text("en"));
+        doc.getMetadata(true).put(new Text("tc"), new Text("true"));
+        kept = filter.keep(doc);
+        assertEquals(false, kept);
+
+        doc = new BehemothDocument();
+        doc.getMetadata(true).put(new Text("lang"), new Text("fr"));
+        doc.getMetadata(true).put(new Text("tc"), new Text("true"));
+        kept = filter.keep(doc);
+        assertEquals(true, kept);
+
+        doc = new BehemothDocument();
+        doc.getMetadata(true).put(new Text("lang"), new Text("fr"));
+        doc.getMetadata(true).put(new Text("tc"), new Text("false"));
         kept = filter.keep(doc);
         assertEquals(true, kept);
 

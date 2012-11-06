@@ -25,6 +25,7 @@ import java.util.List;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapred.Counters.CountersExceededException;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.detect.Detector;
@@ -66,6 +67,8 @@ public class TikaProcessor implements DocumentProcessor, TikaConstants {
 
     private int contentLengthThresholdFilter = -1;
     private boolean forceMTDetection = false;
+
+    private boolean okCounters = true;
 
     public Configuration getConf() {
         return config;
@@ -166,9 +169,14 @@ public class TikaProcessor implements DocumentProcessor, TikaConstants {
         // decide which parser to use
         metadata.set(Metadata.CONTENT_TYPE, inputDoc.getContentType());
 
-        if (reporter != null)
-            reporter.getCounter("MIME-TYPE", inputDoc.getContentType())
-                    .increment(1);
+        try {
+            if (reporter != null && okCounters)
+                reporter.getCounter("MIME-TYPE", inputDoc.getContentType())
+                        .increment(1);
+        } catch (CountersExceededException counterEx) {
+            LOG.error("Exceeded number of counters allowed", counterEx);
+            okCounters = false;
+        }
 
         // TODO check config whether want the markup or just the text and
         // metadata?

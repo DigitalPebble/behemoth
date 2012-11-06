@@ -17,10 +17,9 @@
 
 package com.digitalpebble.behemoth.util;
 
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.URLEncoder;
+import java.util.UUID;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -28,7 +27,12 @@ import org.apache.commons.cli.GnuParser;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
+import org.apache.commons.compress.archivers.ArchiveException;
+import org.apache.commons.compress.archivers.ArchiveOutputStream;
+import org.apache.commons.compress.archivers.ArchiveStreamFactory;
+import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.hadoop.conf.Configured;
+import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -52,7 +56,32 @@ public class ContentExtractor extends Configured implements Tool {
     private static final Logger LOG = LoggerFactory
             .getLogger(ContentExtractor.class);
 
-    private boolean useURLforFileName = true;
+    public static final String numEntriesPerArchiveParamName = "numEntriesPerArchive";
+
+    public enum FileNamingMode {
+        URL, UUID, NUM;
+
+        public static FileNamingMode toMode(String str) {
+            try {
+                return valueOf(str);
+            } catch (Exception ex) {
+                return UUID;
+            }
+        }
+    }
+
+    private FileNamingMode mode = FileNamingMode.UUID;
+
+    // dump the text otherwise
+    private boolean dumpBinary = false;
+
+    private ArchiveOutputStream currentArchive = null;
+    
+    private FSDataOutputStream index = null;
+
+    private int partNum = 0;
+    private int numEntriesInCurrentArchive = 0;
+    private int maxNumEntriesInArchive = 10000;
 
     public ContentExtractor() {
     }
@@ -74,6 +103,10 @@ public class ContentExtractor extends Configured implements Tool {
         options.addOption("h", "help", false, "print this message");
         options.addOption("i", "input", true, "Behemoth corpus");
         options.addOption("o", "output", true, "local corpus dir");
+        options.addOption("b", "binary", false,
+                "dumps binary content, text otherwise");
+        options.addOption("n", "filenaming", true,
+                "whether to name files based on URL, UUID (default) or NUM");
 
         // parse the command line arguments
         try {
@@ -88,24 +121,48 @@ public class ContentExtractor extends Configured implements Tool {
                 formatter.printHelp("ContentExtractor", options);
                 return -1;
             }
-            generateDocs(input, output);
+            dumpBinary = line.hasOption("binary");
+
+            if (line.hasOption("filenaming")) {
+                String naming = line.getOptionValue("n");
+                mode = FileNamingMode.toMode(naming);
+            }
+
+            return generateDocs(input, output);
 
         } catch (ParseException e) {
             formatter.printHelp("ContentExtractor", options);
+            return -1;
         }
-        return 0;
     }
 
-    private void generateDocs(String inputf, String outputf) throws IOException {
-        Path input = new Path(inputf);
+    private int generateDocs(String inputf, String outputf) throws IOException,
+            ArchiveException {
 
-        File output = new File(outputf);
-        if (output.exists() && output.isFile()) {
+        Path input = new Path(inputf);
+        Path dirPath = new Path(outputf);
+
+        FileSystem fsout = FileSystem.get(dirPath.toUri(), getConf());
+
+        if (fsout.exists(dirPath) == false)
+            fsout.mkdirs(dirPath);
+        else {
             System.err.println("Output " + outputf + " already exists");
-            return;
+            return -1;
         }
-        if (output.exists() == false)
-            output.mkdirs();
+
+        // index file
+        Path indexPath = new Path(dirPath, "index");
+        if (fsout.exists(indexPath) == false) {
+            fsout.createNewFile(indexPath);
+        }
+
+        maxNumEntriesInArchive = getConf().getInt(
+                numEntriesPerArchiveParamName, 10000);
+
+        index = fsout.create(indexPath);
+
+        createArchive(dirPath);
 
         FileSystem fs = input.getFileSystem(getConf());
         FileStatus[] statuses = fs.listStatus(input);
@@ -115,12 +172,47 @@ public class ContentExtractor extends Configured implements Tool {
             Path suPath = status.getPath();
             if (suPath.getName().equals("_SUCCESS"))
                 continue;
-            generateDocs(suPath, output, count);
+            generateDocs(suPath, dirPath, count);
+        }
+
+        if (index != null)
+            index.close();
+
+        if (currentArchive != null) {
+            currentArchive.finish();
+            currentArchive.close();
+        }
+
+        return 0;
+    }
+
+    private void createArchive(Path dirPath) throws IOException,
+            ArchiveException {
+        FileSystem fsout = FileSystem.get(dirPath.toUri(), getConf());
+        String archiveType = "zip";
+        FSDataOutputStream currentArchiveOS = fsout.create(new Path(dirPath,
+                "part_" + String.format("%06d", partNum) + "." + archiveType));
+        currentArchive = new ArchiveStreamFactory().createArchiveOutputStream(
+                archiveType, currentArchiveOS);
+        partNum++;
+        numEntriesInCurrentArchive = 0;
+    }
+
+    private void addToArchive(String fileName, byte[] content, Path dirPath)
+            throws IOException, ArchiveException {
+        numEntriesInCurrentArchive++;
+        currentArchive.putArchiveEntry(new ZipArchiveEntry(fileName));
+        currentArchive.write(content);
+        currentArchive.closeArchiveEntry();
+        index.flush();
+        if (numEntriesInCurrentArchive == maxNumEntriesInArchive) {
+            currentArchive.finish();
+            currentArchive.close();
+            createArchive(dirPath);
         }
     }
 
-    private void generateDocs(Path input, File dir, int[] count)
-            throws IOException {
+    private void generateDocs(Path input, Path dir, int[] count) throws IOException, ArchiveException {
 
         DocumentFilter docFilter = DocumentFilter.getFilters(getConf());
 
@@ -130,48 +222,45 @@ public class ContentExtractor extends Configured implements Tool {
             // read the key + values in that file
             Text key = new Text();
             BehemothDocument inputDoc = new BehemothDocument();
-            FileOutputStream writer = null;
             while (current.next(key, inputDoc)) {
                 count[0]++;
                 // filter the doc?
                 if (!docFilter.keep(inputDoc))
                     continue;
-                if (inputDoc.getContent() == null)
+                if (dumpBinary && inputDoc.getContent() == null)
                     continue;
-                try {
-                    String fileName = Integer.toString(count[0]);
-                    String urldoc = inputDoc.getUrl();
-                    if (useURLforFileName && urldoc != null
-                            && urldoc.length() > 0) {
-                        fileName = URLEncoder.encode(urldoc, "UTF-8");
-                    } else
-                        fileName = Integer.toString(count[0]);
+                else if (!dumpBinary && inputDoc.getText() == null)
+                    continue;
 
-                    File outputFile = new File(dir, fileName);
-                    if (outputFile.exists() == false)
-                        outputFile.createNewFile();
-                    else {
-                        // already there! prefix with global counter
-                        outputFile = new File(dir, Integer.toString(count[0])
-                                + "_" + fileName);
-                        if (outputFile.exists() == false)
-                            outputFile.createNewFile();
-                    }
-
-                    writer = new FileOutputStream(outputFile);
-                    writer.write(inputDoc.getContent());
-
-                } catch (Exception e) {
-                    LOG.error(
-                            "Exception on doc [" + count[0] + "] "
-                                    + key.toString(), e);
-                } finally {
-                    if (writer != null)
-                        writer.close();
+                String fileName = Integer.toString(count[0]);
+                String urldoc = inputDoc.getUrl();
+                if (mode.equals(FileNamingMode.URL) && urldoc != null
+                        && urldoc.length() > 0) {
+                    fileName = URLEncoder.encode(urldoc, "UTF-8");
+                } else if (mode.equals(FileNamingMode.UUID) && urldoc != null
+                        && urldoc.length() > 0) {
+                    fileName = UUID.nameUUIDFromBytes(urldoc.getBytes())
+                            .toString();
+                } else {
+                    fileName = String.format("%09d", count[0]);
                 }
+
+                if (!dumpBinary)
+                    fileName += ".txt";
+
+                byte[] contentBytes;
+                if (dumpBinary)
+                    contentBytes = inputDoc.getContent();
+                else
+                    contentBytes = inputDoc.getText().getBytes("UTF-8");
+                // out.write(contentBytes, 0, contentBytes.length);
+                addToArchive(fileName, contentBytes, dir);
+
+                // add the mapping URL->filename in the index -> archive num
+                index.writeBytes(urldoc + "\t" + fileName + "\t"
+                        + String.format("%06d", partNum) + "\n");
             }
             current.close();
         }
     }
-
 }
