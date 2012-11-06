@@ -1,64 +1,80 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-  <modelVersion>4.0.0</modelVersion>
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
 
-    <parent>
-        <groupId>com.digitalpebble.behemoth</groupId>
-        <artifactId>behemoth-parent</artifactId>
-        <version>1.0</version>
-    </parent>
+	<parent>
+		<groupId>com.digitalpebble.behemoth</groupId>
+		<artifactId>behemoth-parent</artifactId>
+		<version>1.0</version>
+	</parent>
 
-  <artifactId>behemoth-gate</artifactId>
-  <version>1.0-SNAPSHOT</version>
-  <packaging>jar</packaging>
+	<artifactId>behemoth-gate</artifactId>
+	<version>1.0-SNAPSHOT</version>
+	<packaging>jar</packaging>
 
-  <name>gate</name>
-  <url>https://github.com/jnioche/behemoth/wiki/GATE-module</url>
+	<name>gate</name>
+	<url>https://github.com/jnioche/behemoth/wiki/GATE-module</url>
 
-  <properties>
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-  </properties>
-  
-   <build>
-    <plugins>
-    <plugin>
-      <artifactId>maven-assembly-plugin</artifactId>
-      <version>2.2.1</version>
-      <configuration>
-        <descriptors>
-          <descriptor>../hadoop-job.xml</descriptor>
-        </descriptors>
-      </configuration>
-      <executions>
-        <execution>
-          <id>make-assembly</id>
-          <phase>package</phase>
-          <goals>
-            <goal>single</goal>
-          </goals>
-        </execution>
-      </executions>
-    </plugin>
-  </plugins>
- </build>
+	<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+	</properties>
 
-  <dependencies>
+	<profiles>
+		<profile>
+			<id>job</id>
+			<activation>
+				<activeByDefault>true</activeByDefault>
+			</activation>
+			<build>
+				<plugins>
+					<plugin>
+						<artifactId>maven-assembly-plugin</artifactId>
+						<version>2.2.1</version>
+						<configuration>
+							<descriptors>
+								<descriptor>../hadoop-job.xml</descriptor>
+							</descriptors>
+						</configuration>
+						<executions>
+							<execution>
+								<id>make-assembly</id>
+								<phase>package</phase>
+								<goals>
+									<goal>single</goal>
+								</goals>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+	</profiles>
 
-<dependency>
-   <groupId>com.digitalpebble.behemoth</groupId>
-   <artifactId>behemoth-core</artifactId>
-   <version>1.0-SNAPSHOT</version>
-</dependency>
+	<dependencies>
 
-<dependency>
-   <groupId>uk.ac.gate</groupId>
-   <artifactId>gate-core</artifactId>
-   <version>7.0</version>
-</dependency>
+		<dependency>
+			<groupId>com.digitalpebble.behemoth</groupId>
+			<artifactId>behemoth-core</artifactId>
+			<version>1.0-SNAPSHOT</version>
+		</dependency>
 
-<dependency><groupId>com.thoughtworks.xstream</groupId><artifactId>xstream</artifactId><version>1.4.2</version></dependency>
-<dependency><groupId>uk.ac.gate</groupId><artifactId>gate-compiler-jdt</artifactId><version>3.7.1</version></dependency>
+		<dependency>
+			<groupId>uk.ac.gate</groupId>
+			<artifactId>gate-core</artifactId>
+			<version>7.0</version>
+		</dependency>
 
-</dependencies>
+		<dependency>
+			<groupId>com.thoughtworks.xstream</groupId>
+			<artifactId>xstream</artifactId>
+			<version>1.4.2</version>
+		</dependency>
+		<dependency>
+			<groupId>uk.ac.gate</groupId>
+			<artifactId>gate-compiler-jdt</artifactId>
+			<version>3.7.1</version>
+		</dependency>
+
+	</dependencies>
 
 </project>
