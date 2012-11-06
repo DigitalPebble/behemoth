@@ -53,6 +53,10 @@ hadoop jar $behe_home/$module/target/behemoth-$module-1.0-SNAPSHOT-job.jar com.d
 module=core
 hadoop jar $behe_home/$module/target/behemoth-$module-1.0-SNAPSHOT-job.jar  com.digitalpebble.behemoth.util.CorpusReader -conf $behe_home/conf/behemoth-site.xml -i ClueWeb09Annie
 
+# corpus filter
+module=core
+hadoop jar $behe_home/$module/target/behemoth-$module-1.0-SNAPSHOT-job.jar  com.digitalpebble.behemoth.util.CorpusFilter -D document.filter.md.keep.isCV=true -i input -0 outputCV
+
 # use of SOLR -> requires to have a SOLR instance running
 module=solr
 hadoop jar $behe_solr/$module/target/behemoth-$module-1.0-SNAPSHOT-job.jar com.digitalpebble.solr.SOLRIndexerJob ClueWeb09Annie http://69.89.5.5:8080/solr
