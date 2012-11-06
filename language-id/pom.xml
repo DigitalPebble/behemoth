@@ -13,7 +13,7 @@
 	<packaging>jar</packaging>
 
 	<name>language-id</name>
-	<url>https://github.com/jnioche/behemoth/wiki/language-id-module</url>
+	<url>https://github.com/DigitalPebble/behemoth/wiki/language-id-module</url>
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

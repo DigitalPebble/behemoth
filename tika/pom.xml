@@ -13,7 +13,7 @@
 	<packaging>jar</packaging>
 
 	<name>tika</name>
-	<url>https://github.com/jnioche/behemoth/wiki/Tika-module</url>
+	<url>https://github.com/DigitalPebble/behemoth/wiki/Tika-module</url>
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
