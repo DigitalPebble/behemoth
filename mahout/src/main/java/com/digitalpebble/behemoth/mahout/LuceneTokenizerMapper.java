@@ -35,41 +35,41 @@ import com.digitalpebble.behemoth.BehemothDocument;
  * Tokenizes a text document and outputs tokens in a StringTuple
  */
 public class LuceneTokenizerMapper extends
-		Mapper<Text, BehemothDocument, Text, StringTuple> {
+        Mapper<Text, BehemothDocument, Text, StringTuple> {
 
-	private Analyzer analyzer;
+    private Analyzer analyzer;
 
-	@Override
-	protected void map(Text key, BehemothDocument value, Context context)
-			throws IOException, InterruptedException {
-		String sContent = value.getText();
-		if (sContent == null) {
-			// no text available? skip
-			context.getCounter("LuceneTokenizer", "BehemothDocWithoutText")
-					.increment(1);
-			return;
-		}
-		TokenStream stream = analyzer.reusableTokenStream(key.toString(),
-				new StringReader(sContent.toString()));
-		CharTermAttribute termAtt = stream
-				.addAttribute(CharTermAttribute.class);
-		StringTuple document = new StringTuple();
-		stream.reset();
-		while (stream.incrementToken()) {
-			if (termAtt.length() > 0) {
-				document.add(new String(termAtt.buffer(), 0, termAtt.length()));
-			}
-		}
-		context.write(key, document);
-	}
+    @Override
+    protected void map(Text key, BehemothDocument value, Context context)
+            throws IOException, InterruptedException {
+        String sContent = value.getText();
+        if (sContent == null) {
+            // no text available? skip
+            context.getCounter("LuceneTokenizer", "BehemothDocWithoutText")
+                    .increment(1);
+            return;
+        }
+        TokenStream stream = analyzer.reusableTokenStream(key.toString(),
+                new StringReader(sContent.toString()));
+        CharTermAttribute termAtt = stream
+                .addAttribute(CharTermAttribute.class);
+        StringTuple document = new StringTuple();
+        stream.reset();
+        while (stream.incrementToken()) {
+            if (termAtt.length() > 0) {
+                document.add(new String(termAtt.buffer(), 0, termAtt.length()));
+            }
+        }
+        context.write(key, document);
+    }
 
-	@Override
-	protected void setup(Context context) throws IOException,
-			InterruptedException {
-		super.setup(context);
-		analyzer = ClassUtils.instantiateAs(
-				context.getConfiguration().get(
-						DocumentProcessor.ANALYZER_CLASS,
-						DefaultAnalyzer.class.getName()), Analyzer.class);
-	}
+    @Override
+    protected void setup(Context context) throws IOException,
+            InterruptedException {
+        super.setup(context);
+        analyzer = ClassUtils.instantiateAs(
+                context.getConfiguration().get(
+                        DocumentProcessor.ANALYZER_CLASS,
+                        DefaultAnalyzer.class.getName()), Analyzer.class);
+    }
 }

@@ -164,10 +164,12 @@ public class CorpusGenerator extends Configured implements Tool {
         }
 
         boolean recurse = true;
-        if (line.hasOption("r") && "false".equalsIgnoreCase(line.getOptionValue("r")))
+        if (line.hasOption("r")
+                && "false".equalsIgnoreCase(line.getOptionValue("r")))
             recurse = false;
         boolean unpack = true;
-        if (line.hasOption("u") && "false".equalsIgnoreCase(line.getOptionValue("u")))
+        if (line.hasOption("u")
+                && "false".equalsIgnoreCase(line.getOptionValue("u")))
             unpack = false;
 
         getConf().setBoolean(unpackParamName, unpack);
@@ -183,11 +185,11 @@ public class CorpusGenerator extends Configured implements Tool {
         setInput(inputDir);
         setOutput(output);
 
-        if (inputDir.getFileSystem(getConf()).exists(inputDir)==false){
-            System.out.println("Input does not exist : "+inputDir);
+        if (inputDir.getFileSystem(getConf()).exists(inputDir) == false) {
+            System.out.println("Input does not exist : " + inputDir);
             return -1;
         }
-        
+
         long count = generate(recurse);
         System.out.println(count + " docs converted");
         return 0;
@@ -242,7 +244,7 @@ public class CorpusGenerator extends Configured implements Tool {
                 String[] mds = md.split(";");
                 for (String metadata : mds) {
                     String[] keyval = metadata.split("=");
-                    log.info("key: "+keyval[0]+"\tval:"+keyval[1]);
+                    log.info("key: " + keyval[0] + "\tval:" + keyval[1]);
                     Writable mdvalue;
                     Writable mdkey = new Text(keyval[0]);
                     if (keyval.length == 1) {

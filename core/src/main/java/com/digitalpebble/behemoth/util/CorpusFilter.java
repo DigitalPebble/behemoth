@@ -43,85 +43,85 @@ import com.digitalpebble.behemoth.BehemothMapper;
 /**
  * Utility class used to filter the content of a Behemoth SequenceFile.
  * 
- * @see DocumentFilter
+ * @see com.digitalpebble.behemoth.DocumentFilter
  **/
 public class CorpusFilter extends Configured implements Tool {
 
-	public static void main(String[] args) throws Exception {
-		int res = ToolRunner.run(BehemothConfiguration.create(),
-				new CorpusFilter(), args);
-		System.exit(res);
-	}
+    public static void main(String[] args) throws Exception {
+        int res = ToolRunner.run(BehemothConfiguration.create(),
+                new CorpusFilter(), args);
+        System.exit(res);
+    }
 
-	public int run(String[] args) throws Exception {
+    public int run(String[] args) throws Exception {
 
-		Options options = new Options();
-		// automatically generate the help statement
-		HelpFormatter formatter = new HelpFormatter();
-		// create the parser
-		CommandLineParser parser = new GnuParser();
+        Options options = new Options();
+        // automatically generate the help statement
+        HelpFormatter formatter = new HelpFormatter();
+        // create the parser
+        CommandLineParser parser = new GnuParser();
 
-		options.addOption("h", "help", false, "print this message");
-		options.addOption("i", "input", true, "input Behemoth corpus");
-		options.addOption("o", "output", true, "output Behemoth corpus");
+        options.addOption("h", "help", false, "print this message");
+        options.addOption("i", "input", true, "input Behemoth corpus");
+        options.addOption("o", "output", true, "output Behemoth corpus");
 
-		// parse the command line arguments
-		CommandLine line = null;
-		try {
-			line = parser.parse(options, args);
-			String input = line.getOptionValue("i");
-			String output = line.getOptionValue("o");
-			if (line.hasOption("help")) {
-				formatter.printHelp("CorpusFilter", options);
-				return 0;
-			}
-			if (input == null | output == null) {
-				formatter.printHelp("CorpusFilter", options);
-				return -1;
-			}
-		} catch (ParseException e) {
-			formatter.printHelp("CorpusFilter", options);
-		}
+        // parse the command line arguments
+        CommandLine line = null;
+        try {
+            line = parser.parse(options, args);
+            String input = line.getOptionValue("i");
+            String output = line.getOptionValue("o");
+            if (line.hasOption("help")) {
+                formatter.printHelp("CorpusFilter", options);
+                return 0;
+            }
+            if (input == null | output == null) {
+                formatter.printHelp("CorpusFilter", options);
+                return -1;
+            }
+        } catch (ParseException e) {
+            formatter.printHelp("CorpusFilter", options);
+        }
 
-		final FileSystem fs = FileSystem.get(getConf());
+        final FileSystem fs = FileSystem.get(getConf());
 
-		Path inputPath = new Path(line.getOptionValue("i"));
-		Path outputPath = new Path(line.getOptionValue("o"));
+        Path inputPath = new Path(line.getOptionValue("i"));
+        Path outputPath = new Path(line.getOptionValue("o"));
 
-		JobConf job = new JobConf(getConf());
-		job.setJarByClass(this.getClass());
+        JobConf job = new JobConf(getConf());
+        job.setJarByClass(this.getClass());
 
-		job.setJobName("CorpusFilter : " + inputPath.toString());
+        job.setJobName("CorpusFilter : " + inputPath.toString());
 
-		job.setInputFormat(SequenceFileInputFormat.class);
-		job.setOutputFormat(SequenceFileOutputFormat.class);
+        job.setInputFormat(SequenceFileInputFormat.class);
+        job.setOutputFormat(SequenceFileOutputFormat.class);
 
-		job.setMapOutputKeyClass(Text.class);
-		job.setMapOutputValueClass(BehemothDocument.class);
-		job.setOutputKeyClass(Text.class);
-		job.setOutputValueClass(BehemothDocument.class);
+        job.setMapOutputKeyClass(Text.class);
+        job.setMapOutputValueClass(BehemothDocument.class);
+        job.setOutputKeyClass(Text.class);
+        job.setOutputValueClass(BehemothDocument.class);
 
-		boolean isFilterRequired = BehemothMapper.isRequired(job);
-		// should be the case here
-		if (!isFilterRequired) {
-			System.err
-					.println("No filters configured. Check your behemoth-site.xml");
-			return -1;
-		}
-		job.setMapperClass(BehemothMapper.class);
-		job.setNumReduceTasks(0);
+        boolean isFilterRequired = BehemothMapper.isRequired(job);
+        // should be the case here
+        if (!isFilterRequired) {
+            System.err
+                    .println("No filters configured. Check your behemoth-site.xml");
+            return -1;
+        }
+        job.setMapperClass(BehemothMapper.class);
+        job.setNumReduceTasks(0);
 
-		FileInputFormat.addInputPath(job, inputPath);
-		FileOutputFormat.setOutputPath(job, outputPath);
+        FileInputFormat.addInputPath(job, inputPath);
+        FileOutputFormat.setOutputPath(job, outputPath);
 
-		try {
-			JobClient.runJob(job);
-		} catch (Exception e) {
-			e.printStackTrace();
-			fs.delete(outputPath, true);
-		} finally {
-		}
+        try {
+            JobClient.runJob(job);
+        } catch (Exception e) {
+            e.printStackTrace();
+            fs.delete(outputPath, true);
+        } finally {
+        }
 
-		return 0;
-	}
+        return 0;
+    }
 }

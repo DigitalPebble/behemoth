@@ -36,7 +36,9 @@ import org.apache.hadoop.io.WritableUtils;
 import com.digitalpebble.behemoth.util.MimeUtil;
 
 /**
- * Implementation of a Document using Hadoop primitives
+ * Implementation of a Document using Hadoop primitives. A BehemothDocument
+ * consists of a URL, content type, binary content, metadata and @class
+ * Annotations.
  ***/
 public class BehemothDocument implements Writable {
 
@@ -65,71 +67,76 @@ public class BehemothDocument implements Writable {
     /** List holding the annotations **/
     private List<Annotation> annotations;
 
+    /** Returns the text of the document if it has been set or null **/
     public String getText() {
         return text;
     }
 
+    /** Sets the text representation for this document **/
     public void setText(String text) {
         this.text = text;
     }
 
-    /** The binary content retrieved. */
+    /** Returns the binary content of the document if it has been set or null **/
     public byte[] getContent() {
         return content;
     }
 
+    /** Sets the binary content for this document **/
     public void setContent(byte[] content) {
         this.content = content;
     }
 
-    /** Can be null if does not exist **/
+    /** Returns the metadata or null if it has not been set **/
     public MapWritable getMetadata() {
         return metadata;
     }
 
-    /**
-     * Instanticates a new Metadata if it does not exist and create is set to
-     * true
-     **/
+    /** Returns the Metadata or a new MapWritable if it has not been set **/
     public MapWritable getMetadata(boolean create) {
         if (metadata == null && create)
             metadata = new MapWritable();
         return getMetadata();
     }
 
+    /** Sets the metadata for this document **/
     public void setMetadata(MapWritable metadata) {
         this.metadata = metadata;
     }
 
+    /** Returns the list of Annotations if set or an empty List otherwise **/
     public List<Annotation> getAnnotations() {
         if (annotations == null)
             annotations = new ArrayList<Annotation>();
         return annotations;
     }
 
+    /** Sets the annotations for this document **/
     public void setAnnotations(List<Annotation> annotations) {
         this.annotations = annotations;
     }
 
+    /** Returns the URL for this document or null **/
     public String getUrl() {
         return url;
     }
 
+    /** Sets the URL for this document **/
     public void setUrl(String url) {
         this.url = url;
     }
 
+    /** Returns the content type for this document or null **/
     public String getContentType() {
         return contentType;
     }
 
+    /** Sets the content type for this document **/
     public void setContentType(String contentType) {
         // make sure that the mime type does not contain any
         // charset info
         this.contentType = MimeUtil.cleanMimeType(contentType);
     }
-
-    /** serialisation **/
 
     public final void readFields(DataInput in) throws IOException {
 
@@ -172,6 +179,7 @@ public class BehemothDocument implements Writable {
         }
     }
 
+    /** Serialization of a BehemothDocument **/
     public void write(DataOutput out) throws IOException {
         writeCommon(out);
         writeAnnotations(out); // write annotations
@@ -278,21 +286,42 @@ public class BehemothDocument implements Writable {
         annot.setFeatures(features);
     }
 
+    /** Deserialization of a BehemothDocument **/
     public static BehemothDocument read(DataInput in) throws IOException {
         BehemothDocument doc = new BehemothDocument();
         doc.readFields(in);
         return doc;
     }
 
-    /** By default includes the binary content in the string representation **/
+    /**
+     * Returns a complete string representation of the document
+     **/
     public String toString() {
         return toString(true, true, true, true);
     }
 
+    /**
+     * Returns a string representation of the document
+     * 
+     * @param binaryContent
+     *            whether to include the binary content
+     **/
     public String toString(boolean binaryContent) {
         return toString(binaryContent, true, true, true);
     }
 
+    /**
+     * Returns a string representation of the document
+     * 
+     * @param showContent
+     *            whether to include the binary content
+     * @param showAnnotations
+     *            whether to include the annotations content
+     * @param showText
+     *            whether to include the text
+     * @param showMD
+     *            whether to include the metadata
+     **/
     public String toString(boolean showContent, boolean showAnnotations,
             boolean showText, boolean showMD) {
         StringBuffer buffer = new StringBuffer();

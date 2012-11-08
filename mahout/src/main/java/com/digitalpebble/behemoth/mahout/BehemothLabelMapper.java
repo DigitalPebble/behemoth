@@ -27,27 +27,27 @@ import org.slf4j.LoggerFactory;
 import com.digitalpebble.behemoth.BehemothDocument;
 
 public class BehemothLabelMapper extends
-		Mapper<Text, BehemothDocument, Text, Text> {
+        Mapper<Text, BehemothDocument, Text, Text> {
 
-	private static final Logger log = LoggerFactory
-			.getLogger(BehemothLabelMapper.class);
-	
-	private Text metadataKey;
+    private static final Logger log = LoggerFactory
+            .getLogger(BehemothLabelMapper.class);
 
-	@Override
-	protected void map(Text key, BehemothDocument value, Context context)
-			throws IOException, InterruptedException {
-		Text label = (Text) value.getMetadata(true).get(metadataKey);
-		if (label != null)
-			context.write(key, label);
-	}
+    private Text metadataKey;
 
-	@Override
-	protected void setup(Context context) throws IOException,
-			InterruptedException {
-		super.setup(context);
-		metadataKey = new Text(context.getConfiguration().get(
-				BehemothDocumentProcessor.MD_LABEL, "UNKNOWN_METADATA_KEY"));
-		log.info("Using metadata key "+metadataKey+" for labels");
-	}
+    @Override
+    protected void map(Text key, BehemothDocument value, Context context)
+            throws IOException, InterruptedException {
+        Text label = (Text) value.getMetadata(true).get(metadataKey);
+        if (label != null)
+            context.write(key, label);
+    }
+
+    @Override
+    protected void setup(Context context) throws IOException,
+            InterruptedException {
+        super.setup(context);
+        metadataKey = new Text(context.getConfiguration().get(
+                BehemothDocumentProcessor.MD_LABEL, "UNKNOWN_METADATA_KEY"));
+        log.info("Using metadata key " + metadataKey + " for labels");
+    }
 }

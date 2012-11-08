@@ -26,5 +26,6 @@ import com.digitalpebble.behemoth.Annotation;
 public interface BehemothHandler extends ContentHandler {
 
     public String getText();
+
     public List<Annotation> getAnnotations();
 }

@@ -31,49 +31,50 @@ import org.apache.hadoop.io.Text;
 
 public class SerializationTest extends TestCase {
 
-	private Configuration conf;
-	private FileSystem fs;
-	private Path file;
+    private Configuration conf;
+    private FileSystem fs;
+    private Path file;
 
-	@Override
-	protected void setUp() throws Exception {
-		conf = BehemothConfiguration.create();
-		fs = FileSystem.getLocal(conf);
-		file = new Path("test_" + System.currentTimeMillis());
-	}
+    @Override
+    protected void setUp() throws Exception {
+        conf = BehemothConfiguration.create();
+        fs = FileSystem.getLocal(conf);
+        file = new Path("test_" + System.currentTimeMillis());
+    }
 
-	@Override
-	protected void tearDown() throws Exception {
-		fs.close();
-	}
+    @Override
+    protected void tearDown() throws Exception {
+        fs.close();
+    }
 
-	public void testSerialization() throws IOException {
-		BehemothDocument doc = new BehemothDocument();
-		doc.setUrl("test");
-		String tcontent = "This is home";
-		doc.setContent(tcontent.getBytes());
-		doc.setText(tcontent);
-		doc.setContentType("txt");
-		Annotation annot = new Annotation();
-		annot.setStart(0);
-		annot.setEnd(12);
-		annot.setType("annotType");
-		doc.getAnnotations().add(annot);
+    public void testSerialization() throws IOException {
+        BehemothDocument doc = new BehemothDocument();
+        doc.setUrl("test");
+        String tcontent = "This is home";
+        doc.setContent(tcontent.getBytes());
+        doc.setText(tcontent);
+        doc.setContentType("txt");
+        Annotation annot = new Annotation();
+        annot.setStart(0);
+        annot.setEnd(12);
+        annot.setType("annotType");
+        doc.getAnnotations().add(annot);
 
-		Writer writer = SequenceFile.createWriter(fs, conf, file, Text.class,
-				BehemothDocument.class);
-		writer.append(new Text("test"), doc);
-		writer.close();
+        Writer writer = SequenceFile.createWriter(fs, conf, file, Text.class,
+                BehemothDocument.class);
+        writer.append(new Text("test"), doc);
+        writer.close();
 
-		Reader reader = new org.apache.hadoop.io.SequenceFile.Reader(fs,file,conf);
-		Text key2 = new Text();
-		BehemothDocument doc2 = new BehemothDocument();
-		reader.next(key2, doc2);
-		reader.close();
-		
-		fs.delete(file,true);
-		
-		// check the values 
-	}
+        Reader reader = new org.apache.hadoop.io.SequenceFile.Reader(fs, file,
+                conf);
+        Text key2 = new Text();
+        BehemothDocument doc2 = new BehemothDocument();
+        reader.next(key2, doc2);
+        reader.close();
+
+        fs.delete(file, true);
+
+        // check the values
+    }
 
 }

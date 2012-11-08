@@ -42,154 +42,153 @@ import com.digitalpebble.behemoth.BehemothDocument;
  */
 public final class BehemothDocumentProcessor {
 
-	public static final String TOKENIZED_DOCUMENT_OUTPUT_FOLDER = "tokenized-documents";
-	public static final String TOKEN_TYPE = "Token.type";
-	public static final String FEATURE_NAME = "Feature.name";
-	public static final String ANALYZER_CLASS = "analyzer.class";
-	public static final String MD_LABEL = "Metadata.Key.Label";
+    public static final String TOKENIZED_DOCUMENT_OUTPUT_FOLDER = "tokenized-documents";
+    public static final String TOKEN_TYPE = "Token.type";
+    public static final String FEATURE_NAME = "Feature.name";
+    public static final String ANALYZER_CLASS = "analyzer.class";
+    public static final String MD_LABEL = "Metadata.Key.Label";
 
-	// public static final Charset CHARSET = Charset.forName("UTF-8");
+    // public static final Charset CHARSET = Charset.forName("UTF-8");
 
-	/**
-	 * Cannot be initialized. Use the static functions
-	 */
-	private BehemothDocumentProcessor() {
+    /**
+     * Cannot be initialized. Use the static functions
+     */
+    private BehemothDocumentProcessor() {
 
-	}
+    }
 
-	/**
-	 * Convert the input documents into token array using the
-	 * {@link StringTuple} The input documents has to be in the
-	 * {@link org.apache.hadoop.io.SequenceFile} format
-	 * 
-	 * @param input
-	 *            input directory of the documents in
-	 *            {@link org.apache.hadoop.io.SequenceFile} format
-	 * @param output
-	 *            output directory were the {@link StringTuple} token array of
-	 *            each document has to be created
-	 * @param type
-	 *            The annotation type representing the tokens
-	 * @param feature
-	 *            The name of the features holding the token value
-	 * @throws IOException
-	 * @throws ClassNotFoundException
-	 * @throws InterruptedException
-	 */
-	public static void tokenizeDocuments(Path input, String type,
-			String feature, Path output) throws IOException,
-			InterruptedException, ClassNotFoundException {
-		Configuration conf = new Configuration();
-		// this conf parameter needs to be set enable serialisation of conf
-		// values
-		conf.set(
-				"io.serializations",
-				"org.apache.hadoop.io.serializer.JavaSerialization,"
-						+ "org.apache.hadoop.io.serializer.WritableSerialization");
-		conf.set(TOKEN_TYPE, type);
-		conf.set(FEATURE_NAME, feature);
+    /**
+     * Convert the input documents into token array using the
+     * {@link StringTuple} The input documents has to be in the
+     * {@link org.apache.hadoop.io.SequenceFile} format
+     * 
+     * @param input
+     *            input directory of the documents in
+     *            {@link org.apache.hadoop.io.SequenceFile} format
+     * @param output
+     *            output directory were the {@link StringTuple} token array of
+     *            each document has to be created
+     * @param type
+     *            The annotation type representing the tokens
+     * @param feature
+     *            The name of the features holding the token value
+     * @throws IOException
+     * @throws ClassNotFoundException
+     * @throws InterruptedException
+     */
+    public static void tokenizeDocuments(Path input, String type,
+            String feature, Path output) throws IOException,
+            InterruptedException, ClassNotFoundException {
+        Configuration conf = new Configuration();
+        // this conf parameter needs to be set enable serialisation of conf
+        // values
+        conf.set(
+                "io.serializations",
+                "org.apache.hadoop.io.serializer.JavaSerialization,"
+                        + "org.apache.hadoop.io.serializer.WritableSerialization");
+        conf.set(TOKEN_TYPE, type);
+        conf.set(FEATURE_NAME, feature);
 
-		Job job = new Job(conf);
-		job.setJobName("DocumentProcessor::BehemothTokenizer: input-folder: "
-				+ input);
-		job.setJarByClass(BehemothDocumentProcessor.class);
+        Job job = new Job(conf);
+        job.setJobName("DocumentProcessor::BehemothTokenizer: input-folder: "
+                + input);
+        job.setJarByClass(BehemothDocumentProcessor.class);
 
-		job.setOutputKeyClass(Text.class);
-		job.setOutputValueClass(StringTuple.class);
-		FileInputFormat.setInputPaths(job, input);
-		FileOutputFormat.setOutputPath(job, output);
+        job.setOutputKeyClass(Text.class);
+        job.setOutputValueClass(StringTuple.class);
+        FileInputFormat.setInputPaths(job, input);
+        FileOutputFormat.setOutputPath(job, output);
 
-		job.setMapperClass(BehemothTokenizerMapper.class);
-		job.setInputFormatClass(SequenceFileInputFormat.class);
-		job.setNumReduceTasks(0);
-		job.setOutputFormatClass(SequenceFileOutputFormat.class);
-		HadoopUtil.delete(conf, output);
+        job.setMapperClass(BehemothTokenizerMapper.class);
+        job.setInputFormatClass(SequenceFileInputFormat.class);
+        job.setNumReduceTasks(0);
+        job.setOutputFormatClass(SequenceFileOutputFormat.class);
+        HadoopUtil.delete(conf, output);
 
-		boolean succeeded = job.waitForCompletion(true);
-		if (!succeeded)
-			throw new IllegalStateException("Job failed!");
-	}
+        boolean succeeded = job.waitForCompletion(true);
+        if (!succeeded)
+            throw new IllegalStateException("Job failed!");
+    }
 
-	/**
-	 * Convert the input documents into token array using the
-	 * {@link StringTuple} The input documents has to be in the
-	 * {@link org.apache.hadoop.io.SequenceFile} format
-	 * 
-	 * @param input
-	 *            input directory of the documents in
-	 *            {@link org.apache.hadoop.io.SequenceFile} format
-	 * @param output
-	 *            output directory were the {@link StringTuple} token array of
-	 *            each document has to be created
-	 * @param analyzerClass
-	 *            The Lucene {@link Analyzer} for tokenizing the UTF-8 text
-	 */
-	public static void tokenizeDocuments(Path input,
-			Class<? extends Analyzer> analyzerClass, Path output,
-			Configuration baseConf) throws IOException, InterruptedException,
-			ClassNotFoundException {
-		Configuration conf = new Configuration(baseConf);
-		// this conf parameter needs to be set enable serialisation of conf
-		// values
-		conf.set(
-				"io.serializations",
-				"org.apache.hadoop.io.serializer.JavaSerialization,"
-						+ "org.apache.hadoop.io.serializer.WritableSerialization");
-		conf.set(ANALYZER_CLASS, analyzerClass.getName());
+    /**
+     * Convert the input documents into token array using the
+     * {@link StringTuple} The input documents has to be in the
+     * {@link org.apache.hadoop.io.SequenceFile} format
+     * 
+     * @param input
+     *            input directory of the documents in
+     *            {@link org.apache.hadoop.io.SequenceFile} format
+     * @param output
+     *            output directory were the {@link StringTuple} token array of
+     *            each document has to be created
+     * @param analyzerClass
+     *            The Lucene {@link Analyzer} for tokenizing the UTF-8 text
+     */
+    public static void tokenizeDocuments(Path input,
+            Class<? extends Analyzer> analyzerClass, Path output,
+            Configuration baseConf) throws IOException, InterruptedException,
+            ClassNotFoundException {
+        Configuration conf = new Configuration(baseConf);
+        // this conf parameter needs to be set enable serialisation of conf
+        // values
+        conf.set(
+                "io.serializations",
+                "org.apache.hadoop.io.serializer.JavaSerialization,"
+                        + "org.apache.hadoop.io.serializer.WritableSerialization");
+        conf.set(ANALYZER_CLASS, analyzerClass.getName());
 
-		Job job = new Job(conf);
-		job.setJobName("DocumentProcessor::LuceneTokenizer: input-folder: "
-				+ input);
-		job.setJarByClass(BehemothDocumentProcessor.class);
+        Job job = new Job(conf);
+        job.setJobName("DocumentProcessor::LuceneTokenizer: input-folder: "
+                + input);
+        job.setJarByClass(BehemothDocumentProcessor.class);
 
-		job.setOutputKeyClass(Text.class);
-		job.setOutputValueClass(StringTuple.class);
-		FileInputFormat.setInputPaths(job, input);
-		FileOutputFormat.setOutputPath(job, output);
+        job.setOutputKeyClass(Text.class);
+        job.setOutputValueClass(StringTuple.class);
+        FileInputFormat.setInputPaths(job, input);
+        FileOutputFormat.setOutputPath(job, output);
 
-		job.setMapperClass(LuceneTokenizerMapper.class);
-		job.setInputFormatClass(SequenceFileInputFormat.class);
-		job.setNumReduceTasks(0);
-		job.setOutputFormatClass(SequenceFileOutputFormat.class);
-		HadoopUtil.delete(conf, output);
+        job.setMapperClass(LuceneTokenizerMapper.class);
+        job.setInputFormatClass(SequenceFileInputFormat.class);
+        job.setNumReduceTasks(0);
+        job.setOutputFormatClass(SequenceFileOutputFormat.class);
+        HadoopUtil.delete(conf, output);
 
-		boolean succeeded = job.waitForCompletion(true);
-		if (!succeeded)
-			throw new IllegalStateException("Job failed!");
+        boolean succeeded = job.waitForCompletion(true);
+        if (!succeeded)
+            throw new IllegalStateException("Job failed!");
 
-	}
+    }
 
-	public static void dumpLabels(Path input, Path output,
-			Configuration baseConf) throws IOException, InterruptedException,
-			ClassNotFoundException {
-		Configuration conf = new Configuration(baseConf);
-		// this conf parameter needs to be set enable serialisation of conf
-		// values
-		conf.set(
-				"io.serializations",
-				"org.apache.hadoop.io.serializer.JavaSerialization,"
-						+ "org.apache.hadoop.io.serializer.WritableSerialization");
+    public static void dumpLabels(Path input, Path output,
+            Configuration baseConf) throws IOException, InterruptedException,
+            ClassNotFoundException {
+        Configuration conf = new Configuration(baseConf);
+        // this conf parameter needs to be set enable serialisation of conf
+        // values
+        conf.set(
+                "io.serializations",
+                "org.apache.hadoop.io.serializer.JavaSerialization,"
+                        + "org.apache.hadoop.io.serializer.WritableSerialization");
 
-		Job job = new Job(conf);
-		job.setJobName("DocumentProcessor::LabelDumper: input-folder: "
-				+ input);
-		job.setJarByClass(BehemothDocumentProcessor.class);
+        Job job = new Job(conf);
+        job.setJobName("DocumentProcessor::LabelDumper: input-folder: " + input);
+        job.setJarByClass(BehemothDocumentProcessor.class);
 
-		job.setOutputKeyClass(Text.class);
-		job.setOutputValueClass(Text.class);
-		FileInputFormat.setInputPaths(job, input);
-		FileOutputFormat.setOutputPath(job, output);
+        job.setOutputKeyClass(Text.class);
+        job.setOutputValueClass(Text.class);
+        FileInputFormat.setInputPaths(job, input);
+        FileOutputFormat.setOutputPath(job, output);
 
-		job.setMapperClass(BehemothLabelMapper.class);
-		job.setInputFormatClass(SequenceFileInputFormat.class);
-		job.setNumReduceTasks(0);
-		job.setOutputFormatClass(SequenceFileOutputFormat.class);
-		HadoopUtil.delete(conf, output);
+        job.setMapperClass(BehemothLabelMapper.class);
+        job.setInputFormatClass(SequenceFileInputFormat.class);
+        job.setNumReduceTasks(0);
+        job.setOutputFormatClass(SequenceFileOutputFormat.class);
+        HadoopUtil.delete(conf, output);
 
-		boolean succeeded = job.waitForCompletion(true);
-		if (!succeeded)
-			throw new IllegalStateException("Job failed!");
+        boolean succeeded = job.waitForCompletion(true);
+        if (!succeeded)
+            throw new IllegalStateException("Job failed!");
 
-	}
+    }
 
 }

@@ -63,7 +63,7 @@ public class DocumentFilter {
     private String medataMode = "AND";
 
     /**
-     * Checks whether any splitters have been specified in the configuration
+     * Checks whether any filters have been specified in the configuration
      **/
     public static boolean isRequired(Configuration conf) {
         DocumentFilter filter = DocumentFilter.getFilters(conf);
@@ -78,7 +78,7 @@ public class DocumentFilter {
         return false;
     }
 
-    // Builds a document filter given a conf object
+    /** Builds a document filter given a Configuration object **/
     public static DocumentFilter getFilters(Configuration conf) {
         // extracts the patterns
         Map<String, String> PositiveKVpatterns = conf

@@ -71,7 +71,7 @@ public class UIMAMapper extends MapReduceBase implements
     private List<Type> uimatypes = new ArrayList<Type>();
 
     private Map<String, Set<Feature>> featfilts = new HashMap<String, Set<Feature>>();
-    
+
     private File installDir;
 
     public void map(Text id, BehemothDocument behemoth,
@@ -142,11 +142,13 @@ public class UIMAMapper extends MapReduceBase implements
 
         File pearFile = new File(urlPEAR.getPath());
 
-        // should check whether a different mapper has already unpacked it 
-        // but for now we just unpack in a different location for every mapper 
-        TaskAttemptID attempt = TaskAttemptID.forName(conf.get("mapred.task.id"));
-        installDir = new  File(pearFile.getParentFile(),attempt.toString());        
-        PackageBrowser instPear = PackageInstaller.installPackage(installDir, pearFile, true);
+        // should check whether a different mapper has already unpacked it
+        // but for now we just unpack in a different location for every mapper
+        TaskAttemptID attempt = TaskAttemptID.forName(conf
+                .get("mapred.task.id"));
+        installDir = new File(pearFile.getParentFile(), attempt.toString());
+        PackageBrowser instPear = PackageInstaller.installPackage(installDir,
+                pearFile, true);
 
         // get the resources required for the AnalysisEngine
         org.apache.uima.resource.ResourceManager rsrcMgr = UIMAFramework

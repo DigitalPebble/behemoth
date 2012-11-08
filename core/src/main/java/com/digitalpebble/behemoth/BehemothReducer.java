@@ -29,61 +29,49 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Custom Reducer which can filter documents before they are written out. TODO
- * split documents based on annotations
+ * Custom Reducer which can filter documents before they are written out.
  ***/
 
 public class BehemothReducer implements
-		Reducer<Text, BehemothDocument, Text, BehemothDocument> {
+        Reducer<Text, BehemothDocument, Text, BehemothDocument> {
 
-	public static final Logger LOG = LoggerFactory
-			.getLogger(BehemothReducer.class);
+    public static final Logger LOG = LoggerFactory
+            .getLogger(BehemothReducer.class);
 
-	private DocumentFilter docFilter;
+    private DocumentFilter docFilter;
 
-	private DocumentSplitter docSplitter;
+    /**
+     * Checks whether any filters have been specified in the configuration
+     **/
+    public static boolean isRequired(JobConf conf) {
+        if (DocumentFilter.isRequired(conf))
+            return true;
+        return false;
+    }
 
-	/**
-	 * Checks whether any filters or splitters have been specified in the
-	 * configuration
-	 **/
-	public static boolean isRequired(JobConf conf) {
-		if (DocumentSplitter.isRequired(conf)) return true;
-		if (DocumentFilter.isRequired(conf)) return true;
-		return false;
-	}
+    public void configure(JobConf conf) {
+        this.docFilter = DocumentFilter.getFilters(conf);
+    }
 
-	public void configure(JobConf conf) {
-		this.docSplitter = DocumentSplitter.getSplitter(conf);
-		this.docFilter = DocumentFilter.getFilters(conf);
-	}
+    public void close() throws IOException {
+    }
 
-	public void close() throws IOException {
-	}
+    public void reduce(Text key, Iterator<BehemothDocument> doc,
+            OutputCollector<Text, BehemothDocument> output, Reporter reporter)
+            throws IOException {
 
-	public void reduce(Text key, Iterator<BehemothDocument> doc,
-			OutputCollector<Text, BehemothDocument> output, Reporter reporter)
-			throws IOException {
+        while (doc.hasNext()) {
+            BehemothDocument inputDoc = doc.next();
+            boolean keep = docFilter.keep(inputDoc);
+            if (!keep) {
+                reporter.incrCounter("BehemothReducer",
+                        "DOC SKIPPED BY FILTERS", 1);
+                continue;
+            }
+            output.collect(key, inputDoc);
 
-		while (doc.hasNext()) {
-			BehemothDocument inputDoc = doc.next();
+        }
 
-			// TODO split THEN filter
-			BehemothDocument[] subdocs = docSplitter.split(inputDoc);
-			if (subdocs.length > 1) {
-				reporter.incrCounter("BehemothReducer", "DOC SPLITTED", 1);
-			}
-			for (BehemothDocument bdoc : subdocs) {
-				boolean keep = docFilter.keep(bdoc);
-				if (!keep) {
-					reporter.incrCounter("BehemothReducer",
-							"DOC SKIPPED BY FILTERS", 1);
-					continue;
-				}
-				output.collect(key, bdoc);
-			}
-		}
-
-	}
+    }
 
 }

@@ -71,223 +71,223 @@ import com.digitalpebble.behemoth.mahout.SparseVectorsFromBehemoth;
  **/
 
 public class Mahout2LibSVM extends Configured implements Tool,
-		Reducer<Text, Text, Text, Text>,
-		Mapper<Text, VectorWritable, Text, Text> {
+        Reducer<Text, Text, Text, Text>,
+        Mapper<Text, VectorWritable, Text, Text> {
 
-	private transient static Logger log = LoggerFactory
-			.getLogger(Mahout2LibSVM.class);
+    private transient static Logger log = LoggerFactory
+            .getLogger(Mahout2LibSVM.class);
 
-	public static void main(String[] args) {
-		int res;
-		try {
-			res = ToolRunner.run(BehemothConfiguration.create(),
-					new Mahout2LibSVM(), args);
-		} catch (Exception e) {
-			res = -1;
-		}
-		System.exit(res);
-	}
+    public static void main(String[] args) {
+        int res;
+        try {
+            res = ToolRunner.run(BehemothConfiguration.create(),
+                    new Mahout2LibSVM(), args);
+        } catch (Exception e) {
+            res = -1;
+        }
+        System.exit(res);
+    }
 
-	public int run(String[] args) throws Exception {
+    public int run(String[] args) throws Exception {
 
-		Options options = new Options();
-		// automatically generate the help statement
-		HelpFormatter formatter = new HelpFormatter();
-		// create the parser
-		CommandLineParser parser = new GnuParser();
+        Options options = new Options();
+        // automatically generate the help statement
+        HelpFormatter formatter = new HelpFormatter();
+        // create the parser
+        CommandLineParser parser = new GnuParser();
 
-		options.addOption("h", "help", false, "print this message");
-		options.addOption("v", "vector", true, "input vector sequencefile");
-		options.addOption("l", "label", true, "input vector sequencefile");
-		options.addOption("o", "output", true, "output Behemoth corpus");
+        options.addOption("h", "help", false, "print this message");
+        options.addOption("v", "vector", true, "input vector sequencefile");
+        options.addOption("l", "label", true, "input vector sequencefile");
+        options.addOption("o", "output", true, "output Behemoth corpus");
 
-		// parse the command line arguments
-		CommandLine line = null;
-		try {
-			line = parser.parse(options, args);
-			if (line.hasOption("help")) {
-				formatter.printHelp("CorpusGenerator", options);
-				return 0;
-			}
-			if (!line.hasOption("v") | !line.hasOption("o")
-					| !line.hasOption("l")) {
-				formatter.printHelp("CorpusGenerator", options);
-				return -1;
-			}
-		} catch (ParseException e) {
-			formatter.printHelp("CorpusGenerator", options);
-		}
+        // parse the command line arguments
+        CommandLine line = null;
+        try {
+            line = parser.parse(options, args);
+            if (line.hasOption("help")) {
+                formatter.printHelp("CorpusGenerator", options);
+                return 0;
+            }
+            if (!line.hasOption("v") | !line.hasOption("o")
+                    | !line.hasOption("l")) {
+                formatter.printHelp("CorpusGenerator", options);
+                return -1;
+            }
+        } catch (ParseException e) {
+            formatter.printHelp("CorpusGenerator", options);
+        }
 
-		Path vectorPath = new Path(line.getOptionValue("v"));
-		Path labelPath = new Path(line.getOptionValue("l"));
-		String output = line.getOptionValue("o");
+        Path vectorPath = new Path(line.getOptionValue("v"));
+        Path labelPath = new Path(line.getOptionValue("l"));
+        String output = line.getOptionValue("o");
 
-		Path tempOutput = new Path(vectorPath.getParent(), "temp-"
-				+ System.currentTimeMillis());
+        Path tempOutput = new Path(vectorPath.getParent(), "temp-"
+                + System.currentTimeMillis());
 
-		// extracts the string representations from the vectors
-		int retVal = vectorToString(vectorPath, tempOutput);
-		if (retVal != 0) {
-			HadoopUtil.delete(getConf(), tempOutput);
-			return retVal;
-		}
+        // extracts the string representations from the vectors
+        int retVal = vectorToString(vectorPath, tempOutput);
+        if (retVal != 0) {
+            HadoopUtil.delete(getConf(), tempOutput);
+            return retVal;
+        }
 
-		Path tempOutput2 = new Path(vectorPath.getParent(), "temp-"
-				+ System.currentTimeMillis());
+        Path tempOutput2 = new Path(vectorPath.getParent(), "temp-"
+                + System.currentTimeMillis());
 
-		retVal = convert(tempOutput, labelPath, tempOutput2);
+        retVal = convert(tempOutput, labelPath, tempOutput2);
 
-		// delete the temp output
-		HadoopUtil.delete(getConf(), tempOutput);
+        // delete the temp output
+        HadoopUtil.delete(getConf(), tempOutput);
 
-		if (retVal != 0) {
-			HadoopUtil.delete(getConf(), tempOutput2);
-			return retVal;
-		}
+        if (retVal != 0) {
+            HadoopUtil.delete(getConf(), tempOutput2);
+            return retVal;
+        }
 
-		// convert tempOutput to standard file
-		BufferedWriter bow = new BufferedWriter(
-				new FileWriter(new File(output)));
+        // convert tempOutput to standard file
+        BufferedWriter bow = new BufferedWriter(
+                new FileWriter(new File(output)));
 
-		// the label dictionary is not dumped to text
-		int labelMaxIndex = 0;
-		Map<String, Integer> labelIndex = new HashMap<String, Integer>();
+        // the label dictionary is not dumped to text
+        int labelMaxIndex = 0;
+        Map<String, Integer> labelIndex = new HashMap<String, Integer>();
 
-		Configuration conf = getConf();
-		FileSystem fs = FileSystem.get(conf);
-		FileStatus[] fss = fs.listStatus(tempOutput2);
-		try {
-			for (FileStatus status : fss) {
-				Path path = status.getPath();
-				// skips the _log or _SUCCESS files
-				if (!path.getName().startsWith("part-")
-						&& !path.getName().equals(tempOutput2.getName()))
-					continue;
-				SequenceFile.Reader reader = new SequenceFile.Reader(fs, path,
-						conf);
-				// read the key + values in that file
-				Text key = new Text();
-				Text value = new Text();
-				while (reader.next(key, value)) {
-					String label = key.toString();
-					// replace the label by its index
-					Integer indexLabel = labelIndex.get(label);
-					if (indexLabel == null) {
-						indexLabel = new Integer(labelMaxIndex);
-						labelIndex.put(label, indexLabel);
-						labelMaxIndex++;
-					}
-					String val = value.toString();
-					bow.append(indexLabel.toString()).append(val).append("\n");
-				}
-				reader.close();
-			}
-			bow.flush();
-		} catch (Exception e) {
-			e.printStackTrace();
-			return -1;
-		} finally {
-			bow.close();
-			fs.delete(tempOutput2, true);
-		}
-		return 0;
-	}
+        Configuration conf = getConf();
+        FileSystem fs = FileSystem.get(conf);
+        FileStatus[] fss = fs.listStatus(tempOutput2);
+        try {
+            for (FileStatus status : fss) {
+                Path path = status.getPath();
+                // skips the _log or _SUCCESS files
+                if (!path.getName().startsWith("part-")
+                        && !path.getName().equals(tempOutput2.getName()))
+                    continue;
+                SequenceFile.Reader reader = new SequenceFile.Reader(fs, path,
+                        conf);
+                // read the key + values in that file
+                Text key = new Text();
+                Text value = new Text();
+                while (reader.next(key, value)) {
+                    String label = key.toString();
+                    // replace the label by its index
+                    Integer indexLabel = labelIndex.get(label);
+                    if (indexLabel == null) {
+                        indexLabel = new Integer(labelMaxIndex);
+                        labelIndex.put(label, indexLabel);
+                        labelMaxIndex++;
+                    }
+                    String val = value.toString();
+                    bow.append(indexLabel.toString()).append(val).append("\n");
+                }
+                reader.close();
+            }
+            bow.flush();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return -1;
+        } finally {
+            bow.close();
+            fs.delete(tempOutput2, true);
+        }
+        return 0;
+    }
 
-	public int vectorToString(Path vectorPath, Path output) throws IOException {
-		JobConf job = new JobConf(getConf());
-		// job.setJobName(this.getClass().getName());
-		job.setJarByClass(this.getClass());
-		FileInputFormat.addInputPath(job, vectorPath);
-		job.setInputFormat(SequenceFileInputFormat.class);
-		job.setNumReduceTasks(0);
-		job.setMapperClass(Mahout2LibSVM.class);
-		FileOutputFormat.setOutputPath(job, output);
-		job.setOutputFormat(SequenceFileOutputFormat.class);
-		job.setOutputKeyClass(Text.class);
-		job.setOutputValueClass(Text.class);
+    public int vectorToString(Path vectorPath, Path output) throws IOException {
+        JobConf job = new JobConf(getConf());
+        // job.setJobName(this.getClass().getName());
+        job.setJarByClass(this.getClass());
+        FileInputFormat.addInputPath(job, vectorPath);
+        job.setInputFormat(SequenceFileInputFormat.class);
+        job.setNumReduceTasks(0);
+        job.setMapperClass(Mahout2LibSVM.class);
+        FileOutputFormat.setOutputPath(job, output);
+        job.setOutputFormat(SequenceFileOutputFormat.class);
+        job.setOutputKeyClass(Text.class);
+        job.setOutputValueClass(Text.class);
 
-		RunningJob rj = JobClient.runJob(job);
+        RunningJob rj = JobClient.runJob(job);
 
-		if (rj.isSuccessful() == false)
-			return -1;
-		return 0;
-	}
+        if (rj.isSuccessful() == false)
+            return -1;
+        return 0;
+    }
 
-	public int convert(Path vectorPath, Path labelPath, Path output)
-			throws IOException {
-		JobConf job = new JobConf(getConf());
-		// job.setJobName(this.getClass().getName());
-		job.setJarByClass(this.getClass());
-		FileInputFormat.addInputPath(job, vectorPath);
-		FileInputFormat.addInputPath(job, labelPath);
-		job.setInputFormat(SequenceFileInputFormat.class);
-		job.setMapperClass(IdentityMapper.class);
-		job.setMapOutputKeyClass(Text.class);
-		job.setMapOutputValueClass(Text.class);
-		// 1 reducers
-		job.setNumReduceTasks(1);
-		job.setReducerClass(Mahout2LibSVM.class);
-		FileOutputFormat.setOutputPath(job, output);
-		job.setOutputFormat(SequenceFileOutputFormat.class);
-		job.setOutputKeyClass(Text.class);
-		job.setOutputValueClass(Text.class);
+    public int convert(Path vectorPath, Path labelPath, Path output)
+            throws IOException {
+        JobConf job = new JobConf(getConf());
+        // job.setJobName(this.getClass().getName());
+        job.setJarByClass(this.getClass());
+        FileInputFormat.addInputPath(job, vectorPath);
+        FileInputFormat.addInputPath(job, labelPath);
+        job.setInputFormat(SequenceFileInputFormat.class);
+        job.setMapperClass(IdentityMapper.class);
+        job.setMapOutputKeyClass(Text.class);
+        job.setMapOutputValueClass(Text.class);
+        // 1 reducers
+        job.setNumReduceTasks(1);
+        job.setReducerClass(Mahout2LibSVM.class);
+        FileOutputFormat.setOutputPath(job, output);
+        job.setOutputFormat(SequenceFileOutputFormat.class);
+        job.setOutputKeyClass(Text.class);
+        job.setOutputValueClass(Text.class);
 
-		RunningJob rj = JobClient.runJob(job);
-		boolean success = rj.isSuccessful();
-		if (!success)
-			return -1;
-		if (log.isInfoEnabled()) {
-			log.info("Conversion: done");
-		}
-		return 0;
-	}
+        RunningJob rj = JobClient.runJob(job);
+        boolean success = rj.isSuccessful();
+        if (!success)
+            return -1;
+        if (log.isInfoEnabled()) {
+            log.info("Conversion: done");
+        }
+        return 0;
+    }
 
-	public void configure(JobConf conf) {
-		setConf(conf);
-	}
+    public void configure(JobConf conf) {
+        setConf(conf);
+    }
 
-	public void close() throws IOException {
-	}
+    public void close() throws IOException {
+    }
 
-	public void reduce(Text key, Iterator<Text> values,
-			OutputCollector<Text, Text> output, Reporter reporter)
-			throws IOException {
-		// should have two values : a vector and a label
-		String label = null;
-		String attributes = null;
-		while (values.hasNext()) {
-			String t = values.next().toString();
-			if (t.startsWith("VECTOR_")) {
-				attributes = t.substring(7);
-			} else
-				label = t;
-		}
-		if (label == null) {
-			log.info(key.toString() + " does not have label");
-		} else if (attributes == null) {
-			log.info(key.toString() + " does not have attributes");
-		} else {
-			output.collect(new Text(label), new Text(attributes));
-		}
-	}
+    public void reduce(Text key, Iterator<Text> values,
+            OutputCollector<Text, Text> output, Reporter reporter)
+            throws IOException {
+        // should have two values : a vector and a label
+        String label = null;
+        String attributes = null;
+        while (values.hasNext()) {
+            String t = values.next().toString();
+            if (t.startsWith("VECTOR_")) {
+                attributes = t.substring(7);
+            } else
+                label = t;
+        }
+        if (label == null) {
+            log.info(key.toString() + " does not have label");
+        } else if (attributes == null) {
+            log.info(key.toString() + " does not have attributes");
+        } else {
+            output.collect(new Text(label), new Text(attributes));
+        }
+    }
 
-	public void map(Text key, VectorWritable value,
-			OutputCollector<Text, Text> output, Reporter reporter)
-			throws IOException {
-		Vector v = value.get();
-		StringBuffer buffer = new StringBuffer();
-		for (int i = 0; i < v.size(); i++) {
-			Element el = v.getElement(i);
-			int index = el.index();
-			// increment index so that starts at 1
-			index++;
-			double weight = el.get();
-			if (weight != 0)
-				buffer.append(" ").append(index).append(":").append(weight);
-		}
-		String rep = buffer.toString();
-		if (rep.length() > 0)
-			output.collect(key, new Text("VECTOR_" + rep));
-	}
+    public void map(Text key, VectorWritable value,
+            OutputCollector<Text, Text> output, Reporter reporter)
+            throws IOException {
+        Vector v = value.get();
+        StringBuffer buffer = new StringBuffer();
+        for (int i = 0; i < v.size(); i++) {
+            Element el = v.getElement(i);
+            int index = el.index();
+            // increment index so that starts at 1
+            index++;
+            double weight = el.get();
+            if (weight != 0)
+                buffer.append(" ").append(index).append(":").append(weight);
+        }
+        String rep = buffer.toString();
+        if (rep.length() > 0)
+            output.collect(key, new Text("VECTOR_" + rep));
+    }
 
 }

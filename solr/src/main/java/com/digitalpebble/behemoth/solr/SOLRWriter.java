@@ -52,11 +52,10 @@ public class SOLRWriter {
         solr = new StreamingUpdateSolrServer(solrURL, queueSize, threadCount);
         /*
          * Generate mapping for Behemoth annotations/features to Solr fields
-         * config values look like 
-         * solr.f.<solr field> = <annotationtype>.<feature>
-         * E.g., solr.f.foo = bar solr.f.foo = spam.eggs
-         * generates the mapping
-         * {"bar":{"*","foo"}, "spam":{"eggs":"foo"}}
+         * config values look like solr.f.<solr field> =
+         * <annotationtype>.<feature> E.g., solr.f.foo = bar solr.f.foo =
+         * spam.eggs generates the mapping {"bar":{"*","foo"},
+         * "spam":{"eggs":"foo"}}
          */
         Iterator<Entry<String, String>> iterator = job.iterator();
         while (iterator.hasNext()) {

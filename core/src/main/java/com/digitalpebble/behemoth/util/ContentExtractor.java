@@ -76,7 +76,7 @@ public class ContentExtractor extends Configured implements Tool {
     private boolean dumpBinary = false;
 
     private ArchiveOutputStream currentArchive = null;
-    
+
     private FSDataOutputStream index = null;
 
     private int partNum = 0;
@@ -212,7 +212,8 @@ public class ContentExtractor extends Configured implements Tool {
         }
     }
 
-    private void generateDocs(Path input, Path dir, int[] count) throws IOException, ArchiveException {
+    private void generateDocs(Path input, Path dir, int[] count)
+            throws IOException, ArchiveException {
 
         DocumentFilter docFilter = DocumentFilter.getFilters(getConf());
 

@@ -32,36 +32,36 @@ import org.slf4j.LoggerFactory;
  ***/
 
 public class BehemothMapper implements
-		Mapper<Text, BehemothDocument, Text, BehemothDocument> {
+        Mapper<Text, BehemothDocument, Text, BehemothDocument> {
 
-	public static final Logger LOG = LoggerFactory
-			.getLogger(BehemothMapper.class);
+    public static final Logger LOG = LoggerFactory
+            .getLogger(BehemothMapper.class);
 
-	private DocumentFilter docFilter;
+    private DocumentFilter docFilter;
 
-	/**
-	 * Checks whether any filters have been specified in the configuration
-	 **/
-	public static boolean isRequired(JobConf conf) {
-		return (DocumentFilter.isRequired(conf));
-	}
+    /**
+     * Checks whether any filters have been specified in the configuration
+     **/
+    public static boolean isRequired(JobConf conf) {
+        return (DocumentFilter.isRequired(conf));
+    }
 
-	public void configure(JobConf conf) {
-		this.docFilter = DocumentFilter.getFilters(conf);
-	}
+    public void configure(JobConf conf) {
+        this.docFilter = DocumentFilter.getFilters(conf);
+    }
 
-	public void close() throws IOException {
-	}
+    public void close() throws IOException {
+    }
 
-	public void map(Text key, BehemothDocument inputDoc,
-			OutputCollector<Text, BehemothDocument> output, Reporter reporter)
-			throws IOException {
-		boolean keep = docFilter.keep(inputDoc);
-		if (!keep) {
-			reporter.incrCounter("BehemothMapper", "DOC SKIPPED BY FILTERS", 1);
-			return;
-		}
-		output.collect(key, inputDoc);
-	}
+    public void map(Text key, BehemothDocument inputDoc,
+            OutputCollector<Text, BehemothDocument> output, Reporter reporter)
+            throws IOException {
+        boolean keep = docFilter.keep(inputDoc);
+        if (!keep) {
+            reporter.incrCounter("BehemothMapper", "DOC SKIPPED BY FILTERS", 1);
+            return;
+        }
+        output.collect(key, inputDoc);
+    }
 
 }

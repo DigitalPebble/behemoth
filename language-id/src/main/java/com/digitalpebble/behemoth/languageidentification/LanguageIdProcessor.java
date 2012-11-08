@@ -37,92 +37,92 @@ import com.digitalpebble.behemoth.DocumentProcessor;
 
 public class LanguageIdProcessor implements DocumentProcessor {
 
-	public static final Text languageMDKey = new Text("lang");
+    public static final Text languageMDKey = new Text("lang");
 
-	private static final Logger LOG = LoggerFactory
-			.getLogger(LanguageIdProcessor.class);
+    private static final Logger LOG = LoggerFactory
+            .getLogger(LanguageIdProcessor.class);
 
-	private Configuration config;
+    private Configuration config;
 
-	private final String[] defaultLanguagesToLoad = new String[] { "af", "ar",
-			"bg", "bn", "cs", "da", "de", "el", "en", "es", "et", "fa", "fi",
-			"fr", "gu", "he", "hi", "hr", "hu", "id", "it", "ja", "kn", "ko",
-			"lt", "lv", "mk", "ml", "mr", "ne", "nl", "no", "pa", "pl", "pt",
-			"ro", "ru", "sk", "sl", "so", "sq", "sv", "sw", "ta", "te", "th",
-			"tl", "tr", "uk", "ur", "vi", "zh-cn", "zh-tw" };
+    private final String[] defaultLanguagesToLoad = new String[] { "af", "ar",
+            "bg", "bn", "cs", "da", "de", "el", "en", "es", "et", "fa", "fi",
+            "fr", "gu", "he", "hi", "hr", "hu", "id", "it", "ja", "kn", "ko",
+            "lt", "lv", "mk", "ml", "mr", "ne", "nl", "no", "pa", "pl", "pt",
+            "ro", "ru", "sk", "sl", "so", "sq", "sv", "sw", "ta", "te", "th",
+            "tl", "tr", "uk", "ur", "vi", "zh-cn", "zh-tw" };
 
-	public Configuration getConf() {
-		return config;
-	}
+    public Configuration getConf() {
+        return config;
+    }
 
-	public void setConf(Configuration conf) {
-		config = conf;
+    public void setConf(Configuration conf) {
+        config = conf;
 
-		// TODO get list of languages to load from conf
+        // TODO get list of languages to load from conf
 
-		String[] languagesToLoad = defaultLanguagesToLoad;
+        String[] languagesToLoad = defaultLanguagesToLoad;
 
-		List<String> json_profiles = new ArrayList<String>();
+        List<String> json_profiles = new ArrayList<String>();
 
-		for (String langCode : languagesToLoad) {
-			try {
-				json_profiles.add(loadLanguageProfile(langCode));
-			} catch (IOException e) {
-				LOG.info("Can't load language profile for " + langCode);
-			}
-		}
+        for (String langCode : languagesToLoad) {
+            try {
+                json_profiles.add(loadLanguageProfile(langCode));
+            } catch (IOException e) {
+                LOG.info("Can't load language profile for " + langCode);
+            }
+        }
 
-		try {
-			DetectorFactory.loadProfile(json_profiles);
-		} catch (LangDetectException e) {
-			LOG.info("Can't load language profiles");
-		}
-	}
+        try {
+            DetectorFactory.loadProfile(json_profiles);
+        } catch (LangDetectException e) {
+            LOG.info("Can't load language profiles");
+        }
+    }
 
-	private static String loadLanguageProfile(String langCode)
-			throws IOException {
-		InputStream is = DetectorFactory.class.getClassLoader()
-				.getResourceAsStream("profiles/" + langCode);
-		String profile = IOUtils.toString(is);
-		is.close();
-		return profile;
-	}
+    private static String loadLanguageProfile(String langCode)
+            throws IOException {
+        InputStream is = DetectorFactory.class.getClassLoader()
+                .getResourceAsStream("profiles/" + langCode);
+        String profile = IOUtils.toString(is);
+        is.close();
+        return profile;
+    }
 
-	public void close() {
-	}
+    public void close() {
+    }
 
-	public BehemothDocument[] process(BehemothDocument inputDoc,
-			Reporter reporter) {
-		// check that it has some text
-		if (inputDoc.getText() == null) {
-			LOG.info("No text for " + inputDoc.getUrl() + " skipping");
-			reporter.getCounter("LANGUAGE ID", "MISSING TEXT").increment(1);
-			return new BehemothDocument[] { inputDoc };
-		}
+    public BehemothDocument[] process(BehemothDocument inputDoc,
+            Reporter reporter) {
+        // check that it has some text
+        if (inputDoc.getText() == null) {
+            LOG.info("No text for " + inputDoc.getUrl() + " skipping");
+            reporter.getCounter("LANGUAGE ID", "MISSING TEXT").increment(1);
+            return new BehemothDocument[] { inputDoc };
+        }
 
-		String lang = null;
+        String lang = null;
 
-		// skip docs with empty text
-		if (inputDoc.getText().trim().isEmpty()) {
-			LOG.info("Empty text for " + inputDoc.getUrl() + " skipping");
-			reporter.getCounter("LANGUAGE ID", "EMPTY TEXT").increment(1);
-			return new BehemothDocument[] { inputDoc };
-		}
+        // skip docs with empty text
+        if (inputDoc.getText().trim().isEmpty()) {
+            LOG.info("Empty text for " + inputDoc.getUrl() + " skipping");
+            reporter.getCounter("LANGUAGE ID", "EMPTY TEXT").increment(1);
+            return new BehemothDocument[] { inputDoc };
+        }
 
-		try {
-			Detector detector = DetectorFactory.create();
-			detector.append(inputDoc.getText());
-			lang = detector.detect();
-			inputDoc.getMetadata(true).put(languageMDKey, new Text(lang));
-		} catch (LangDetectException e) {
-			LOG.error("Exception on doc " + inputDoc.getUrl(), e);
-			lang = null;
-		}
+        try {
+            Detector detector = DetectorFactory.create();
+            detector.append(inputDoc.getText());
+            lang = detector.detect();
+            inputDoc.getMetadata(true).put(languageMDKey, new Text(lang));
+        } catch (LangDetectException e) {
+            LOG.error("Exception on doc " + inputDoc.getUrl(), e);
+            lang = null;
+        }
 
-		if (reporter != null && lang != null)
-			reporter.getCounter("LANGUAGE DETECTED", lang).increment(1);
+        if (reporter != null && lang != null)
+            reporter.getCounter("LANGUAGE DETECTED", lang).increment(1);
 
-		return new BehemothDocument[] { inputDoc };
-	}
+        return new BehemothDocument[] { inputDoc };
+    }
 
 }

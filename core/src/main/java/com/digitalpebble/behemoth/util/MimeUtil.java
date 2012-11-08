@@ -22,8 +22,8 @@ public final class MimeUtil {
     private static final String SEPARATOR = ";";
 
     /**
-     * Cleans a {@link MimeType} name by removing out the actual
-     * {@link MimeType}, from a string of the form:
+     * Cleans a MimeType name by removing out the actual MimeType, from a string
+     * of the form:
      * 
      * <pre>
      *      &lt;primary type&gt;/&lt;sub type&gt; ; &lt; optional params

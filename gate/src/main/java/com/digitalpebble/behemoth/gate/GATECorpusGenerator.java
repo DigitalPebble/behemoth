@@ -56,7 +56,7 @@ public class GATECorpusGenerator extends Configured implements Tool {
 
     private static final Logger LOG = LoggerFactory
             .getLogger(GATECorpusGenerator.class);
-    
+
     public GATECorpusGenerator() throws GateException {
         Gate.runInSandbox(true);
         Gate.init();
@@ -154,7 +154,9 @@ public class GATECorpusGenerator extends Configured implements Tool {
                     writer.write(gatedocument.toXml());
 
                 } catch (Exception e) {
-                    LOG.error("Exception on doc ["+count[0]+"] " + key.toString(), e);
+                    LOG.error(
+                            "Exception on doc [" + count[0] + "] "
+                                    + key.toString(), e);
                 } finally {
                     if (writer != null)
                         writer.close();

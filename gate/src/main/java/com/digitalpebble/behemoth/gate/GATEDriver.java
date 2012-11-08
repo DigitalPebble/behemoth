@@ -106,7 +106,7 @@ public class GATEDriver extends Configured implements Tool {
             job.setMapperClass(GATEMapper.class);
         }
 
-        // detect if any filters or splitters have been defined
+        // detect if any filters have been defined
         // and activate the reducer accordingly
         boolean isFilterRequired = BehemothReducer.isRequired(job);
         if (isFilterRequired)
