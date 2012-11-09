@@ -4,11 +4,11 @@
 	<parent>
 		<groupId>com.digitalpebble.behemoth</groupId>
 		<artifactId>behemoth-parent</artifactId>
-		<version>1.0</version>
+		<version>1.1-SNAPSHOT</version>
 	</parent>
 
 	<artifactId>behemoth-io</artifactId>
-	<version>1.0</version>
+	<version>1.1-SNAPSHOT</version>
 	<packaging>jar</packaging>
 
 	<name>io</name>
@@ -54,7 +54,7 @@
 		<dependency>
 			<groupId>com.digitalpebble.behemoth</groupId>
 			<artifactId>behemoth-core</artifactId>
-			<version>1.0</version>
+			<version>1.1-SNAPSHOT</version>
 		</dependency>
 
 		<dependency>
