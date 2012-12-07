@@ -17,6 +17,7 @@
 				<exclude>org.apache.mahout:mahout-core</exclude>
 				<exclude>org.apache.mahout:mahout-collections</exclude>
 				<exclude>org.apache.mahout:mahout-math</exclude>
+				<exclude>com.digitalpebble.behemoth:behemoth-core</exclude>
 			</excludes>
 		</dependencySet>
 		<dependencySet>
@@ -26,6 +27,7 @@
 				<include>org.apache.mahout:mahout-core</include>
 				<include>org.apache.mahout:mahout-collections</include>
 				<include>org.apache.mahout:mahout-math</include>
+				<include>com.digitalpebble.behemoth:behemoth-core</include>
 			</includes>
 		</dependencySet>
 	</dependencySets>
