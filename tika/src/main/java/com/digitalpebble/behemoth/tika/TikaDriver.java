@@ -28,6 +28,7 @@ import org.apache.commons.cli2.builder.ArgumentBuilder;
 import org.apache.commons.cli2.builder.DefaultOptionBuilder;
 import org.apache.commons.cli2.builder.GroupBuilder;
 import org.apache.commons.cli2.commandline.Parser;
+import org.apache.commons.cli2.util.HelpFormatter;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.FileSystem;
@@ -79,11 +80,11 @@ public class TikaDriver extends Configured implements Tool, TikaConstants {
         Option tikaOpt = buildOption(
                 "tikaProcessor",
                 "t",
-                "The fully qualified name of a TikaProcessor class that handles the extraction",
+                "The fully qualified name of a TikaProcessor class that handles the extraction (optional)",
                 true, false, null);
         options.add(tikaOpt);
         Option mimeTypeOpt = buildOption("mimeType", "m",
-                "The mime type to use", true, false, "");
+                "The mime type to use (optional)", true, false, "");
         options.add(mimeTypeOpt);
         for (Option opt : options) {
             gBuilder = gBuilder.withOption(opt);
@@ -148,7 +149,10 @@ public class TikaDriver extends Configured implements Tool, TikaConstants {
             }
 
         } catch (OptionException e) {
-            log.error("OptionException", e);
+            log.error("OptionException", e.getMessage());
+            HelpFormatter formatter = new HelpFormatter();
+            formatter.setGroup(group);
+            formatter.print();
             return -1;
         }
 
