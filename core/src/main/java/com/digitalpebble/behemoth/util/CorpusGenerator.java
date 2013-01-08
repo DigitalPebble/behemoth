@@ -290,11 +290,13 @@ public class CorpusGenerator extends Configured implements Tool {
                                 }
                             }
 
-                        } catch (ArchiveException e) {
+                        } catch (Throwable t) {
                             // TODO Auto-generated catch block
-                            e.printStackTrace();
+                            log.warn("Error processing ZIP archive: " + file + ", skipping remaining entries: " + t.toString());
                         } finally {
+                          if (fis != null) {
                             fis.close();
+                          }
                         }
 
                     } else {
@@ -317,9 +319,9 @@ public class CorpusGenerator extends Configured implements Tool {
                                 reporter.incrCounter(Counters.DOC_COUNT, 1);
                             }
                         } catch (FileNotFoundException e) {
-                            throw new RuntimeException(e);
+                          log.warn("File not found " + file + ", skipping: " + e);
                         } catch (IOException e) {
-                            throw new RuntimeException(e);
+                          log.warn("IO error reading file " + file + ", skipping: " + e);
                         }
                     }
                 }
