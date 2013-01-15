@@ -86,7 +86,8 @@ public class TikaProcessor implements DocumentProcessor, TikaConstants {
     if (inputDoc.getContent() == null && inputDoc.getText() == null) {
       LOG.info("No content or text for " + inputDoc.getUrl()
               + " skipping");
-      return null;
+      setMetadata(inputDoc, "parsing", "skipped, no content");
+      return new BehemothDocument[]{inputDoc};
     }
 
     // determine the content type if missing
@@ -127,8 +128,10 @@ public class TikaProcessor implements DocumentProcessor, TikaConstants {
     Parser parser = TikaConfig.getDefaultConfig().getParser();
 
     // skip the processing if the input document already has some text
-    if (inputDoc.getText() != null)
+    if (inputDoc.getText() != null) {
+      setMetadata(inputDoc, "parsing", "skipped, already processed?");
       return new BehemothDocument[]{inputDoc};
+    }
 
     // otherwise parse the document and retrieve the text, metadata and
     // markup annotations
@@ -167,6 +170,7 @@ public class TikaProcessor implements DocumentProcessor, TikaConstants {
       LOG.error(inputDoc.getUrl().toString(), e);
       if (reporter != null)
         reporter.getCounter("TIKA", "PARSING_ERROR").increment(1);
+      setMetadata(inputDoc, "parsing", "failed: " + e.toString());
       return new BehemothDocument[]{inputDoc};
     } finally {
       try {
@@ -180,7 +184,15 @@ public class TikaProcessor implements DocumentProcessor, TikaConstants {
     if (reporter != null)
       reporter.getCounter("TIKA", "DOC-PARSED").increment(1);
 
+    setMetadata(inputDoc, "parsing", "ok");
     return new BehemothDocument[]{inputDoc};
+  }
+  
+  private void setMetadata(BehemothDocument doc, String name, String value) {
+    if (doc.getMetadata() == null) {
+      doc.setMetadata(new MapWritable());
+    }
+    doc.getMetadata().put(new Text(name), new Text(value));
   }
 
   /**
