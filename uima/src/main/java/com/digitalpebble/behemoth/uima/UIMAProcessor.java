@@ -25,6 +25,8 @@ import org.apache.uima.cas.FSIterator;
 import org.apache.uima.cas.Feature;
 import org.apache.uima.cas.Type;
 import org.apache.uima.cas.impl.AnnotationImpl;
+import org.apache.uima.cas.text.AnnotationFS;
+import org.apache.uima.jcas.tcas.Annotation;
 import org.apache.uima.pear.tools.PackageBrowser;
 import org.apache.uima.pear.tools.PackageInstaller;
 import org.apache.uima.resource.ResourceSpecifier;
@@ -103,12 +105,10 @@ public class UIMAProcessor implements DocumentProcessor {
     }
 
     public void setConf(Configuration conf) {
+        long initStart = System.currentTimeMillis();
         config = conf;
-
         storeshortnames = config.getBoolean("uima.store.short.names", true);
-
         File pearFile = new File(urlPEAR.getPath());
-
         PackageBrowser instPear = PackageInstaller.installPackage(
                 pearFile.getParentFile(), pearFile, true);
 
@@ -158,7 +158,8 @@ public class UIMAProcessor implements DocumentProcessor {
             Type aType = cas.getTypeSystem().getType(type);
             uimatypes.add(aType);
         }
-
+        long initEnd = System.currentTimeMillis();
+        LOG.info("Initialisation of UIMAProcessor done in "+(initEnd-initStart)+" msec");
     }
 
     /** convert the annotations from the CAS into the Behemoth format **/
@@ -175,13 +176,9 @@ public class UIMAProcessor implements DocumentProcessor {
             uimatypes.add(aType);
         }
 
-        FSIterator annotIterator = cas.getAnnotationIndex().iterator();
-
+        FSIterator<AnnotationFS> annotIterator = cas.getAnnotationIndex().iterator();
         while (annotIterator.hasNext()) {
-            Object annotObject = annotIterator.next();
-            if (annotObject instanceof AnnotationImpl == false)
-                continue;
-            AnnotationImpl annotation = (AnnotationImpl) annotObject;
+            AnnotationFS annotation = annotIterator.next();
             if (!uimatypes.contains(annotation.getType()))
                 continue;
             String atype = annotation.getType().toString();
