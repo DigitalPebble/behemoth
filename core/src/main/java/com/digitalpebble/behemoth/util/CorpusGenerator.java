@@ -297,7 +297,7 @@ public class CorpusGenerator extends Configured implements Tool {
                             input.read(content);
                             key.set(URI + "!" + name);
                             // fill the values for the content object
-                            value.setUrl(URI + "!" + name);
+                            value.setUrl(URI + ":" + name);
                             value.setContent(content);
                             writer.append(key, value);
                             processed++;
