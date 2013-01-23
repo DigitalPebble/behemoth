@@ -79,7 +79,7 @@ public class ContentExtractor extends Configured implements Tool {
 
     private FSDataOutputStream index = null;
 
-    private int partNum = 0;
+    private int partNum = -1;
     private int numEntriesInCurrentArchive = 0;
     private int maxNumEntriesInArchive = 10000;
 
@@ -190,11 +190,11 @@ public class ContentExtractor extends Configured implements Tool {
             ArchiveException {
         FileSystem fsout = FileSystem.get(dirPath.toUri(), getConf());
         String archiveType = "zip";
+        partNum++;
         FSDataOutputStream currentArchiveOS = fsout.create(new Path(dirPath,
                 "part_" + String.format("%06d", partNum) + "." + archiveType));
         currentArchive = new ArchiveStreamFactory().createArchiveOutputStream(
                 archiveType, currentArchiveOS);
-        partNum++;
         numEntriesInCurrentArchive = 0;
     }
 
