@@ -69,7 +69,6 @@ public class LucidWorksProcessor implements DocumentProcessor, TikaConstants {
 
   private Configuration config;
   private boolean includeMetadata = false;
-  private boolean includeAnnotations = false;
   private String mimeType = "text/plain";
   public static final String defaultInputEncoding = "UTF-8";
   public static final String defaultOutputEncoding = "UTF-8";
@@ -84,7 +83,7 @@ public class LucidWorksProcessor implements DocumentProcessor, TikaConstants {
   protected String batchId = null;
   protected ContentHandler dummy = new DefaultHandler();
   protected boolean includeImages = true;
-  protected boolean flattenCompound = true;
+  protected boolean flattenCompound = false;
   protected boolean addFailedDocs = true;
   protected boolean addOriginalContent = false;
   protected AutoDetectParser autoDetectParser = new AutoDetectParser();
@@ -96,8 +95,12 @@ public class LucidWorksProcessor implements DocumentProcessor, TikaConstants {
   public void setConf(Configuration conf) {
     config = conf;
     mimeType = config.get(TIKA_MIME_TYPE_KEY);
-    includeMetadata = conf.getBoolean("tika.metadata", false);
-    includeAnnotations = conf.getBoolean("tika.annotations", false);
+    batchId = conf.get("lw.batch.id");
+    includeMetadata = conf.getBoolean("tika.metadata", true);
+    flattenCompound = conf.getBoolean("tika.flatten", false);
+    addFailedDocs = conf.getBoolean("tika.add.failed", true);
+    includeImages = conf.getBoolean("tika.images", true);
+    addOriginalContent = conf.getBoolean("tika.add.original", false);
     autoDetectParser.setFallback(ErrorParser.INSTANCE);
   }
 
