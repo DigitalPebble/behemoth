@@ -21,6 +21,11 @@
 	</property>
 
 	<property>
+		<name>mapred.output.compression.type</name>
+		<value>BLOCK</value>
+	</property>
+
+	<property>
 		<name>hadoop.job.history.user.location</name>
 		<value>${hadoop.log.dir}/history/user</value>
 		<description>Hadoop 0.17.x comes with a default setting to create
