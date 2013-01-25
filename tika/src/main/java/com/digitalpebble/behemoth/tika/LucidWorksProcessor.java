@@ -50,6 +50,8 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
@@ -164,7 +166,11 @@ public class LucidWorksProcessor implements DocumentProcessor, TikaConstants {
         LOG.info("Parsing failed for " + inputDoc.getUrl() + ", skipping: " + t.toString());
         if (addFailedDocs) {
           // add an empty doc with metadata only
-          setMetadata(inputDoc, "parsing", "failed: " + t.toString());
+          StringWriter sw = new StringWriter();
+          PrintWriter pw = new PrintWriter(sw);
+          t.printStackTrace(pw);
+          pw.flush();
+          setMetadata(inputDoc, "parsing", "failed: " + sw.toString());
           docs.add(inputDoc);
           if (reporter != null)
             reporter.getCounter("TIKA", "DOC-FAILED").increment(1);
@@ -396,7 +402,7 @@ public class LucidWorksProcessor implements DocumentProcessor, TikaConstants {
         LOG.trace("---\nExtracted content body length: " + body.length() + " extracted content body: <<" + body + ">>");
   
         // Add body field to generated document.
-        setMetadata(doc, BODY_FIELD, body);
+        doc.setText(body);
         if (containerName != null) {
           addMetadata(doc, CONTAINER_FIELD, containerName.toString());
         }
@@ -440,7 +446,7 @@ public class LucidWorksProcessor implements DocumentProcessor, TikaConstants {
         }
         docs.add(doc);
         //System.err.println("LEAVE " + resourceName + " nested: " + nested);
-      } catch (Exception e) {
+      } catch (Throwable e) {
         if (addFailedDocs) {
           BehemothDocument doc = new BehemothDocument();
           setMetadata(doc, uniqueKey, thisUrl.toString());
@@ -450,7 +456,11 @@ public class LucidWorksProcessor implements DocumentProcessor, TikaConstants {
               addMetadata(doc, m, v);
             }
           }
-          setMetadata(doc, "parsing", "failed: (invalid format?) " + e.getMessage());
+          StringWriter sw = new StringWriter();
+          PrintWriter pw = new PrintWriter(sw);
+          e.printStackTrace(pw);
+          pw.flush();
+          setMetadata(doc, "parsing", "failed: (invalid format?) " + sw.toString());
           docs.add(doc);
         } else {
           LOG.warn("Parsing " + thisUrl + " failed: " + e.getMessage());
