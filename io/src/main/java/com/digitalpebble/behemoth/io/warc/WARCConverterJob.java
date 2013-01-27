@@ -42,6 +42,10 @@ import org.apache.nutch.protocol.ProtocolException;
 import com.digitalpebble.behemoth.BehemothConfiguration;
 import com.digitalpebble.behemoth.BehemothDocument;
 
+import edu.cmu.lemurproject.WarcFileInputFormat;
+import edu.cmu.lemurproject.WarcRecord;
+import edu.cmu.lemurproject.WritableWarcRecord;
+
 /**
  * Converts a WARC archive into a Behemoth datastructure for further processing
  */
@@ -74,17 +78,18 @@ public class WARCConverterJob extends Configured implements Tool,
 
         BehemothDocument behemothDocument = new BehemothDocument();
 
-        if (record.getRecord().getHeaderRecordType().equals("response") == false)
+        WarcRecord wr = record.getRecord();
+
+        if (wr.getHeaderRecordType().equals("response") == false)
             return;
 
-        byte[] binarycontent = record.getRecord().getContent();
+        byte[] binarycontent = wr.getContent();
 
-        String uri = record.getRecord()
-                .getHeaderMetadataItem("WARC-Target-URI");
-        // application/http;msgtype=response
-        // but always null?
-        // String WARCContentType =
-        // record.getRecord().getHeaderMetadataItem("Content-Type");
+        String uri = wr.getHeaderMetadataItem("WARC-Target-URI");
+
+        // skip non http documents
+        if (uri.startsWith("http") == false)
+            return;
 
         HttpResponse response;
         try {
