@@ -260,6 +260,16 @@ public final class SparseVectorsFromBehemoth extends AbstractJob implements
                 CommandLineUtil.printHelp(group);
                 return -1;
             }
+            
+            if (!cmdLine.hasOption(inputDirOpt)) {
+                CommandLineUtil.printHelp(group);
+                return -1;
+            }
+            
+            if (!cmdLine.hasOption(outputDirOpt)) {
+                CommandLineUtil.printHelp(group);
+                return -1;
+            }
 
         } catch (OptionException e) {
             log.error("Exception", e);
