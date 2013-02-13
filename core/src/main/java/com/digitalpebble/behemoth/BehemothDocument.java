@@ -21,6 +21,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -340,7 +341,7 @@ public class BehemothDocument implements Writable {
         if (showContent) {
             buffer.append("\nContent:\n");
             int maxLengthText = Math.min(200, content.length);
-            buffer.append(new String(content).substring(0, maxLengthText));
+            buffer.append(new String(Arrays.copyOfRange(content, 0, maxLengthText)));
         }
         // try
         // default
