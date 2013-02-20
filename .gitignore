@@ -8,7 +8,7 @@
 build
 **/build
 **/target
-lib
+#lib
 *.iml
 .idea
 

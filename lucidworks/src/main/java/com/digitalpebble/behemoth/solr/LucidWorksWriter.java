@@ -21,15 +21,16 @@ import com.digitalpebble.behemoth.BehemothDocument;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.io.MapWritable;
-import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.util.Progressable;
 import org.apache.solr.client.solrj.SolrServer;
 import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.solr.client.solrj.impl.CloudSolrServer;
-import org.apache.solr.client.solrj.impl.StreamingUpdateSolrServer;
+import org.apache.solr.client.solrj.impl.ConcurrentUpdateSolrServer;
+import org.apache.solr.client.solrj.request.UpdateRequest;
 import org.apache.solr.common.SolrInputDocument;
+import org.apache.solr.common.params.ModifiableSolrParams;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -48,6 +49,8 @@ public class LucidWorksWriter {
   private Progressable progress;
   private boolean includeMetadata = false;
   protected boolean includeAnnotations = false;
+  protected boolean includeAllAnnotations = false;
+  protected ModifiableSolrParams params = null;
 
   public LucidWorksWriter(Progressable progress) {
     this.progress = progress;
@@ -64,11 +67,24 @@ public class LucidWorksWriter {
       String solrURL = job.get("solr.server.url");
       int queueSize = job.getInt("solr.client.queue.size", 100);
       int threadCount = job.getInt("solr.client.threads", 1);
-      solr = new StreamingUpdateSolrServer(solrURL, queueSize, threadCount);
+      solr = new ConcurrentUpdateSolrServer(solrURL, queueSize, threadCount);
+    }
+    String paramsString = job.get("solr.params");
+    if (paramsString != null) {
+      params = new ModifiableSolrParams();
+      String[] pars = paramsString.trim().split("\\&");
+      for (String kvs : pars) {
+        String[] kv = kvs.split("=");
+        if (kv.length < 2) {
+          LOG.warn("Invalid Solr param " + kvs + ", skipping...");
+          continue;
+        }
+        params.add(kv[0], kv[1]);
+      }
+      LOG.info("Using Solr params: " + params.toString());
     }
     includeMetadata = job.getBoolean("lw.metadata", false);
     includeAnnotations = job.getBoolean("lw.annotations", false);
-
     populateSolrFieldMappingsFromBehemothAnnotationsTypesAndFeatures(job);
   }
 
@@ -83,44 +99,70 @@ public class LucidWorksWriter {
       if (entry.getKey().startsWith("solr.f.") == false)
         continue;
       String solrFieldName = entry.getKey().substring("solr.f.".length());
-      // see if a feature has been specified
-      // if not we'll use '*' to indicate that we want
-      // the text covered by the annotation
-      //HashMap<String, String> featureValMap = new HashMap<String, String>();
-
-      String[] toks = entry.getValue().split("\\.");
-      String annotationName = null;
-      String featureName = null;
-      if(toks.length == 1) {
-        annotationName = toks[0];
-      } else if(toks.length == 2) {
-        annotationName = toks[0];
-        featureName = toks[1];
-      } else {
-        LOG.warn("Invalid annotation field mapping: " + entry.getValue());
-      }
-      
-      Map<String, String> featureMap = fieldMapping.get(annotationName);
-      if(featureMap == null) {
-        featureMap = new HashMap<String, String>();
-      }
-      
-      if(featureName == null)
-        featureName = "*";
-
-      featureMap.put(featureName, solrFieldName);
-      fieldMapping.put(annotationName, featureMap);
-
-      LOG.info("Adding mapping for annotation " + annotationName + 
-               ", feature '" + featureName + "' to  Solr field '" + solrFieldName + "'");
+      populateMapping(solrFieldName, entry.getValue());
     }
+    // process lw.annotations.list
+    String list = job.get("lw.annotations.list");
+    if (list == null || list.trim().length() == 0) {
+      return;
+    }
+    String[] names = list.split("\\s+");
+    for (String name : names) {
+      // support all annotations denoted by '*'
+      if (name.equals("*")) {
+        includeAllAnnotations = true;
+      } else {
+        String solrFieldName = "annotation_" + name;
+        populateMapping(solrFieldName, name);
+      }
+    }
+  }
+  
+  private void populateMapping(String solrFieldName, String value) {
+    // see if a feature has been specified
+    // if not we'll use '*' to indicate that we want
+    // the text covered by the annotation
+    //HashMap<String, String> featureValMap = new HashMap<String, String>();
+
+    String[] toks = value.split("\\.");
+    String annotationName = null;
+    String featureName = null;
+    if(toks.length == 1) {
+      annotationName = toks[0];
+    } else if(toks.length == 2) {
+      annotationName = toks[0];
+      featureName = toks[1];
+    } else {
+      LOG.warn("Invalid annotation field mapping: " + value);
+    }
+    
+    Map<String, String> featureMap = fieldMapping.get(annotationName);
+    if(featureMap == null) {
+      featureMap = new HashMap<String, String>();
+    }
+    
+    if(featureName == null)
+      featureName = "*";
+
+    featureMap.put(featureName, solrFieldName);
+    fieldMapping.put(annotationName, featureMap);
+
+    LOG.info("Adding mapping for annotation " + annotationName + 
+             ", feature '" + featureName + "' to  Solr field '" + solrFieldName + "'");
   }
 
   public void write(BehemothDocument doc) throws IOException {
     final SolrInputDocument inputDoc = convertToSOLR(doc);
     try {
       progress.progress();
-      solr.add(inputDoc);
+      if (params == null) {
+        solr.add(inputDoc);
+      } else {
+        UpdateRequest req = new UpdateRequest();
+        req.setParams(params);
+        req.add(inputDoc);
+        solr.request(req);
+      }
     } catch (SolrServerException e) {
       throw makeIOException(e);
     }
@@ -160,25 +202,33 @@ public class LucidWorksWriter {
         // check whether it belongs to a type we'd like to send to SOLR
         Map<String, String> featureField = fieldMapping.get(current
                 .getType());
-        if (featureField == null)
+        // special case of all annotations
+        if (featureField == null && !includeAllAnnotations) {
           continue;
-        // iterate on the expected features
-        for (String targetFeature : featureField.keySet()) {
-          String SOLRFieldName = featureField.get(targetFeature);
-          String value = null;
-          // special case for covering text
-          if ("*".equals(targetFeature)) {
-            value = doc.getText().substring((int) current.getStart(),
-                    (int) current.getEnd());
+        }
+        if (!includeAllAnnotations) {
+          // iterate on the expected features
+          for (String targetFeature : featureField.keySet()) {
+            String SOLRFieldName = featureField.get(targetFeature);
+            String value = null;
+            // special case for covering text
+            if ("*".equals(targetFeature)) {
+              value = doc.getText().substring((int) current.getStart(),
+                      (int) current.getEnd());
+            }
+            // get the value for the feature
+            else {
+              value = current.getFeatures().get(targetFeature);
+            }
+            LOG.debug("Adding field : " + SOLRFieldName + "\t" + value);
+            // skip if no value has been found
+            if (value != null)
+              inputDoc.addField(SOLRFieldName, value);
           }
-          // get the value for the feature
-          else {
-            value = current.getFeatures().get(targetFeature);
+        } else {
+          for (Entry<String,String> e : current.getFeatures().entrySet()) {
+            inputDoc.addField("annotation_" + current.getType() + "." + e.getKey(), e.getValue());
           }
-          LOG.debug("Adding field : " + SOLRFieldName + "\t" + value);
-          // skip if no value has been found
-          if (value != null)
-            inputDoc.addField(SOLRFieldName, value);
         }
       }
     }
@@ -191,12 +241,7 @@ public class LucidWorksWriter {
   public void close() throws IOException {
     try {
       solr.commit(false, false);
-      if(solr instanceof StreamingUpdateSolrServer) {
-        ((StreamingUpdateSolrServer)solr).shutdown();
-      }
-      if(solr instanceof CloudSolrServer) {
-        ((CloudSolrServer)solr).close();
-      }
+      solr.shutdown();
     } catch (final SolrServerException e) {
       throw makeIOException(e);
     }

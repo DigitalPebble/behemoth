@@ -20,6 +20,9 @@ package com.digitalpebble.behemoth.util;
 import java.io.BufferedInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
+import java.util.Locale;
+import java.util.zip.GZIPInputStream;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -31,6 +34,7 @@ import org.apache.commons.compress.archivers.ArchiveEntry;
 import org.apache.commons.compress.archivers.ArchiveException;
 import org.apache.commons.compress.archivers.ArchiveInputStream;
 import org.apache.commons.compress.archivers.ArchiveStreamFactory;
+import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.FSDataInputStream;
@@ -65,7 +69,7 @@ public class CorpusGenerator extends Configured implements Tool {
 
     private Reporter reporter;
 
-    private static String unpackParamName = "CorpusGenerator-unpack";
+    public static String unpackParamName = "CorpusGenerator-unpack";
 
     public enum Counters {
         DOC_COUNT
@@ -263,64 +267,81 @@ public class CorpusGenerator extends Configured implements Tool {
                 if (defaultIgnores.accept(file)
                         && fs.getFileStatus(file).isDir() == false) {
                     String URI = file.toUri().toString();
+                    String uri = URI.toLowerCase(Locale.ENGLISH);
+                    int processed = 0;
 
                     // detect whether a file is likely to be an archive
-                    // TODO extend to other known types
-                    if (unpack && URI.toLowerCase().endsWith(".zip")) {
-                        FSDataInputStream fis = null;
+                    if (unpack) {
+                      if (  uri.endsWith(".cpio") || uri.endsWith(".jar") ||
+                              uri.endsWith(".dump") || uri.endsWith(".ar") ||
+                              uri.endsWith("tar") ||
+                              uri.endsWith(".zip") || uri.endsWith("tar.gz") ||
+                              uri.endsWith(".tgz") || uri.endsWith(".tbz2") ||
+                              uri.endsWith(".tbz") || uri.endsWith("tar.bzip2")) {
+                        InputStream fis = null;
                         try {
-                            fis = fs.open(file);
-                            ArchiveInputStream input = new ArchiveStreamFactory()
-                                    .createArchiveInputStream(new BufferedInputStream(
-                                            fis));
-                            ArchiveEntry entry = null;
-                            while ((entry = input.getNextEntry()) != null) {
-                                String name = entry.getName();
-                                long size = entry.getSize();
-                                byte[] content = new byte[(int) size];
-                                input.read(content);
-                                key.set(name);
-                                // fill the values for the content object
-                                value.setUrl(name);
-                                value.setContent(content);
-                                writer.append(key, value);
-                                counter++;
-                                if (reporter != null) {
-                                    reporter.incrCounter(Counters.DOC_COUNT, 1);
-                                }
-                            }
-
-                        } catch (ArchiveException e) {
-                            // TODO Auto-generated catch block
-                            e.printStackTrace();
-                        } finally {
-                            fis.close();
-                        }
-
-                    } else {
-                        // Hmm, kind of dangerous to do this
-                        byte[] fileBArray = new byte[(int) fs.getFileStatus(
-                                file).getLen()];
-                        FSDataInputStream fis = null;
-                        try {
-                            fis = fs.open(file);
-                            fis.readFully(0, fileBArray);
-                            fis.close();
-                            key.set(URI);
+                          fis = fs.open(file);
+                          if (uri.endsWith(".gz") || uri.endsWith(".tgz")) {
+                            fis = new GZIPInputStream(fis);
+                          } else if (uri.endsWith(".tbz") || uri.endsWith(".tbz2") || uri.endsWith(".bzip2")) {
+                            fis = new BZip2CompressorInputStream(fis);
+                          }
+                          ArchiveInputStream input = new ArchiveStreamFactory()
+                          .createArchiveInputStream(new BufferedInputStream(
+                                  fis));
+                          ArchiveEntry entry = null;
+                          while ((entry = input.getNextEntry()) != null) {
+                            String name = entry.getName();
+                            long size = entry.getSize();
+                            byte[] content = new byte[(int) size];
+                            input.read(content);
+                            key.set(URI + "!" + name);
                             // fill the values for the content object
-                            value.setUrl(URI);
-                            value.setContent(fileBArray);
-
+                            value.setUrl(URI + ":" + name);
+                            value.setContent(content);
                             writer.append(key, value);
+                            processed++;
                             counter++;
                             if (reporter != null) {
-                                reporter.incrCounter(Counters.DOC_COUNT, 1);
+                              reporter.incrCounter(Counters.DOC_COUNT, 1);
                             }
-                        } catch (FileNotFoundException e) {
-                            throw new RuntimeException(e);
-                        } catch (IOException e) {
-                            throw new RuntimeException(e);
+                          }
+                        } catch (Throwable t) {
+                          if (processed == 0) {
+                            log.warn("Error unpacking archive: " + file + ", adding as a regular file: " + t.toString());
+                          } else {
+                            log.warn("Error unpacking archive: " + file + ", processed " + processed + " entries, skipping remaining entries: " + t.toString());                            
+                          }
+                        } finally {
+                          if (fis != null) {
+                            fis.close();
+                          }
                         }
+                      }
+                    }
+                    if (processed == 0) { // not processed as archive
+                      // Hmm, kind of dangerous to do this
+                      byte[] fileBArray = new byte[(int) fs.getFileStatus(
+                              file).getLen()];
+                      try {
+                        FSDataInputStream fis = fs.open(file);
+                        fis.readFully(0, fileBArray);
+                        fis.close();
+                        key.set(URI);
+                        // fill the values for the content object
+                        value.setUrl(URI);
+                        value.setContent(fileBArray);
+
+                        writer.append(key, value);
+                        counter++;
+                        if (reporter != null) {
+                          reporter.incrCounter(Counters.DOC_COUNT, 1);
+                        }
+                      } catch (FileNotFoundException e) {
+                        log.warn("File not found " + file + ", skipping: " + e);
+                      } catch (IOException e) {
+                        log.warn("IO error reading file " + file + ", skipping: " + e);
+                      }
                     }
                 }
                 // if it is a directory, accept it so we can possibly recurse on
