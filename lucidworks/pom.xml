@@ -58,9 +58,9 @@
     <dependency>
       <groupId>org.apache.solr</groupId>
       <artifactId>solr-solrj</artifactId>
-      <version>4.0-SNAPSHOT</version>
-      <scope>system</scope>
-      <systemPath>${basedir}/lib/apache-solr-solrj-4.0-SNAPSHOT.jar</systemPath>
+      <version>4.1.0</version>
+      <!--<scope>system</scope>-->
+      <!--<systemPath>${basedir}/lib/apache-solr-solrj-4.0-SNAPSHOT.jar</systemPath>-->
     </dependency>
 
 </dependencies>

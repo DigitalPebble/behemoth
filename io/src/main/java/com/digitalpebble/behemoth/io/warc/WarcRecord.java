@@ -416,6 +416,13 @@ public class WarcRecord {
         this.warcContent = o.warcContent;
     }
 
+  /**
+     * Get the header
+     */
+    public WarcHeader getHeader() {
+      return warcHeader;
+    }
+
     /**
      * Retrieves the total record length (header and content)
      * 
