@@ -15,7 +15,6 @@
         <module>gate</module>
         <module>tika</module>
         <module>uima</module>
-        <module>lucidworks</module>
         <module>io</module>
         <module>mahout</module>
         <module>solr</module>
