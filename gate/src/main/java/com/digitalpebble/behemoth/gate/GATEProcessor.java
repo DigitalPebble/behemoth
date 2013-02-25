@@ -40,6 +40,8 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.io.MapWritable;
+import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapred.Reporter;
 import org.slf4j.Logger;
@@ -124,7 +126,8 @@ public class GATEProcessor implements DocumentProcessor {
         if (reporter != null)
             reporter.setStatus("GATE : " + inputDoc.getUrl().toString());
 
-        boolean clearAS = config.getBoolean("gate.emptyannotationset", false);
+        boolean clearBehemothAnnotations = config.getBoolean(
+                "gate.deleteBehemothAnnotations", false);
 
         // process the text passed as value with the application
         // a) create a GATE document based on the text value
@@ -148,6 +151,8 @@ public class GATEProcessor implements DocumentProcessor {
 
             // enrich the input doc with the annotations from
             // the GATE application
+            // transfer the annotations from the GATE document
+            // to the Behemoth one using the filters
             List<com.digitalpebble.behemoth.Annotation> beheannotations = convertGATEAnnotationsToBehemoth(
                     annots, inputDoc);
 
@@ -155,7 +160,7 @@ public class GATEProcessor implements DocumentProcessor {
             Collections.sort(beheannotations);
 
             // clear the existing behemoth annotations
-            if (clearAS) {
+            if (clearBehemothAnnotations) {
                 inputDoc.getAnnotations().clear();
             }
 
@@ -167,8 +172,20 @@ public class GATEProcessor implements DocumentProcessor {
                     reporter.incrCounter("GATE", annot.getType(), 1);
                 }
 
-            // transfer the annotations from the GATE document
-            // to the Behemoth one using the filters
+            // Add the document features from GATE to Behemoth
+            Set<String> docFeatFilter = this.filters.getDocFeaturesFilter();
+            MapWritable beheMD = inputDoc.getMetadata(true);
+            if (docFeatFilter.size() > 0) {
+                for (String docFeatName : docFeatFilter) {
+                    Object featValue = gatedocument.getFeatures().get(
+                            docFeatName);
+                    if (featValue != null) {
+                        beheMD.put(new Text(docFeatName),
+                                new Text(featValue.toString()));
+                    }
+                }
+            }
+
             if (reporter != null)
                 reporter.incrCounter("GATE", "Document", 1);
 
@@ -228,6 +245,7 @@ public class GATEProcessor implements DocumentProcessor {
 
             // load the annotation and feature filters from the configuration
             this.filters = GATEAnnotationFilters.getFilters(config);
+
         } catch (Exception e) {
             LOG.error("Encountered error while initialising GATE", e);
             throw new RuntimeException(e);
@@ -395,7 +413,7 @@ public class GATEProcessor implements DocumentProcessor {
 
             // now do the features
             // is the type listed?
-            Set<String> expectedfeatnames = filters.getFeatfilts().get(
+            Set<String> expectedfeatnames = filters.getFeatureFilters().get(
                     source.getType());
             if (expectedfeatnames != null) {
                 Iterator featurenames = source.getFeatures().keySet()

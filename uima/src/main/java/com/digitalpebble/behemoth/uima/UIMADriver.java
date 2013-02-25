@@ -113,7 +113,8 @@ public class UIMADriver extends Configured implements Tool {
         } catch (Exception e) {
             e.printStackTrace();
             fs.delete(outputPath, true);
-        } finally {}
+        } finally {
+        }
 
         return 0;
     }

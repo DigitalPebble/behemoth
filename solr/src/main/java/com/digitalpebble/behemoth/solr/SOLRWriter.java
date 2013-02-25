@@ -1,4 +1,4 @@
-/*
+/**
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -13,7 +13,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- */
+ **/
 package com.digitalpebble.behemoth.solr;
 
 import com.digitalpebble.behemoth.Annotation;
@@ -37,7 +37,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
-//TODO: consolidate this w/ LucidWorksWriter now that they are on the same version
+
 public class SOLRWriter {
 
   private static final Log LOG = LogFactory.getLog(SOLRWriter.class);
@@ -84,9 +84,49 @@ public class SOLRWriter {
       }
       LOG.info("Using Solr params: " + params.toString());
     }
-    includeMetadata = job.getBoolean("lw.metadata", false);
-    includeAnnotations = job.getBoolean("lw.annotations", false);
-    populateSolrFieldMappingsFromBehemothAnnotationsTypesAndFeatures(job);
+
+    Iterator<Entry<String, String>> iterator = job.iterator();
+    while (iterator.hasNext()) {
+        Entry<String, String> entry = iterator.next();
+        if (entry.getKey().startsWith("solr.f.") == false)
+            continue;
+        String solrFieldName = entry.getKey().substring("solr.f.".length());
+
+        // Split the annotation type and feature name (e.g., Person.string)
+        String[] toks = entry.getValue().split("\\.");
+        String annotationName = null;
+        String featureName = null;
+        if (toks.length == 1) {
+            annotationName = toks[0];
+        } else if (toks.length == 2) {
+            annotationName = toks[0];
+            featureName = toks[1];
+        } else {
+            LOG.warn("Invalid annotation field mapping: "
+                    + entry.getValue());
+        }
+
+        Map<String, String> featureMap = fieldMapping.get(annotationName);
+        if (featureMap == null) {
+            featureMap = new HashMap<String, String>();
+        }
+
+        // If not feature name is given (e.g., Person instead of
+        // Person.string), infer a *
+        if (featureName == null)
+            featureName = "*";
+
+        featureMap.put(featureName, solrFieldName);
+        fieldMapping.put(annotationName, featureMap);
+
+        LOG.debug("Adding mapping for annotation " + annotationName
+                + ", feature '" + featureName + "' to  Solr field '"
+                + solrFieldName + "'");
+
+      includeMetadata = job.getBoolean("solr.metadata", false);
+      includeAnnotations = job.getBoolean("solr.annotations", false);
+      populateSolrFieldMappingsFromBehemothAnnotationsTypesAndFeatures(job);
+    }
   }
 
   protected void populateSolrFieldMappingsFromBehemothAnnotationsTypesAndFeatures(JobConf job) {
@@ -147,7 +187,6 @@ public class SOLRWriter {
 
     featureMap.put(featureName, solrFieldName);
     fieldMapping.put(annotationName, featureMap);
-
     LOG.info("Adding mapping for annotation " + annotationName +
             ", feature '" + featureName + "' to  Solr field '" + solrFieldName + "'");
   }
@@ -168,6 +207,7 @@ public class SOLRWriter {
       throw makeIOException(e);
     }
   }
+
 
   protected SolrInputDocument convertToSOLR(BehemothDocument doc) {
     final SolrInputDocument inputDoc = new SolrInputDocument();
@@ -253,5 +293,10 @@ public class SOLRWriter {
     ioe.initCause(e);
     return ioe;
   }
+
+  public Map<String, Map<String, String>> getFieldMapping() {
+      return fieldMapping;
+  }
+
 
 }

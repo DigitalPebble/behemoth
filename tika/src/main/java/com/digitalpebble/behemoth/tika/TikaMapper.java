@@ -49,7 +49,11 @@ public class TikaMapper extends MapReduceBase implements
         BehemothDocument[] documents = processor.process(inputDoc, reporter);
         if (documents != null) {
             for (int i = 0; i < documents.length; i++) {
-                outputCollector.collect(text, documents[i]);
+                try {
+                    outputCollector.collect(text, documents[i]);
+                } catch (Error e) {
+                    LOG.error("Error with writing doc", inputDoc.getUrl());
+                }
             }
         }
     }
@@ -62,7 +66,6 @@ public class TikaMapper extends MapReduceBase implements
             Class handlerClass = job.getClass(handlerName, TikaProcessor.class);
             try {
                 processor = (TikaProcessor) handlerClass.newInstance();
-
             } catch (InstantiationException e) {
                 LOG.error("Exception", e);
                 // TODO: what's the best way to do this?

@@ -24,9 +24,9 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
-import org.junit.Test;
 
 public class TikaProcessorTest extends TestCase {
+
 
   TikaProcessor tika = null;
 
@@ -82,5 +82,4 @@ public class TikaProcessorTest extends TestCase {
     assertNotNull("keywords", keywords);
     assertTrue(outputs[0].getAnnotations().size() > 0);
   }
-
 }

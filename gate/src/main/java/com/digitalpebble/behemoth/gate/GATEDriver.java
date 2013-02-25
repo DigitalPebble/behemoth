@@ -38,6 +38,7 @@ import org.apache.hadoop.util.ToolRunner;
 
 import com.digitalpebble.behemoth.BehemothConfiguration;
 import com.digitalpebble.behemoth.BehemothDocument;
+import com.digitalpebble.behemoth.BehemothReducer;
 
 public class GATEDriver extends Configured implements Tool {
     private static final Logger LOG = LoggerFactory.getLogger(GATEDriver.class);
@@ -89,7 +90,7 @@ public class GATEDriver extends Configured implements Tool {
         // MUST not forget the line below
         job.setJarByClass(this.getClass());
 
-        job.setJobName("Processing "+args[0]+" with GATE application from "
+        job.setJobName("Processing " + args[0] + " with GATE application from "
                 + zip_application_path);
 
         job.setInputFormat(SequenceFileInputFormat.class);
@@ -105,7 +106,14 @@ public class GATEDriver extends Configured implements Tool {
             job.setMapperClass(GATEMapper.class);
         }
 
-        job.setNumReduceTasks(0);
+        // detect if any filters have been defined
+        // and activate the reducer accordingly
+        boolean isFilterRequired = BehemothReducer.isRequired(job);
+        if (isFilterRequired)
+            job.setReducerClass(BehemothReducer.class);
+        else {
+            job.setNumReduceTasks(0);
+        }
 
         FileInputFormat.addInputPath(job, inputPath);
         FileOutputFormat.setOutputPath(job, outputPath);
@@ -124,7 +132,8 @@ public class GATEDriver extends Configured implements Tool {
           }
         } catch (Exception e) {
             e.printStackTrace();
-            fs.delete(outputPath, true);
+            // leave even partial output
+            // fs.delete(outputPath, true);
         } finally {
         }
 

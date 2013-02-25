@@ -21,6 +21,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -29,13 +30,16 @@ import java.util.Map.Entry;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.io.Text;
+import org.apache.hadoop.io.VersionMismatchException;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableUtils;
 
 import com.digitalpebble.behemoth.util.MimeUtil;
 
 /**
- * Implementation of a Document using Hadoop primitives
+ * Implementation of a Document using Hadoop primitives. A BehemothDocument
+ * consists of a URL, content type, binary content, metadata and @class
+ * Annotations.
  ***/
 public class BehemothDocument implements Writable {
 
@@ -45,6 +49,8 @@ public class BehemothDocument implements Writable {
     private String url;
 
     private String contentType;
+
+    private final static byte CUR_VERSION = 1;
 
     /**
      * Text representation of a document - can be null if the document is at a
@@ -62,73 +68,88 @@ public class BehemothDocument implements Writable {
     /** List holding the annotations **/
     private List<Annotation> annotations;
 
+    /** Returns the text of the document if it has been set or null **/
     public String getText() {
         return text;
     }
 
+    /** Sets the text representation for this document **/
     public void setText(String text) {
         this.text = text;
     }
 
-    /** The binary content retrieved. */
+    /** Returns the binary content of the document if it has been set or null **/
     public byte[] getContent() {
         return content;
     }
 
+    /** Sets the binary content for this document **/
     public void setContent(byte[] content) {
         this.content = content;
     }
 
-    /** Can be null if does not exist **/
+    /** Returns the metadata or null if it has not been set **/
     public MapWritable getMetadata() {
         return metadata;
     }
 
-    /** Instanticates a new Metadata if it does not exist and create is set to true **/
+    /** Returns the Metadata or a new MapWritable if it has not been set **/
     public MapWritable getMetadata(boolean create) {
         if (metadata == null && create)
             metadata = new MapWritable();
         return getMetadata();
     }
 
+    /** Sets the metadata for this document **/
     public void setMetadata(MapWritable metadata) {
         this.metadata = metadata;
     }
 
+    /** Returns the list of Annotations if set or an empty List otherwise **/
     public List<Annotation> getAnnotations() {
         if (annotations == null)
             annotations = new ArrayList<Annotation>();
         return annotations;
     }
 
+    /** Sets the annotations for this document **/
     public void setAnnotations(List<Annotation> annotations) {
         this.annotations = annotations;
     }
 
+    /** Returns the URL for this document or null **/
     public String getUrl() {
         return url;
     }
 
+    /** Sets the URL for this document **/
     public void setUrl(String url) {
         this.url = url;
     }
 
+    /** Returns the content type for this document or null **/
     public String getContentType() {
         return contentType;
     }
 
+    /** Sets the content type for this document **/
     public void setContentType(String contentType) {
         // make sure that the mime type does not contain any
         // charset info
         this.contentType = MimeUtil.cleanMimeType(contentType);
     }
 
-    /** serialisation **/
-
     public final void readFields(DataInput in) throws IOException {
+
+        byte version = in.readByte(); // read version
+        if (version > CUR_VERSION) // check version
+            throw new VersionMismatchException(CUR_VERSION, version);
+
         url = Text.readString(in);
-        content = new byte[in.readInt()];
-        in.readFully(content);
+        int contentLength = in.readInt();
+        content = new byte[contentLength];
+        if (contentLength > 0)
+            in.readFully(content);
         contentType = Text.readString(in);
         boolean hasText = in.readBoolean();
         if (hasText)
@@ -159,15 +180,21 @@ public class BehemothDocument implements Writable {
         }
     }
 
+    /** Serialization of a BehemothDocument **/
     public void write(DataOutput out) throws IOException {
         writeCommon(out);
         writeAnnotations(out); // write annotations
     }
 
     public void writeCommon(DataOutput out) throws IOException {
+        out.writeByte(CUR_VERSION); // write version
         Text.writeString(out, url); // write url
-        out.writeInt(content.length); // write content
-        out.write(content);
+        if (content == null)
+            out.writeInt(0); // write content
+        else {
+            out.writeInt(content.length); // write content
+            out.write(content);
+        }
         if (contentType != null) {
             Text.writeString(out, contentType); // write contentType
         } else {
@@ -260,24 +287,50 @@ public class BehemothDocument implements Writable {
         annot.setFeatures(features);
     }
 
+    /** Deserialization of a BehemothDocument **/
     public static BehemothDocument read(DataInput in) throws IOException {
         BehemothDocument doc = new BehemothDocument();
         doc.readFields(in);
         return doc;
     }
 
-    /** By default includes the binary content in the string representation **/
+    /**
+     * Returns a complete string representation of the document
+     **/
     public String toString() {
-        return toString(true);
+        return toString(true, true, true, true);
     }
 
+    /**
+     * Returns a string representation of the document
+     * 
+     * @param binaryContent
+     *            whether to include the binary content
+     **/
     public String toString(boolean binaryContent) {
+        return toString(binaryContent, true, true, true);
+    }
+
+    /**
+     * Returns a string representation of the document
+     * 
+     * @param showContent
+     *            whether to include the binary content
+     * @param showAnnotations
+     *            whether to include the annotations content
+     * @param showText
+     *            whether to include the text
+     * @param showMD
+     *            whether to include the metadata
+     **/
+    public String toString(boolean showContent, boolean showAnnotations,
+            boolean showText, boolean showMD) {
         StringBuffer buffer = new StringBuffer();
 
         buffer.append("\nurl: ").append(url);
         buffer.append("\ncontentType: ").append(contentType);
-        buffer.append("\nmetadata: ");
-        if (metadata != null) {
+        if (metadata != null && showMD) {
+            buffer.append("\nmetadata: ");
             for (Entry<Writable, Writable> e : metadata.entrySet()) {
                 buffer.append("\n\t");
                 buffer.append(e.getKey());
@@ -285,20 +338,20 @@ public class BehemothDocument implements Writable {
                 buffer.append(e.getValue());
             }
         }
-        if (binaryContent) {
+        if (showContent) {
             buffer.append("\nContent:\n");
             int maxLengthText = Math.min(200, content.length);
-            buffer.append(new String(content).substring(0, maxLengthText));
+            buffer.append(new String(Arrays.copyOfRange(content, 0, maxLengthText)));
         }
         // try
         // default
         // encoding
-        if (this.text != null) {
+        if (this.text != null && showText) {
             buffer.append("\nText:\n");
             int maxLengthText = Math.min(200, text.length());
             buffer.append(text.substring(0, maxLengthText));
         }
-        if (annotations == null)
+        if (annotations == null || !showAnnotations)
             return buffer.toString();
         buffer.append("\nAnnotations:\n");
         for (Annotation ann : annotations) {

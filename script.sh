@@ -6,6 +6,8 @@ mvn clean package
 
 hadoop jar $behe_home/core/target/behemoth-core-1.0-SNAPSHOT-job.jar com.digitalpebble.behemoth.util.CorpusGenerator -i $behe_home/gate/src/test/resources/docs -o textcorpus
 
+hadoop jar $behe_home/core/target/behemoth-core-1.0-SNAPSHOT-job.jar com.digitalpebble.behemoth.util.CorpusGenerator -i $behe_home/gate/src/test/resources/docs -o textcorpus
+
 # have a quick look at the content
 hadoop fs -libjars $behe_home/core/target/behemoth-core-1.0-SNAPSHOT-job.jar -text textcorpus
 
@@ -13,8 +15,17 @@ hadoop fs -libjars $behe_home/core/target/behemoth-core-1.0-SNAPSHOT-job.jar -te
 module=gate
 hadoop fs -copyFromLocal $behe_home/$module/src/test/resources/ANNIE.zip ANNIE.zip
 hadoop jar $behe_home/$module/target/behemoth-$module-1.0-SNAPSHOT-job.jar com.digitalpebble.behemoth.gate.GATEDriver -conf $behe_home/conf/behemoth-site.xml textcorpus textcorpusANNIE ANNIE.zip
+
+# generate a XML corpus locally 
+hadoop jar $behe_home/$module/target/behemoth-$module-1.0-SNAPSHOT-job.jar com.digitalpebble.behemoth.gate.GATECorpusGenerator -conf $behe_home/conf/behemoth-site.xml -i textcorpusANNIE -o GATEXMLCorpus
+
 # have a look at the seqfile after processing using standard hadoop method
 hadoop fs -libjars $behe_home/core/target/behemoth-core-1.0-SNAPSHOT-job.jar -text textcorpusANNIE/part-*
+
+# extract content from seq files
+hadoop jar ./behemoth-core*job.jar com.digitalpebble.behemoth.util.ContentExtractor -i seq-directory -o seqdirectory-output
+
+
 
 # process with Tika
 module=tika
@@ -24,6 +35,29 @@ hadoop jar $behe_home/$module/target/behemoth-$module-1.0-SNAPSHOT-job.jar com.d
 module=language-id
 hadoop jar $behe_home/$module/target/behemoth-$module-1.0-SNAPSHOT-job.jar com.digitalpebble.behemoth.languageidentification.LanguageIdDriver -i textcorpusTika -o textcorpusTikaLang
 
+# same but filter on language 
+hadoop jar $behe_home/$module/target/behemoth-$module-1.0-SNAPSHOT-job.jar com.digitalpebble.behemoth.languageidentification.LanguageIdDriver -D document.filter.md.keep.lang=en -i textcorpusTika -o -o textcorpusTika-EN
+
+
+#filter on mime type
+module = core
+hadoop jar $behe_home/$module/target/behemoth-$module-1.0-SNAPSHOT-job.jar com.digitalpebble.behemoth.util.CorpusFilter -D document.filter.mimetype.keep=.+html.* -i textcorpusTika -o textcorpusTika-html
+
+#filter on url
+hadoop jar $behe_home/$module/target/behemoth-$module-1.0-SNAPSHOT-job.jar com.digitalpebble.behemoth.util.CorpusFilter -D document.filter.url.keep=.+13.* -i textcorpusTika -o textcorpusTika-13
+
+#filter on label
+hadoop jar $behe_home/$module/target/behemoth-$module-1.0-SNAPSHOT-job.jar com.digitalpebble.behemoth.util.CorpusFilter -D document.filter.md.keep.label=contract -i textcorpusTika -o textcorpusTika-contracts
+
+#set filter mode
+hadoop jar $behe_home/$module/target/behemoth-$module-1.0-SNAPSHOT-job.jar com.digitalpebble.behemoth.util.CorpusFilter -D document.filter.md.mode=OR 
+
+# Cluster/DocumentID dump
+hadoop jar ./behemoth-mahout*job.jar com.digitalpebble.behemoth.mahout.util.ClusterDocIDDumper -i  .../clusteredPoints -o cluster-mapping
+
+
+
+
 # process with UIMA
 module=uima
 hadoop fs -copyFromLocal $behe_home/$module/src/test/resources/WhitespaceTokenizer.pear WhitespaceTokenizer.pear
@@ -31,7 +65,10 @@ hadoop jar $behe_home/$module/target/behemoth-$module-1.0-SNAPSHOT-job.jar com.d
 
 # generate vectors for Mahout
 module=mahout
-hadoop jar $behe_home/$module/target/behemoth-$module-1.0-SNAPSHOT-job.jar com.digitalpebble.behemoth.mahout.SparseVectorsFromBehemoth -i textcorpusUIMA -o textcorpus-vectors -t org.apache.uima.TokenAnnotation 
+hadoop jar $behe_home/$module/target/behemoth-$module-1.0-SNAPSHOT-job.jar com.digitalpebble.behemoth.mahout.SparseVectorsFromBehemoth -i textcorpusUIMA -o textcorpus-vectors -t org.apache.uima.TokenAnnotation --namedVector
+
+
+
 
 # processing a web archive
 module=io
@@ -42,7 +79,11 @@ hadoop jar $behe_home/$module/target/behemoth-$module-1.0-SNAPSHOT-job.jar com.d
 
 # corpus reader (useful for older version of Hadoop e.g. 0.18.x)
 module=core
-hadoop jar $behe_home/$module/target/behemoth-$module-1.0-SNAPSHOT-job.jar  com.digitalpebble.behemoth.util.CorpusReader -conf $behe_home/conf/behemoth-site.xml ClueWeb09Annie
+hadoop jar $behe_home/$module/target/behemoth-$module-1.0-SNAPSHOT-job.jar  com.digitalpebble.behemoth.util.CorpusReader -conf $behe_home/conf/behemoth-site.xml -i ClueWeb09Annie
+
+# corpus filter
+module=core
+hadoop jar $behe_home/$module/target/behemoth-$module-1.0-SNAPSHOT-job.jar  com.digitalpebble.behemoth.util.CorpusFilter -D document.filter.md.keep.isCV=true -i input -0 outputCV
 
 # use of SOLR -> requires to have a SOLR instance running
 module=solr

@@ -19,6 +19,7 @@ package com.digitalpebble.behemoth.languageidentification;
 
 import java.io.IOException;
 
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.MapReduceBase;
@@ -29,32 +30,46 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.digitalpebble.behemoth.BehemothDocument;
+import com.digitalpebble.behemoth.DocumentFilter;
 
 public class LanguageIdMapper extends MapReduceBase implements
-		Mapper<Text, BehemothDocument, Text, BehemothDocument> {
-	
-	private static final Logger LOG = LoggerFactory
-			.getLogger(LanguageIdMapper.class);
+        Mapper<Text, BehemothDocument, Text, BehemothDocument> {
 
-	protected LanguageIdProcessor processor;
+    private static final Logger LOG = LoggerFactory
+            .getLogger(LanguageIdMapper.class);
 
-	public void map(Text text, BehemothDocument inputDoc,
-			OutputCollector<Text, BehemothDocument> outputCollector,
-			Reporter reporter) throws IOException {
+    protected static LanguageIdProcessor processor;
 
-		BehemothDocument[] documents = processor.process(inputDoc, reporter);
-		if (documents != null) {
-			for (int i = 0; i < documents.length; i++) {
-				outputCollector.collect(text, documents[i]);
-			}
-		}
-	}
+    private DocumentFilter filter;
 
-	@Override
-	public void configure(JobConf job) {
-		if (processor == null) {
-			processor = new LanguageIdProcessor();
-		}
-		processor.setConf(job);
-	}
+    public void map(Text text, BehemothDocument inputDoc,
+            OutputCollector<Text, BehemothDocument> outputCollector,
+            Reporter reporter) throws IOException {
+
+        BehemothDocument[] documents = processor.process(inputDoc, reporter);
+        if (documents != null) {
+            for (int i = 0; i < documents.length; i++) {
+                boolean keep = filter.keep(documents[i]);
+                if (keep)
+                    outputCollector.collect(text, documents[i]);
+                else
+                    reporter.incrCounter("LanguageIDMapper", "FILTERED", 1);
+            }
+        }
+    }
+
+    @Override
+    public void configure(JobConf job) {
+        filter = DocumentFilter.getFilters(job);
+        if (processor == null) {
+            long start = System.currentTimeMillis();
+            processor = new LanguageIdProcessor();
+            processor.setConf(job);
+            long end = System.currentTimeMillis();
+            LOG.info("LanguageIdProcessor initialised in " + (end - start)
+                    + " msec");
+        } else
+            LOG.info("Reusing existing language processor");
+
+    }
 }

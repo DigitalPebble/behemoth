@@ -1,0 +1,76 @@
+#!/bin/bash
+#
+# shortcuts for behemoth commands
+# assumes that mvn clean install has been called succesfully
+
+# if no args specified, show usage
+if [ $# = 0 ]; then
+  echo "Usage: behemoth COMMAND"
+  echo "where COMMAND is one of:"
+  echo "  reader"
+  echo "  exporter"
+  echo "  filter"
+  echo "  importer"
+  echo "  gate"
+  echo "  tika"
+  echo "  uima"
+  echo "  mahout"
+  echo "  solr"
+  echo "  language-id"
+  echo "Most commands print help when invoked w/o parameters."
+  exit 1
+fi
+
+# get arguments
+COMMAND=$1
+shift
+
+# figure out which class to run
+if [ "$COMMAND" = "reader" ] ; then
+  CLASS=com.digitalpebble.behemoth.util.CorpusReader
+  MODULE=core
+elif [ "$COMMAND" = "filter" ] ; then
+  CLASS=com.digitalpebble.behemoth.util.CorpusFilter
+  MODULE=core
+elif [ "$COMMAND" = "importer" ] ; then
+  CLASS=com.digitalpebble.behemoth.util.CorpusGenerator
+  MODULE=core
+elif [ "$COMMAND" = "exporter" ] ; then
+  CLASS=com.digitalpebble.behemoth.util.ContentExtractor
+  MODULE=core
+elif [ "$COMMAND" = "gate" ] ; then
+  CLASS=com.digitalpebble.behemoth.gate.GATEDriver
+  MODULE=gate
+elif [ "$COMMAND" = "tika" ] ; then
+  CLASS=com.digitalpebble.behemoth.tika.TikaDriver
+  MODULE=tika
+elif [ "$COMMAND" = "uima" ] ; then
+  CLASS=com.digitalpebble.behemoth.uima.UIMADriver
+  MODULE=uima
+elif [ "$COMMAND" = "mahout" ] ; then
+  CLASS=com.digitalpebble.behemoth.mahout.SparseVectorsFromBehemoth
+  MODULE=mahout
+elif [ "$COMMAND" = "solr" ] ; then
+  CLASS=com.digitalpebble.behemoth.solr.SOLRIndexerJob
+  MODULE=solr
+elif [ "$COMMAND" = "language-id" ] ; then
+  CLASS=com.digitalpebble.behemoth.languageidentification.LanguageIdDriver
+  MODULE=language-id
+else
+   echo "unknown command"
+   exit -1;
+fi
+
+BEHE_JOB=$(dirname $0)/$MODULE/target/behemoth-$MODULE-1.1-SNAPSHOT-job.jar
+EXEC_CALL="hadoop jar $BEHE_JOB"
+
+# check that hadoop can be found on the path
+if [ $(which hadoop | wc -l ) -eq 0 ]; then
+    echo "Can't find Hadoop executable. Add HADOOP_HOME/bin to the path"
+    exit -1;
+fi
+
+# run it
+exec $EXEC_CALL $CLASS "$@"
+
+

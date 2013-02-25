@@ -21,6 +21,10 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
+/**
+ * Implementation of an Annotation. Has a type , metadata and start and end
+ * offsets referring to the position in the text of a @class BehemothDocument.
+ **/
 public class Annotation implements Comparable<Annotation> {
 
     private String type;
@@ -96,6 +100,7 @@ public class Annotation implements Comparable<Annotation> {
         return 0;
     }
 
+    /** Returns a String representation of the Annotation **/
     public String toString() {
         StringBuffer buffer = new StringBuffer();
         buffer.append(this.type).append("\t").append(start).append("\t")

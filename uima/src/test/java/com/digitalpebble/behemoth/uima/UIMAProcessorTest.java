@@ -32,8 +32,8 @@ public class UIMAProcessorTest extends TestCase {
 
     public void setUp() throws Exception {
         // load the resources from the test environment
-        java.net.URL appDescriptor =
-            getClass().getClassLoader().getResource("WhitespaceTokenizer.pear");
+        java.net.URL appDescriptor = getClass().getClassLoader().getResource(
+                "WhitespaceTokenizer.pear");
         // try loading the UIMA processor
         Configuration conf = BehemothConfiguration.create();
         conf.set("uima.pear.path", appDescriptor.getPath());

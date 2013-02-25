@@ -27,8 +27,8 @@ import org.apache.hadoop.mapred.Reporter;
 import com.digitalpebble.behemoth.BehemothDocument;
 
 /**
- * Processes BehemothDocuments with GATE but stores the output at the GATE XML format.
- * Useful for debugging
+ * Processes BehemothDocuments with GATE but stores the output at the GATE XML
+ * format. Useful for debugging
  **/
 
 public class GATEXMLMapper extends AbstractGATEMapper implements

@@ -18,6 +18,8 @@ package com.digitalpebble.behemoth.tika;
 
 import com.digitalpebble.behemoth.BehemothConfiguration;
 import com.digitalpebble.behemoth.BehemothDocument;
+import com.digitalpebble.behemoth.BehemothReducer;
+
 import org.apache.commons.cli2.CommandLine;
 import org.apache.commons.cli2.Group;
 import org.apache.commons.cli2.Option;
@@ -26,6 +28,7 @@ import org.apache.commons.cli2.builder.ArgumentBuilder;
 import org.apache.commons.cli2.builder.DefaultOptionBuilder;
 import org.apache.commons.cli2.builder.GroupBuilder;
 import org.apache.commons.cli2.commandline.Parser;
+import org.apache.commons.cli2.util.HelpFormatter;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.FileSystem;
@@ -77,11 +80,11 @@ public class TikaDriver extends Configured implements Tool, TikaConstants {
         Option tikaOpt = buildOption(
                 "tikaProcessor",
                 "t",
-                "The fully qualified name of a TikaProcessor class that handles the extraction",
+                "The fully qualified name of a TikaProcessor class that handles the extraction (optional)",
                 true, false, null);
         options.add(tikaOpt);
         Option mimeTypeOpt = buildOption("mimeType", "m",
-                "The mime type to use", true, false, "");
+                "The mime type to use (optional)", true, false, "");
         options.add(mimeTypeOpt);
         for (Option opt : options) {
             gBuilder = gBuilder.withOption(opt);
@@ -113,7 +116,7 @@ public class TikaDriver extends Configured implements Tool, TikaConstants {
                 job.set(TIKA_PROCESSOR_KEY, handlerName);
             }
 
-            job.setJobName("Processing with Tika");
+            job.setJobName("Tika : " + inputPath.toString());
 
             job.setInputFormat(SequenceFileInputFormat.class);
             job.setOutputFormat(SequenceFileOutputFormat.class);
@@ -125,7 +128,12 @@ public class TikaDriver extends Configured implements Tool, TikaConstants {
 
             job.setMapperClass(TikaMapper.class);
 
-            job.setNumReduceTasks(0);
+            boolean isFilterRequired = BehemothReducer.isRequired(job);
+            if (isFilterRequired)
+                job.setReducerClass(BehemothReducer.class);
+            else {
+                job.setNumReduceTasks(0);
+            }
 
             FileInputFormat.addInputPath(job, inputPath);
             FileOutputFormat.setOutputPath(job, outputPath);
@@ -138,14 +146,19 @@ public class TikaDriver extends Configured implements Tool, TikaConstants {
                 log.info("TikaDriver completed. Timing: " + (finish - start) + " ms");
               }
             } catch (Exception e) {
-                e.printStackTrace();
-                fs.delete(outputPath, true);
+                log.error("Exception", e);
+                return -1;
+                // don't delete the output as some of it could be used
+                // fs.delete(outputPath, true);
             } finally {
             }
 
         } catch (OptionException e) {
-            log.error("Exception", e);
-
+            log.error("OptionException", e.getMessage());
+            HelpFormatter formatter = new HelpFormatter();
+            formatter.setGroup(group);
+            formatter.print();
+            return -1;
         }
 
         return 0;
@@ -157,8 +170,8 @@ public class TikaDriver extends Configured implements Tool, TikaConstants {
             String defaultValue) {
 
         DefaultOptionBuilder optBuilder = new DefaultOptionBuilder()
-                .withLongName(name).withDescription(description).withRequired(
-                        required);
+                .withLongName(name).withDescription(description)
+                .withRequired(required);
 
         if (shortName != null) {
             optBuilder.withShortName(shortName);

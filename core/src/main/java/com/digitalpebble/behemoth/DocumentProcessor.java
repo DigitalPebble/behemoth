@@ -19,7 +19,7 @@ package com.digitalpebble.behemoth;
 import org.apache.hadoop.conf.Configurable;
 import org.apache.hadoop.mapred.Reporter;
 
-/** Interface for the GATE or UIMA processors **/
+/** Interface for document processors **/
 
 public interface DocumentProcessor extends Configurable {
 
