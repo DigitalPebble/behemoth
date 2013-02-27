@@ -1,3 +1,20 @@
+package com.digitalpebble.behemoth.languageidentification;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import org.apache.commons.cli2.CommandLine;
+import org.apache.commons.cli2.Group;
+import org.apache.commons.cli2.Option;
+import org.apache.commons.cli2.OptionException;
+import org.apache.commons.cli2.builder.ArgumentBuilder;
+import org.apache.commons.cli2.builder.DefaultOptionBuilder;
+import org.apache.commons.cli2.builder.GroupBuilder;
+import org.apache.commons.cli2.commandline.Parser;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.conf.Configured;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
 /**
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -14,22 +31,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.digitalpebble.behemoth.languageidentification;
+
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.CommandLineParser;
-import org.apache.commons.cli.GnuParser;
-import org.apache.commons.cli.HelpFormatter;
-import org.apache.commons.cli.Options;
-import org.apache.commons.cli.ParseException;
+import org.apache.commons.cli2.CommandLine;
+
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.FileInputFormat;
 import org.apache.hadoop.mapred.FileOutputFormat;
@@ -48,106 +62,139 @@ import com.digitalpebble.behemoth.BehemothReducer;
 import com.digitalpebble.behemoth.DocumentFilter;
 
 public class LanguageIdDriver extends Configured implements Tool {
-    private transient static Logger log = LoggerFactory
-            .getLogger(LanguageIdDriver.class);
 
-    public LanguageIdDriver() {
-        super(null);
-    }
+	private transient static Logger log = LoggerFactory
+			.getLogger(LanguageIdDriver.class);
 
-    public LanguageIdDriver(Configuration conf) {
-        super(conf);
-    }
+	public LanguageIdDriver() {
+		super(null);
+	}
 
-    public static void main(String args[]) throws Exception {
-        int res = ToolRunner.run(BehemothConfiguration.create(),
-                new LanguageIdDriver(), args);
-        System.exit(res);
-    }
+	public LanguageIdDriver(Configuration conf) {
+		super(conf);
+	}
 
-    public int run(String[] args) throws Exception {
+	public static void main(String args[]) throws Exception {
+		int res = ToolRunner.run(BehemothConfiguration.create(),
+				new LanguageIdDriver(), args);
+		System.exit(res);
+	}
 
-        final FileSystem fs = FileSystem.get(getConf());
+	public int run(String[] args) throws Exception {
 
-        Options options = new Options();
-        // automatically generate the help statement
-        HelpFormatter formatter = new HelpFormatter();
-        // create the parser
-        CommandLineParser parser = new GnuParser();
+		final FileSystem fs = FileSystem.get(getConf());
+		GroupBuilder gBuilder = new GroupBuilder().withName("Options:");
+		List<Option> options = new ArrayList<Option>();
+		Option inputOpt = buildOption("input", "i", "The input path", true,
+				true, null);
+		options.add(inputOpt);
+		Option outOpt = buildOption("output", "o", "The output path", true,
+				true, null);
+		options.add(outOpt);
+		// Option tikaOpt = buildOption(
+		// "tikaProcessor",
+		// "t",
+		// "The fully qualified name of a TikaProcessor class that handles the extraction",
+		// true, false, null);
+		// options.add(tikaOpt);
+		// Option mimeTypeOpt = buildOption("mimeType", "m",
+		// "The mime type to use", true, false, "");
+		// options.add(mimeTypeOpt);
+		for (Option opt : options) {
+			gBuilder = gBuilder.withOption(opt);
+		}
 
-        options.addOption("h", "help", false, "print this message");
-        options.addOption("i", "input", true, "input file or directory");
-        options.addOption("o", "output", true, "output Behemoth corpus");
-        options.addOption("w", "overwrite", false, "overwrite the output");
+		Group group = gBuilder.create();
 
-        Path inputPath = null;
-        Path outputPath = null;
+		try {
+			Parser parser = new Parser();
+			parser.setGroup(group);
+			// TODO catch exceptions with parsing of opts
+			CommandLine cmdLine = parser.parse(args);
+			Path inputPath = new Path(cmdLine.getValue(inputOpt).toString());
+			Path outputPath = new Path(cmdLine.getValue(outOpt).toString());
+//			String handlerName = null;
+//			if (cmdLine.hasOption(tikaOpt)) {
+//				handlerName = cmdLine.getValue(tikaOpt).toString();
+//			}
 
-        boolean overWrite = false;
+			JobConf job = new JobConf(getConf());
+			job.setJarByClass(this.getClass());
 
-        // parse the command line arguments
-        CommandLine cmdLine = null;
-        try {
-            cmdLine = parser.parse(options, args);
-            String input = cmdLine.getOptionValue("i");
-            String output = cmdLine.getOptionValue("o");
-            if (cmdLine.hasOption("help")) {
-                formatter.printHelp("LanguageIdDriver", options);
-                return 0;
-            }
-            if (input == null | output == null) {
-                formatter.printHelp("LanguageIdDriver", options);
-                return -1;
-            }
-            inputPath = new Path(input);
-            outputPath = new Path(output);
-            if (cmdLine.hasOption("overwrite")) {
-                overWrite = true;
-            }
-        } catch (ParseException e) {
-            formatter.printHelp("LanguageIdDriver", options);
+//			if (cmdLine.hasOption(mimeTypeOpt)) {
+//				String mimeType = cmdLine.getValue(mimeTypeOpt).toString();
+//				job.set(TikaConstants.TIKA_MIME_TYPE_KEY, mimeType);
+//			}
+//
+//			if (handlerName != null && handlerName.equals("") == false) {
+//				job.set(TIKA_PROCESSOR_KEY, handlerName);
+//			}
+
+			job.setJobName("Processing with Language Identifier");
+
+			job.setInputFormat(SequenceFileInputFormat.class);
+			job.setOutputFormat(SequenceFileOutputFormat.class);
+
+			job.setMapOutputKeyClass(Text.class);
+			job.setMapOutputValueClass(BehemothDocument.class);
+			job.setOutputKeyClass(Text.class);
+			job.setOutputValueClass(BehemothDocument.class);
+
+			job.setMapperClass(LanguageIdMapper.class);
+
+			job.setNumReduceTasks(0);
+
+			FileInputFormat.addInputPath(job, inputPath);
+			FileOutputFormat.setOutputPath(job, outputPath);
+
+			try {
+        long start = System.currentTimeMillis();
+        JobClient.runJob(job);
+        long finish = System.currentTimeMillis();
+        if (log.isInfoEnabled()) {
+          log.info("LanguagedIdDriver completed. Timing: " + (finish - start) + " ms");
         }
+			} catch (Exception e) {
+				e.printStackTrace();
+				fs.delete(outputPath, true);
+			} finally {
+			}
 
-        // check whether needs overwriting
-        if (FileSystem.get(outputPath.toUri(), getConf()).exists(outputPath)) {
-            if (!overWrite) {
-                System.out.println("Output path " + outputPath
-                        + " already exists. Use option -w to overwrite.");
-                return 0;
-            } else
-                fs.delete(outputPath, true);
-        }
+		} catch (OptionException e) {
+			log.error("Exception", e);
 
-        JobConf job = new JobConf(getConf());
-        job.setJarByClass(this.getClass());
+		}
 
-        job.setJobName("Processing with Language Identifier");
+		return 0;
+	}
 
-        job.setInputFormat(SequenceFileInputFormat.class);
-        job.setOutputFormat(SequenceFileOutputFormat.class);
+	// taken from Mahout AbstractJob
+	private Option buildOption(String name, String shortName,
+			String description, boolean hasArg, boolean required,
+			String defaultValue) {
 
-        job.setMapOutputKeyClass(Text.class);
-        job.setMapOutputValueClass(BehemothDocument.class);
-        job.setOutputKeyClass(Text.class);
-        job.setOutputValueClass(BehemothDocument.class);
+		DefaultOptionBuilder optBuilder = new DefaultOptionBuilder()
+				.withLongName(name).withDescription(description)
+				.withRequired(required);
 
-        job.setMapperClass(LanguageIdMapper.class);
+		if (shortName != null) {
+			optBuilder.withShortName(shortName);
+		}
 
-        job.setNumReduceTasks(0);
+		if (hasArg) {
+			ArgumentBuilder argBuilder = new ArgumentBuilder().withName(name)
+					.withMinimum(1).withMaximum(1);
 
-        FileInputFormat.addInputPath(job, inputPath);
-        FileOutputFormat.setOutputPath(job, outputPath);
+			if (defaultValue != null) {
+				argBuilder = argBuilder.withDefault(defaultValue);
+			}
 
-        try {
-            JobClient.runJob(job);
-        } catch (Exception e) {
-            e.printStackTrace();
-            fs.delete(outputPath, true);
-            return -1;
-        } finally {
-        }
+			optBuilder.withArgument(argBuilder.create());
+		}
 
-        return 0;
-    }
+		return optBuilder.create();
+	}
+
+
 
 }

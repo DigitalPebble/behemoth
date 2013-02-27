@@ -20,6 +20,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 import java.io.IOException;
+
+import org.apache.hadoop.util.Progressable;
 import org.junit.Test;
 import org.apache.hadoop.mapred.JobConf;
 
@@ -32,7 +34,13 @@ public class TestSOLRWriter {
         conf.set("solr.f.personTitle", "Person.title");
         conf.set("solr.f.location", "Location");
 
-        SOLRWriter writer = new SOLRWriter();
+      Progressable progress = new Progressable() {
+        @Override
+        public void progress() {
+
+        }
+      };
+      SOLRWriter writer = new SOLRWriter(progress);
         writer.open(conf, "test");
 
         assertEquals(writer.getFieldMapping().size(), 2);

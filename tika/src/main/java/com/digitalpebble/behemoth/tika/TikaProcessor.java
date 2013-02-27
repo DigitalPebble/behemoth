@@ -56,6 +56,8 @@ public class TikaProcessor implements DocumentProcessor, TikaConstants {
 
     private Configuration config;
 
+    private boolean includeMetadata = false;
+    private boolean includeAnnotations = false;
     private String mimeType = "text/plain";
 
     private MimeTypes mimetypes = TikaConfig.getDefaultConfig()
@@ -80,6 +82,8 @@ public class TikaProcessor implements DocumentProcessor, TikaConstants {
         contentLengthThresholdFilter = config.getInt(
                 contentLengthThresholdFilterParamName, -1);
         forceMTDetection = config.getBoolean(forceMTDetectionParamName, false);
+        includeMetadata = conf.getBoolean("tika.metadata", false);
+        includeAnnotations = conf.getBoolean("tika.annotations", false);
     }
 
     public void close() {
@@ -206,11 +210,15 @@ public class TikaProcessor implements DocumentProcessor, TikaConstants {
 
         try {
             parser.parse(is, handler, metadata, context);
+          if (includeMetadata) {
             processMetadata(inputDoc, metadata);
-            processText(inputDoc, handler.getText());
+          }
+          processText(inputDoc, handler.getText());
+          if (includeAnnotations) {
             processMarkupAnnotations(inputDoc, handler.getAnnotations());
-            if (reporter != null)
-                reporter.getCounter("TIKA", "ANNOTATIONS ADDED").increment(
+          }
+          if (reporter != null)
+              reporter.getCounter("TIKA", "ANNOTATIONS ADDED").increment(
                         handler.getAnnotations().size());
         } catch (Exception e) {
             LOG.error(inputDoc.getUrl().toString(), e);

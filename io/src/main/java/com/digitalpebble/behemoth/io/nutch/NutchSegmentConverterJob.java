@@ -117,10 +117,12 @@ public class NutchSegmentConverterJob extends Configured implements Tool,
         job.setOutputKeyClass(Text.class);
         job.setOutputValueClass(BehemothDocument.class);
 
-        JobClient.runJob(job);
-        if (LOG.isInfoEnabled()) {
-            LOG.info("Conversion: done");
-        }
+      long start = System.currentTimeMillis();
+      JobClient.runJob(job);
+      long finish = System.currentTimeMillis();
+      if (LOG.isInfoEnabled()) {
+        LOG.info("NutchSegmentConverterJob completed.  Timing: " + (finish - start) + " ms");
+      }
     }
 
     public static void main(String[] args) throws Exception {

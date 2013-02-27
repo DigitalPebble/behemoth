@@ -1,4 +1,3 @@
-package com.digitalpebble.behemoth.tika;
 /**
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -16,6 +15,12 @@ package com.digitalpebble.behemoth.tika;
  * limitations under the License.
  */
 
+package com.digitalpebble.behemoth.tika;
+
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.Locator;
@@ -23,39 +28,29 @@ import org.xml.sax.SAXException;
 
 import com.digitalpebble.behemoth.Annotation;
 
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-
 /*******************************************************************************
  * SAX Handler which gets events from the Tika parser events and create Behemoth
  * annotations accordingly.
  * 
  ******************************************************************************/
 
-public class TikaMarkupHandler implements BehemothHandler {
+public class AnnotatingMarkupHandler extends TikaMarkupHandler implements ContentHandler {
 
-    protected StringBuilder textBuffer;
 
     private List<Annotation> annotationBuffer;
 
     private LinkedList<Annotation> startedAnnotations;
 
-    public TikaMarkupHandler() {
+    public AnnotatingMarkupHandler() {
         textBuffer = new StringBuilder();
         annotationBuffer = new LinkedList<Annotation>();
         startedAnnotations = new LinkedList<Annotation>();
-    }
-
-    public void characters(char[] ch, int start, int length)
-            throws SAXException {
-        textBuffer.append(ch, start, length);
     }
 
     public void startDocument() throws SAXException {
-        textBuffer = new StringBuilder();
-        annotationBuffer = new LinkedList<Annotation>();
-        startedAnnotations = new LinkedList<Annotation>();
+        textBuffer.setLength(0);
+        annotationBuffer.clear();
+        startedAnnotations.clear();
     }
 
     public void endDocument() throws SAXException {
@@ -115,33 +110,8 @@ public class TikaMarkupHandler implements BehemothHandler {
         annotationBuffer.add(startedAnnot);
     }
 
-    public void ignorableWhitespace(char[] ch, int start, int length)
-            throws SAXException {
-        characters(ch, start, length);
-    }
-
     // the following methods are simply ignored
 
-    public void startPrefixMapping(String prefix, String uri)
-            throws SAXException {
-    }
-
-    public void endPrefixMapping(String prefix) throws SAXException {
-    }
-
-    public void setDocumentLocator(Locator locator) {
-    }
-
-    public void skippedEntity(String name) throws SAXException {
-    }
-
-    public void processingInstruction(String target, String data)
-            throws SAXException {
-    }
-
-    public String getText() {
-        return this.textBuffer.toString();
-    }
 
     public List<Annotation> getAnnotations() {
         return this.annotationBuffer;
