@@ -447,7 +447,11 @@ public class WarcRecord {
   public void clearHeaderMetadata() {
     warcHeader.metadata.clear();
   }
-  
+
+  public WarcHeader getHeader() {
+    return warcHeader;
+  }
+
   public Set<Entry<String,String>> getHeaderMetadata() {
     return warcHeader.metadata.entrySet();
   }
