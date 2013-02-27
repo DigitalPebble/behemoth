@@ -139,7 +139,13 @@ public class TikaDriver extends Configured implements Tool, TikaConstants {
             FileOutputFormat.setOutputPath(job, outputPath);
 
             try {
+                long start = System.currentTimeMillis();
                 JobClient.runJob(job);
+                long finish = System.currentTimeMillis();
+                if (log.isInfoEnabled()) {
+                    log.info("TikaDriver completed. Timing: "
+                            + (finish - start) + " ms");
+                }
             } catch (Exception e) {
                 log.error("Exception", e);
                 return -1;

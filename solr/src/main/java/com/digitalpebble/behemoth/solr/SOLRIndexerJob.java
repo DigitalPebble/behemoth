@@ -23,7 +23,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
-import org.apache.hadoop.filecache.DistributedCache;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
@@ -32,7 +31,6 @@ import org.apache.hadoop.mapred.FileOutputFormat;
 import org.apache.hadoop.mapred.JobClient;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.SequenceFileInputFormat;
-import org.apache.hadoop.mapred.SequenceFileOutputFormat;
 import org.apache.hadoop.mapred.lib.IdentityMapper;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
@@ -97,7 +95,13 @@ public class SOLRIndexerJob extends Configured implements Tool {
         job.set("solr.server.url", solrURL);
 
         try {
+            long start = System.currentTimeMillis();
             JobClient.runJob(job);
+            long finish = System.currentTimeMillis();
+            if (LOG.isInfoEnabled()) {
+                LOG.info("SOLRIndexerJob completed. Timing: "
+                        + (finish - start) + " ms");
+            }
         } catch (Exception e) {
             LOG.error(e);
         } finally {

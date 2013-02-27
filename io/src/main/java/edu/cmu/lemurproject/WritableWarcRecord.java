@@ -41,35 +41,35 @@ import java.io.IOException;
 import org.apache.hadoop.io.Writable;
 
 public class WritableWarcRecord implements Writable {
-  
-  WarcRecord record=null;
-  
-  public WritableWarcRecord() {
-    record=new WarcRecord();
-  }
-  
-  public WritableWarcRecord(WarcRecord o) {
-    record=new WarcRecord(o);
-  }
-  
-  public WarcRecord getRecord() {
-    return record;
-  }
-  
-  public void setRecord(WarcRecord rec) {
-    record=new WarcRecord(rec);
-  }
 
-  public void write(DataOutput out) throws IOException {
-    if (record!=null) {
-      record.write(out);
+    WarcRecord record = null;
+
+    public WritableWarcRecord() {
+        record = new WarcRecord();
     }
-  }
-  
-  public void readFields(DataInput in) throws IOException {
-    if (record!=null) {
-      record.readFields(in);
+
+    public WritableWarcRecord(WarcRecord o) {
+        record = new WarcRecord(o);
     }
-  }
-  
+
+    public WarcRecord getRecord() {
+        return record;
+    }
+
+    public void setRecord(WarcRecord rec) {
+        record = new WarcRecord(rec);
+    }
+
+    public void write(DataOutput out) throws IOException {
+        if (record != null) {
+            record.write(out);
+        }
+    }
+
+    public void readFields(DataInput in) throws IOException {
+        if (record != null) {
+            record.readFields(in);
+        }
+    }
+
 }

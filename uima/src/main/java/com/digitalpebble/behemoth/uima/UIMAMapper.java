@@ -224,7 +224,8 @@ public class UIMAMapper extends MapReduceBase implements
             uimatypes.add(aType);
         }
 
-        FSIterator<AnnotationFS> annotIterator = cas.getAnnotationIndex().iterator();
+        FSIterator<AnnotationFS> annotIterator = cas.getAnnotationIndex()
+                .iterator();
         while (annotIterator.hasNext()) {
             AnnotationFS annotation = annotIterator.next();
             if (!uimatypes.contains(annotation.getType()))

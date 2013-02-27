@@ -341,7 +341,8 @@ public class BehemothDocument implements Writable {
         if (showContent) {
             buffer.append("\nContent:\n");
             int maxLengthText = Math.min(200, content.length);
-            buffer.append(new String(Arrays.copyOfRange(content, 0, maxLengthText)));
+            buffer.append(new String(Arrays.copyOfRange(content, 0,
+                    maxLengthText)));
         }
         // try
         // default

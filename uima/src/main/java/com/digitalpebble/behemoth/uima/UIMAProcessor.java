@@ -159,7 +159,8 @@ public class UIMAProcessor implements DocumentProcessor {
             uimatypes.add(aType);
         }
         long initEnd = System.currentTimeMillis();
-        LOG.info("Initialisation of UIMAProcessor done in "+(initEnd-initStart)+" msec");
+        LOG.info("Initialisation of UIMAProcessor done in "
+                + (initEnd - initStart) + " msec");
     }
 
     /** convert the annotations from the CAS into the Behemoth format **/
@@ -176,7 +177,8 @@ public class UIMAProcessor implements DocumentProcessor {
             uimatypes.add(aType);
         }
 
-        FSIterator<AnnotationFS> annotIterator = cas.getAnnotationIndex().iterator();
+        FSIterator<AnnotationFS> annotIterator = cas.getAnnotationIndex()
+                .iterator();
         while (annotIterator.hasNext()) {
             AnnotationFS annotation = annotIterator.next();
             if (!uimatypes.contains(annotation.getType()))

@@ -104,9 +104,15 @@ public class UIMADriver extends Configured implements Tool {
         job.set("uima.pear.path", pearPath);
 
         try {
+            long start = System.currentTimeMillis();
             JobClient.runJob(job);
+            long finish = System.currentTimeMillis();
+            if (LOG.isInfoEnabled()) {
+                LOG.info("UIMADriver completed. Timing: " + (finish - start)
+                        + " ms");
+            }
         } catch (Exception e) {
-            e.printStackTrace();
+            LOG.error("Exception", e);
             fs.delete(outputPath, true);
         } finally {
         }

@@ -124,9 +124,15 @@ public class GATEDriver extends Configured implements Tool {
         job.set("gate.application.path", zip_application_path.toString());
 
         try {
+            long start = System.currentTimeMillis();
             JobClient.runJob(job);
+            long finish = System.currentTimeMillis();
+            if (LOG.isInfoEnabled()) {
+                LOG.info("GATEDriver completed. Timing: " + (finish - start)
+                        + " ms");
+            }
         } catch (Exception e) {
-            e.printStackTrace();
+            LOG.error("Exception caught", e);
             // leave even partial output
             // fs.delete(outputPath, true);
         } finally {
