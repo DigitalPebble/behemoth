@@ -25,7 +25,6 @@ import java.util.List;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.io.Text;
-import org.apache.hadoop.mapred.Counters.CountersExceededException;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.detect.Detector;
@@ -169,12 +168,13 @@ public class TikaProcessor implements DocumentProcessor, TikaConstants {
         // decide which parser to use
         metadata.set(Metadata.CONTENT_TYPE, inputDoc.getContentType());
 
+        String ct = inputDoc.getContentType();
         try {
             if (reporter != null && okCounters)
-                reporter.getCounter("MIME-TYPE", inputDoc.getContentType())
+                reporter.getCounter("MIME-TYPE", ct)
                         .increment(1);
-        } catch (CountersExceededException counterEx) {
-            LOG.error("Exceeded number of counters allowed", counterEx);
+        } catch (Exception counterEx) {
+            LOG.error("Could not add counter MIME-TYPE:" + ct, counterEx);
             okCounters = false;
         }
 
