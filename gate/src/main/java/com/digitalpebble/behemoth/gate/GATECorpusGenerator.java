@@ -33,6 +33,7 @@ import org.apache.commons.cli.GnuParser;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
@@ -128,6 +129,7 @@ public class GATECorpusGenerator extends Configured implements Tool {
     private void generateXMLdocs(Path input, File dir, int[] count)
             throws IOException {
 
+        Configuration conf = BehemothConfiguration.create();
         Reader[] cacheReaders = SequenceFileOutputFormat.getReaders(getConf(),
                 input);
         for (Reader current : cacheReaders) {
@@ -143,6 +145,7 @@ public class GATECorpusGenerator extends Configured implements Tool {
                     // first put the text
                     GATEProcessor gp = new GATEProcessor(new URL(
                             "http://dummy.com"));
+                    gp.setConfig(conf);
                     gatedocument = gp.generateGATEDoc(inputDoc);
 
                     // then save as XML

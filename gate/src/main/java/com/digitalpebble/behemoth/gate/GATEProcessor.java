@@ -204,6 +204,11 @@ public class GATEProcessor implements DocumentProcessor {
         return new BehemothDocument[] { inputDoc };
     }
 
+    public void setConfig(Configuration conf) {
+        config = conf;
+    }
+
+    // TODO differenciate setConf from initialisation
     public void setConf(Configuration conf) {
         config = conf;
 
@@ -374,6 +379,7 @@ public class GATEProcessor implements DocumentProcessor {
         // finally the annotations to the GATE document
         String GATEAnnotationSetName = getConf().get(
                 "gate.annotationset.input", "Original markups");
+
         AnnotationSet outputAS = gatedocument
                 .getAnnotations(GATEAnnotationSetName);
         for (Annotation annot : inputDoc.getAnnotations()) {
