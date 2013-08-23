@@ -371,10 +371,11 @@ public class GATEProcessor implements DocumentProcessor {
             }
         }
 
-        // finally the annotations as original markups
-        // TODO change the name of the annotation set via config
+        // finally the annotations to the GATE document
+        String GATEAnnotationSetName = getConf().get(
+                "gate.annotationset.input", "Original markups");
         AnnotationSet outputAS = gatedocument
-                .getAnnotations("Original markups");
+                .getAnnotations(GATEAnnotationSetName);
         for (Annotation annot : inputDoc.getAnnotations()) {
             // add to outputAS as a GATE annotation
             FeatureMap features = Factory.newFeatureMap();

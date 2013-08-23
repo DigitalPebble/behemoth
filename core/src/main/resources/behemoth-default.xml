@@ -20,9 +20,9 @@
 
 	<property>
 		<name>gate.annotationset.input</name>
-		<value></value>
-		<description>Map the information at the behemoth format onto the
-			select annotationset
+		<value>Original markups</value>
+		<description>AnnotationSet to use when populating a GATE doc with 
+			behemoth annotations. 
 		</description>
 	</property>
 
