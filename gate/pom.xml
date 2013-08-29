@@ -60,7 +60,7 @@
 		<dependency>
 			<groupId>uk.ac.gate</groupId>
 			<artifactId>gate-core</artifactId>
-			<version>7.0</version>
+			<version>7.1</version>
 		</dependency>
 
 		<dependency>
