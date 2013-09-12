@@ -1,0 +1,24 @@
+{"namespace": "com.digitalpebble.behemoth",
+ "type": "record",
+ "name": "BehemothDocument",
+ "fields": [
+     {"name": "url", "type": "string"},
+     {"name": "contentType",  "type": ["string", "null"]},
+     {"name": "text", "type": ["string", "null"]},
+     {"name": "content", "type": ["bytes", "null"]},
+     {"name": "metadata", "type": {"type": "map", "values": "string"}},
+     {"name": "annotations", "type": {"type": "array", "items": 
+     {"namespace": "com.digitalpebble.behemoth",
+      "type": "record",
+      "name": "Annotation",
+      "fields": [
+                     {"name": "start", "type": "int"},
+                     {"name": "end", "type": "int"},
+          			{"name": "type", "type": "string"},
+                     {"name": "features", "type": {"type": "map", "values": "string"}}
+      ]
+     }  
+    }
+   }
+ ]
+}
