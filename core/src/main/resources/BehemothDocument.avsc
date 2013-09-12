@@ -2,23 +2,23 @@
  "type": "record",
  "name": "BehemothDocument",
  "fields": [
-     {"name": "url", "type": "string"},
-     {"name": "contentType",  "type": ["string", "null"]},
-     {"name": "text", "type": ["string", "null"]},
-     {"name": "content", "type": ["bytes", "null"]},
-     {"name": "metadata", "type": {"type": "map", "values": "string"}},
-     {"name": "annotations", "type": {"type": "array", "items": 
+     {"name": "url", "type": [ "null", "string"]},
+     {"name": "contentType",  "type": [ "null", "string"]},
+     {"name": "text", "type": [ "null", "string"]},
+     {"name": "content", "type": ["null", "bytes"]},
+     {"name": "metadata", "type": ["null", {"type": "map", "values": "string"}]},
+     {"name": "annotations", "type": ["null", {"type": "array", "items": 
      {"namespace": "com.digitalpebble.behemoth",
       "type": "record",
       "name": "Annotation",
       "fields": [
-                     {"name": "start", "type": "int"},
-                     {"name": "end", "type": "int"},
-          			{"name": "type", "type": "string"},
-                     {"name": "features", "type": {"type": "map", "values": "string"}}
+                     {"name": "start", "type": "long"},
+                     {"name": "end", "type": "long"},
+          			 {"name": "type", "type": "string"},
+                     {"name": "features", "type": ["null", {"type": "map", "values": "string"}]}
       ]
-     }  
-    }
+     }	  
+    }]
    }
  ]
 }

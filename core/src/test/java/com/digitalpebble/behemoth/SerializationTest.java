@@ -17,29 +17,32 @@
 
 package com.digitalpebble.behemoth;
 
+import java.io.File;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 
 import junit.framework.TestCase;
 
+import org.apache.avro.file.DataFileReader;
+import org.apache.avro.file.DataFileWriter;
+import org.apache.avro.io.DatumReader;
+import org.apache.avro.io.DatumWriter;
+import org.apache.avro.specific.SpecificDatumReader;
+import org.apache.avro.specific.SpecificDatumWriter;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.SequenceFile;
-import org.apache.hadoop.io.SequenceFile.Reader;
-import org.apache.hadoop.io.SequenceFile.Writer;
-import org.apache.hadoop.io.Text;
 
 public class SerializationTest extends TestCase {
 
     private Configuration conf;
     private FileSystem fs;
-    private Path file;
+    private File file;
 
     @Override
     protected void setUp() throws Exception {
         conf = BehemothConfiguration.create();
         fs = FileSystem.getLocal(conf);
-        file = new Path("test_" + System.currentTimeMillis());
+        file = new File("test_" + System.currentTimeMillis());
     }
 
     @Override
@@ -51,30 +54,39 @@ public class SerializationTest extends TestCase {
         BehemothDocument doc = new BehemothDocument();
         doc.setUrl("test");
         String tcontent = "This is home";
-        doc.setContent(tcontent.getBytes());
+        doc.setContent(ByteBuffer.wrap(tcontent.getBytes()));
         doc.setText(tcontent);
         doc.setContentType("txt");
         Annotation annot = new Annotation();
-        annot.setStart(0);
-        annot.setEnd(12);
+        annot.setStart(0l);
+        annot.setEnd(12l);
         annot.setType("annotType");
-        doc.getAnnotations().add(annot);
 
-        Writer writer = SequenceFile.createWriter(fs, conf, file, Text.class,
+        BehemothDocumentUtil.getOrCreateAnnotations(doc).add(annot);
+
+        DatumWriter<BehemothDocument> datumWriter = new SpecificDatumWriter<BehemothDocument>(
                 BehemothDocument.class);
-        writer.append(new Text("test"), doc);
-        writer.close();
+        DataFileWriter<BehemothDocument> dataFileWriter = new DataFileWriter<BehemothDocument>(
+                datumWriter);
+        dataFileWriter.create(doc.getSchema(), file);
+        dataFileWriter.append(doc);
+        dataFileWriter.close();
 
-        Reader reader = new org.apache.hadoop.io.SequenceFile.Reader(fs, file,
-                conf);
-        Text key2 = new Text();
-        BehemothDocument doc2 = new BehemothDocument();
-        reader.next(key2, doc2);
-        reader.close();
+        DatumReader<BehemothDocument> userDatumReader = new SpecificDatumReader<BehemothDocument>(
+                BehemothDocument.class);
+        DataFileReader<BehemothDocument> dataFileReader = new DataFileReader<BehemothDocument>(
+                file, userDatumReader);
+        BehemothDocument doc2 = null;
+        while (dataFileReader.hasNext()) {
+            // Reuse user object by passing it to next(). This saves us from
+            // allocating and garbage collecting many objects for files with
+            // many items.
+            doc2 = dataFileReader.next(doc2);
+        }
 
-        fs.delete(file, true);
+        file.delete();
 
-        // check the values
+        // TODO check the values
     }
 
 }

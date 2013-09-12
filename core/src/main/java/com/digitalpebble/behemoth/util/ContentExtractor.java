@@ -21,6 +21,12 @@ import java.io.IOException;
 import java.net.URLEncoder;
 import java.util.UUID;
 
+import org.apache.avro.file.DataFileReader;
+import org.apache.avro.file.FileReader;
+import org.apache.avro.file.SeekableInput;
+import org.apache.avro.io.DatumReader;
+import org.apache.avro.mapred.FsInput;
+import org.apache.avro.specific.SpecificDatumReader;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.GnuParser;
@@ -36,9 +42,6 @@ import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.SequenceFile.Reader;
-import org.apache.hadoop.io.Text;
-import org.apache.hadoop.mapred.SequenceFileOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 import org.slf4j.Logger;
@@ -46,6 +49,7 @@ import org.slf4j.LoggerFactory;
 
 import com.digitalpebble.behemoth.BehemothConfiguration;
 import com.digitalpebble.behemoth.BehemothDocument;
+import com.digitalpebble.behemoth.BehemothDocumentUtil;
 import com.digitalpebble.behemoth.DocumentFilter;
 
 /**
@@ -217,51 +221,61 @@ public class ContentExtractor extends Configured implements Tool {
 
         DocumentFilter docFilter = DocumentFilter.getFilters(getConf());
 
-        Reader[] cacheReaders = SequenceFileOutputFormat.getReaders(getConf(),
-                input);
-        for (Reader current : cacheReaders) {
-            // read the key + values in that file
-            Text key = new Text();
-            BehemothDocument inputDoc = new BehemothDocument();
-            while (current.next(key, inputDoc)) {
-                count[0]++;
-                // filter the doc?
-                if (!docFilter.keep(inputDoc))
-                    continue;
-                if (dumpBinary && inputDoc.getContent() == null)
-                    continue;
-                else if (!dumpBinary && inputDoc.getText() == null)
-                    continue;
+        SeekableInput si = new FsInput(input, getConf());
+        DatumReader<BehemothDocument> reader = new SpecificDatumReader<BehemothDocument>(
+                BehemothDocument.class);
+        FileReader<BehemothDocument> fileReader = DataFileReader.openReader(si,
+                reader);
 
-                String fileName = Integer.toString(count[0]);
-                String urldoc = inputDoc.getUrl();
-                if (mode.equals(FileNamingMode.URL) && urldoc != null
-                        && urldoc.length() > 0) {
-                    fileName = URLEncoder.encode(urldoc, "UTF-8");
-                } else if (mode.equals(FileNamingMode.UUID) && urldoc != null
-                        && urldoc.length() > 0) {
-                    fileName = UUID.nameUUIDFromBytes(urldoc.getBytes())
-                            .toString();
-                } else {
-                    fileName = String.format("%09d", count[0]);
-                }
+        //
+        // Reader[] cacheReaders =
+        // SequenceFileOutputFormat.getReaders(getConf(),
+        // input);
+        // for (Reader current : cacheReaders) {
+        // read the key + values in that file
+        // Text key = new Text();
+        // BehemothDocument inputDoc = new BehemothDocument();
 
-                if (!dumpBinary)
-                    fileName += ".txt";
+        for (BehemothDocument inputDoc : fileReader) {
+            // while (current.next(key, inputDoc)) {
+            count[0]++;
+            // filter the doc?
+            if (!docFilter.keep(inputDoc))
+                continue;
+            if (dumpBinary && inputDoc.getContent() == null)
+                continue;
+            else if (!dumpBinary && inputDoc.getText() == null)
+                continue;
 
-                byte[] contentBytes;
-                if (dumpBinary)
-                    contentBytes = inputDoc.getContent();
-                else
-                    contentBytes = inputDoc.getText().getBytes("UTF-8");
-                // out.write(contentBytes, 0, contentBytes.length);
-                addToArchive(fileName, contentBytes, dir);
-
-                // add the mapping URL->filename in the index -> archive num
-                index.writeBytes(urldoc + "\t" + fileName + "\t"
-                        + String.format("%06d", partNum) + "\n");
+            String fileName = Integer.toString(count[0]);
+            String urldoc = inputDoc.getUrl().toString();
+            if (mode.equals(FileNamingMode.URL) && urldoc != null
+                    && urldoc.length() > 0) {
+                fileName = URLEncoder.encode(urldoc, "UTF-8");
+            } else if (mode.equals(FileNamingMode.UUID) && urldoc != null
+                    && urldoc.length() > 0) {
+                fileName = UUID.nameUUIDFromBytes(urldoc.getBytes()).toString();
+            } else {
+                fileName = String.format("%09d", count[0]);
             }
-            current.close();
+
+            if (!dumpBinary)
+                fileName += ".txt";
+
+            byte[] contentBytes;
+            if (dumpBinary)
+                contentBytes = BehemothDocumentUtil
+                        .getContentAsByteArray(inputDoc);
+            else
+                contentBytes = inputDoc.getText().toString().getBytes("UTF-8");
+            // out.write(contentBytes, 0, contentBytes.length);
+            addToArchive(fileName, contentBytes, dir);
+
+            // add the mapping URL->filename in the index -> archive num
+            index.writeBytes(urldoc + "\t" + fileName + "\t"
+                    + String.format("%06d", partNum) + "\n");
         }
+        fileReader.close();
+        // }
     }
 }

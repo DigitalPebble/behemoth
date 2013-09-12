@@ -17,10 +17,11 @@
 
 package com.digitalpebble.behemoth;
 
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.io.Text;
+import java.util.HashMap;
 
 import junit.framework.TestCase;
+
+import org.apache.hadoop.conf.Configuration;
 
 public class DocumentFilterTest extends TestCase {
 
@@ -36,15 +37,18 @@ public class DocumentFilterTest extends TestCase {
         DocumentFilter filter = DocumentFilter.getFilters(config);
 
         BehemothDocument doc = new BehemothDocument();
-        doc.getMetadata(true).put(new Text("lang"), new Text("en"));
+        if (doc.getMetadata() == null)
+            doc.setMetadata(new HashMap<String, String>());
+
+        doc.getMetadata().put("lang", "en");
         boolean kept = filter.keep(doc);
         assertEquals(true, kept);
 
-        doc.getMetadata(true).put(new Text("lang"), new Text("fr"));
+        doc.getMetadata().put("lang", "fr");
         kept = filter.keep(doc);
         assertEquals(false, kept);
 
-        doc.getMetadata(true).remove(new Text("lang"));
+        doc.getMetadata().remove("lang");
         kept = filter.keep(doc);
         assertEquals(false, kept);
 
@@ -56,20 +60,25 @@ public class DocumentFilterTest extends TestCase {
                 "true");
         filter = DocumentFilter.getFilters(config);
 
-        doc.getMetadata(true).put(new Text("lang"), new Text("en"));
-        doc.getMetadata(true).put(new Text("tc"), new Text("true"));
+        doc.getMetadata().put("lang", "en");
+        doc.getMetadata().put("tc", "true");
         kept = filter.keep(doc);
         assertEquals(true, kept);
 
         doc = new BehemothDocument();
-        doc.getMetadata(true).put(new Text("lang"), new Text("fr"));
-        doc.getMetadata(true).put(new Text("tc"), new Text("true"));
+        if (doc.getMetadata() == null)
+            doc.setMetadata(new HashMap<String, String>());
+
+        doc.getMetadata().put("lang", "fr");
+        doc.getMetadata().put("tc", "true");
         kept = filter.keep(doc);
         assertEquals(false, kept);
 
         doc = new BehemothDocument();
-        doc.getMetadata(true).put(new Text("lang"), new Text("fr"));
-        doc.getMetadata(true).put(new Text("tc"), new Text("false"));
+        if (doc.getMetadata() == null)
+            doc.setMetadata(new HashMap<String, String>());
+        doc.getMetadata().put("lang", "fr");
+        doc.getMetadata().put("tc", "false");
         kept = filter.keep(doc);
         assertEquals(false, kept);
     }
@@ -81,11 +90,14 @@ public class DocumentFilterTest extends TestCase {
 
         DocumentFilter filter = DocumentFilter.getFilters(config);
         BehemothDocument doc = new BehemothDocument();
-        doc.getMetadata(true).put(new Text("lang"), new Text("en"));
+        BehemothDocumentUtil.getOrCreateMetadata(doc).put("lang", "en");
         boolean kept = filter.keep(doc);
         assertEquals(false, kept);
 
         doc = new BehemothDocument();
+        if (doc.getMetadata() == null)
+            doc.setMetadata(new HashMap<String, String>());
+
         kept = filter.keep(doc);
         assertEquals(true, kept);
 
@@ -97,20 +109,24 @@ public class DocumentFilterTest extends TestCase {
                 "true");
         filter = DocumentFilter.getFilters(config);
 
-        doc.getMetadata(true).put(new Text("lang"), new Text("en"));
-        doc.getMetadata(true).put(new Text("tc"), new Text("true"));
+        doc.getMetadata().put("lang", "en");
+        doc.getMetadata().put("tc", "true");
         kept = filter.keep(doc);
         assertEquals(false, kept);
 
         doc = new BehemothDocument();
-        doc.getMetadata(true).put(new Text("lang"), new Text("fr"));
-        doc.getMetadata(true).put(new Text("tc"), new Text("true"));
+        if (doc.getMetadata() == null)
+            doc.setMetadata(new HashMap<String, String>());
+        doc.getMetadata().put("lang", "fr");
+        doc.getMetadata().put("tc", "true");
         kept = filter.keep(doc);
         assertEquals(true, kept);
 
         doc = new BehemothDocument();
-        doc.getMetadata(true).put(new Text("lang"), new Text("fr"));
-        doc.getMetadata(true).put(new Text("tc"), new Text("false"));
+        if (doc.getMetadata() == null)
+            doc.setMetadata(new HashMap<String, String>());
+        doc.getMetadata().put("lang", "fr");
+        doc.getMetadata().put("tc", "false");
         kept = filter.keep(doc);
         assertEquals(true, kept);
 
@@ -123,7 +139,7 @@ public class DocumentFilterTest extends TestCase {
         // no URL set - must fail
         DocumentFilter filter = DocumentFilter.getFilters(config);
         BehemothDocument doc = new BehemothDocument();
-        doc.getMetadata(true).put(new Text("lang"), new Text("en"));
+        BehemothDocumentUtil.getOrCreateMetadata(doc).put("lang", "en");
         boolean kept = filter.keep(doc);
         assertEquals(false, kept);
 

@@ -21,6 +21,7 @@ import java.io.BufferedInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.ByteBuffer;
 import java.util.Locale;
 import java.util.zip.GZIPInputStream;
 
@@ -254,14 +255,14 @@ public class CorpusGenerator extends Configured implements Tool {
                 for (String metadata : mds) {
                     String[] keyval = metadata.split("=");
                     log.info("key: " + keyval[0] + "\tval:" + keyval[1]);
-                    Writable mdvalue;
-                    Writable mdkey = new Text(keyval[0]);
+                    String mdvalue;
+                    String mdkey = keyval[0];
                     if (keyval.length == 1) {
-                        mdvalue = NullWritable.get();
+                        mdvalue = null;
                     } else {
-                        mdvalue = new Text(keyval[1]);
+                        mdvalue = keyval[0];
                     }
-                    value.getMetadata(true).put(mdkey, mdvalue);
+                    value.getMetadata().put(mdkey, mdvalue);
                 }
             }
         }
@@ -309,7 +310,7 @@ public class CorpusGenerator extends Configured implements Tool {
                                     key.set(URI + "!" + name);
                                     // fill the values for the content object
                                     value.setUrl(URI + ":" + name);
-                                    value.setContent(content);
+                                    value.setContent(ByteBuffer.wrap(content));
                                     writer.append(key, value);
                                     processed++;
                                     counter++;
@@ -349,7 +350,7 @@ public class CorpusGenerator extends Configured implements Tool {
                             key.set(URI);
                             // fill the values for the content object
                             value.setUrl(URI);
-                            value.setContent(fileBArray);
+                            value.setContent(ByteBuffer.wrap(fileBArray));
 
                             writer.append(key, value);
                             counter++;

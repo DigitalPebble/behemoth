@@ -16,6 +16,7 @@
  */
 package com.digitalpebble.behemoth;
 
+import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -24,9 +25,6 @@ import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.io.MapWritable;
-import org.apache.hadoop.io.Text;
-import org.apache.hadoop.io.Writable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -158,9 +156,10 @@ public class DocumentFilter {
         if (input == null)
             return false;
 
+        ByteBuffer content = input.getContent();
         // check length content
-        if (input.getContent() != null && maxContentLength != -1) {
-            if (input.getContent().length > maxContentLength)
+        if (content != null && maxContentLength != -1) {
+            if (content.remaining() > maxContentLength)
                 return false;
         }
 
@@ -183,7 +182,7 @@ public class DocumentFilter {
                 return false;
         }
 
-        MapWritable metadata = input.getMetadata();
+        Map<String, String> metadata = input.getMetadata();
         // no rules at all -> fine!
         if (KVpatterns.size() == 0)
             return true;
@@ -205,12 +204,12 @@ public class DocumentFilter {
             String k = kiter.next();
             String regex = KVpatterns.get(k);
             // see if we have a metadata for that key
-            Writable value = metadata.get(new Text(k));
+            String value = metadata.get(k);
             if (value == null) {
                 matchesAll = false;
                 continue;
             }
-            if (value.toString().matches(regex)) {
+            if (value.matches(regex)) {
                 hasMatch = true;
             } else
                 matchesAll = false;

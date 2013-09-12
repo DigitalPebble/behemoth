@@ -17,6 +17,12 @@
 
 package com.digitalpebble.behemoth.util;
 
+import org.apache.avro.file.DataFileReader;
+import org.apache.avro.file.FileReader;
+import org.apache.avro.file.SeekableInput;
+import org.apache.avro.io.DatumReader;
+import org.apache.avro.mapred.FsInput;
+import org.apache.avro.specific.SpecificDatumReader;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.GnuParser;
@@ -35,6 +41,7 @@ import org.apache.hadoop.util.ToolRunner;
 
 import com.digitalpebble.behemoth.BehemothConfiguration;
 import com.digitalpebble.behemoth.BehemothDocument;
+import com.digitalpebble.behemoth.BehemothDocumentUtil;
 import com.digitalpebble.behemoth.DocumentFilter;
 
 /**
@@ -105,18 +112,24 @@ public class CorpusReader extends Configured implements Tool {
             if (!path.getName().startsWith("part-")
                     && !path.getName().equals(inputPath.getName()))
                 continue;
-            SequenceFile.Reader reader = new SequenceFile.Reader(fs, path, conf);
-            Text key = new Text();
-            BehemothDocument value = new BehemothDocument();
-            while (reader.next(key, value)) {
+
+            SeekableInput input = new FsInput(path, conf);
+            DatumReader<BehemothDocument> reader = new SpecificDatumReader<BehemothDocument>(
+                    BehemothDocument.class);
+            FileReader<BehemothDocument> fileReader = DataFileReader
+                    .openReader(input, reader);
+
+            for (BehemothDocument datum : fileReader) {
                 // skip this document?
-                if (doFilter && filters.keep(value) == false)
+                if (doFilter && filters.keep(datum) == false)
                     continue;
 
-                System.out.println(value.toString(showBinaryContent,
-                        showAnnotations, showText, showMD));
+                String output = BehemothDocumentUtil.toString(datum,
+                        showBinaryContent, showAnnotations, showText, showMD);
+                System.out.println(output);
             }
-            reader.close();
+
+            fileReader.close(); // also closes underlying FsInput
         }
 
         return 0;
