@@ -25,6 +25,11 @@ import java.nio.ByteBuffer;
 import java.util.Locale;
 import java.util.zip.GZIPInputStream;
 
+import org.apache.avro.file.DataFileWriter;
+import org.apache.avro.io.DatumReader;
+import org.apache.avro.io.DatumWriter;
+import org.apache.avro.specific.SpecificDatumReader;
+import org.apache.avro.specific.SpecificDatumWriter;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.GnuParser;
@@ -101,15 +106,18 @@ public class CorpusGenerator extends Configured implements Tool {
         long result = 0;
         // read from input path
         // create new Content object and add it to the SequenceFile
-        Text key = new Text();
         BehemothDocument value = new BehemothDocument();
-        SequenceFile.Writer writer = null;
+        DataFileWriter<BehemothDocument> writer= null;
         try {
             Configuration conf = getConf();
             FileSystem fs = output.getFileSystem(conf);
-            writer = SequenceFile.createWriter(fs, conf, output,
-                    key.getClass(), value.getClass());
-            PerformanceFileFilter pff = new PerformanceFileFilter(writer, key,
+            
+            DatumWriter<BehemothDocument> dw = new SpecificDatumWriter<BehemothDocument>(
+                    BehemothDocument.class);
+            writer = new DataFileWriter<BehemothDocument>(dw);
+            writer.create(BehemothDocument.getClassSchema(),fs.create(output));
+
+            PerformanceFileFilter pff = new PerformanceFileFilter(writer,
                     value, conf, reporter);
             // iterate on the files in the source dir
             result = processFiles(conf, input, recurse, pff);
@@ -233,16 +241,14 @@ public class CorpusGenerator extends Configured implements Tool {
             }
         };
 
-        private SequenceFile.Writer writer;
-        private Text key;
+        private DataFileWriter<BehemothDocument> writer;
         private BehemothDocument value;
         private Configuration conf;
         private Reporter reporter;
 
-        public PerformanceFileFilter(SequenceFile.Writer writer, Text key,
+        public PerformanceFileFilter(DataFileWriter<BehemothDocument> writer,
                 BehemothDocument value, Configuration conf, Reporter reporter) {
             this.writer = writer;
-            this.key = key;
             this.value = value;
             this.conf = conf;
             this.reporter = reporter;
@@ -307,11 +313,11 @@ public class CorpusGenerator extends Configured implements Tool {
                                     long size = entry.getSize();
                                     byte[] content = new byte[(int) size];
                                     input.read(content);
-                                    key.set(URI + "!" + name);
+                                    // key.set(URI + "!" + name);
                                     // fill the values for the content object
                                     value.setUrl(URI + ":" + name);
                                     value.setContent(ByteBuffer.wrap(content));
-                                    writer.append(key, value);
+                                    writer.append(value);
                                     processed++;
                                     counter++;
                                     if (reporter != null) {
@@ -347,12 +353,11 @@ public class CorpusGenerator extends Configured implements Tool {
                             FSDataInputStream fis = fs.open(file);
                             fis.readFully(0, fileBArray);
                             fis.close();
-                            key.set(URI);
                             // fill the values for the content object
                             value.setUrl(URI);
                             value.setContent(ByteBuffer.wrap(fileBArray));
 
-                            writer.append(key, value);
+                            writer.append(value);
                             counter++;
                             if (reporter != null) {
                                 reporter.incrCounter(Counters.DOC_COUNT, 1);
