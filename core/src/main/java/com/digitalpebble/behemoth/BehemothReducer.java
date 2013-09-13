@@ -20,10 +20,11 @@ package com.digitalpebble.behemoth;
 import java.io.IOException;
 import java.util.Iterator;
 
+import org.apache.avro.mapred.AvroCollector;
+import org.apache.avro.mapred.AvroReducer;
+import org.apache.avro.util.Utf8;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.JobConf;
-import org.apache.hadoop.mapred.OutputCollector;
-import org.apache.hadoop.mapred.Reducer;
 import org.apache.hadoop.mapred.Reporter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,8 +33,8 @@ import org.slf4j.LoggerFactory;
  * Custom Reducer which can filter documents before they are written out.
  ***/
 
-public class BehemothReducer implements
-        Reducer<Text, BehemothDocument, Text, BehemothDocument> {
+public class BehemothReducer extends
+        AvroReducer<Utf8, BehemothDocument, BehemothDocument> {
 
     public static final Logger LOG = LoggerFactory
             .getLogger(BehemothReducer.class);
@@ -56,19 +57,19 @@ public class BehemothReducer implements
     public void close() throws IOException {
     }
 
-    public void reduce(Text key, Iterator<BehemothDocument> doc,
-            OutputCollector<Text, BehemothDocument> output, Reporter reporter)
+    public void reduce(Text key, Iterator<BehemothDocument> values,
+            AvroCollector<BehemothDocument> output, Reporter reporter)
             throws IOException {
 
-        while (doc.hasNext()) {
-            BehemothDocument inputDoc = doc.next();
+        while (values.hasNext()) {
+            BehemothDocument inputDoc = values.next();
             boolean keep = docFilter.keep(inputDoc);
             if (!keep) {
                 reporter.incrCounter("BehemothReducer",
                         "DOC SKIPPED BY FILTERS", 1);
                 continue;
             }
-            output.collect(key, inputDoc);
+            output.collect(inputDoc);
 
         }
 

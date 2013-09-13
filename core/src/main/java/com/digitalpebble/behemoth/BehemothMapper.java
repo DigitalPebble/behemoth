@@ -19,10 +19,9 @@ package com.digitalpebble.behemoth;
 
 import java.io.IOException;
 
-import org.apache.hadoop.io.Text;
+import org.apache.avro.mapred.AvroCollector;
+import org.apache.avro.mapred.AvroMapper;
 import org.apache.hadoop.mapred.JobConf;
-import org.apache.hadoop.mapred.Mapper;
-import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reporter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,8 +30,8 @@ import org.slf4j.LoggerFactory;
  * Custom Mapper which can filter documents before they are written out.
  ***/
 
-public class BehemothMapper implements
-        Mapper<Text, BehemothDocument, Text, BehemothDocument> {
+public class BehemothMapper extends
+        AvroMapper<BehemothDocument, BehemothDocument> {
 
     public static final Logger LOG = LoggerFactory
             .getLogger(BehemothMapper.class);
@@ -53,15 +52,15 @@ public class BehemothMapper implements
     public void close() throws IOException {
     }
 
-    public void map(Text key, BehemothDocument inputDoc,
-            OutputCollector<Text, BehemothDocument> output, Reporter reporter)
+    public void map(BehemothDocument inputDoc,
+            AvroCollector<BehemothDocument> output, Reporter reporter)
             throws IOException {
         boolean keep = docFilter.keep(inputDoc);
         if (!keep) {
             reporter.incrCounter("BehemothMapper", "DOC SKIPPED BY FILTERS", 1);
             return;
         }
-        output.collect(key, inputDoc);
+        output.collect(inputDoc);
     }
 
 }
