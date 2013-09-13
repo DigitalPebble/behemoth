@@ -17,6 +17,9 @@
 
 package com.digitalpebble.behemoth.util;
 
+import org.apache.avro.mapred.AvroInputFormat;
+import org.apache.avro.mapred.AvroJob;
+import org.apache.avro.mapred.AvroOutputFormat;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.GnuParser;
@@ -26,13 +29,10 @@ import org.apache.commons.cli.ParseException;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.FileInputFormat;
 import org.apache.hadoop.mapred.FileOutputFormat;
 import org.apache.hadoop.mapred.JobClient;
 import org.apache.hadoop.mapred.JobConf;
-import org.apache.hadoop.mapred.SequenceFileInputFormat;
-import org.apache.hadoop.mapred.SequenceFileOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 
@@ -88,34 +88,33 @@ public class CorpusFilter extends Configured implements Tool {
         Path inputPath = new Path(line.getOptionValue("i"));
         Path outputPath = new Path(line.getOptionValue("o"));
 
-        JobConf job = new JobConf(getConf());
-        job.setJarByClass(this.getClass());
+        JobConf conf = new JobConf(getConf(), this.getClass());
+        conf.setJobName("CorpusFilter : " + inputPath.toString());
 
-        job.setJobName("CorpusFilter : " + inputPath.toString());
-
-        job.setInputFormat(SequenceFileInputFormat.class);
-        job.setOutputFormat(SequenceFileOutputFormat.class);
-
-        job.setMapOutputKeyClass(Text.class);
-        job.setMapOutputValueClass(BehemothDocument.class);
-        job.setOutputKeyClass(Text.class);
-        job.setOutputValueClass(BehemothDocument.class);
-
-        boolean isFilterRequired = BehemothMapper.isRequired(job);
+        boolean isFilterRequired = BehemothMapper.isRequired(conf);
         // should be the case here
         if (!isFilterRequired) {
             System.err
                     .println("No filters configured. Check your behemoth-site.xml");
             return -1;
         }
-        job.setMapperClass(BehemothMapper.class);
-        job.setNumReduceTasks(0);
 
-        FileInputFormat.addInputPath(job, inputPath);
-        FileOutputFormat.setOutputPath(job, outputPath);
+        conf.setNumReduceTasks(0);
+
+        FileInputFormat.addInputPath(conf, inputPath);
+        FileOutputFormat.setOutputPath(conf, outputPath);
+
+        AvroJob.setInputSchema(conf, BehemothDocument.getClassSchema());
+        AvroJob.setOutputSchema(conf, BehemothDocument.getClassSchema());
+        AvroJob.setMapOutputSchema(conf, BehemothDocument.getClassSchema());
+
+        AvroJob.setMapperClass(conf, BehemothMapper.class);
+
+        conf.setInputFormat(AvroInputFormat.class);
+        conf.setOutputFormat(AvroOutputFormat.class);
 
         try {
-            JobClient.runJob(job);
+            JobClient.runJob(conf);
         } catch (Exception e) {
             e.printStackTrace();
             fs.delete(outputPath, true);
