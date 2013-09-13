@@ -189,7 +189,7 @@ public class CorpusGenerator extends Configured implements Tool {
         }
 
         setInput(inputDir);
-        setOutput(output);
+        setOutput(new Path(output, "part-00000.avro"));
 
         long start = System.currentTimeMillis();
         if (inputDir.getFileSystem(getConf()).exists(inputDir) == false) {
