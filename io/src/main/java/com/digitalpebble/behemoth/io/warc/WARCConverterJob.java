@@ -18,26 +18,29 @@ package com.digitalpebble.behemoth.io.warc;
  */
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.avro.mapred.AvroJob;
+import org.apache.avro.mapred.AvroWrapper;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
-import org.apache.hadoop.io.Text;
+import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.mapred.FileInputFormat;
 import org.apache.hadoop.mapred.FileOutputFormat;
 import org.apache.hadoop.mapred.JobClient;
 import org.apache.hadoop.mapred.JobConf;
+import org.apache.hadoop.mapred.MapReduceBase;
 import org.apache.hadoop.mapred.Mapper;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reporter;
-import org.apache.hadoop.mapred.SequenceFileOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 import org.apache.nutch.metadata.HttpHeaders;
 import org.apache.nutch.protocol.ProtocolException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.digitalpebble.behemoth.BehemothConfiguration;
 import com.digitalpebble.behemoth.BehemothDocument;
@@ -49,111 +52,114 @@ import edu.cmu.lemurproject.WritableWarcRecord;
 /**
  * Converts a WARC archive into a Behemoth datastructure for further processing
  */
-public class WARCConverterJob extends Configured implements Tool,
-        Mapper<LongWritable, WritableWarcRecord, Text, BehemothDocument> {
+public class WARCConverterJob extends Configured implements Tool {
 
-    public static final Logger LOG = LoggerFactory
-            .getLogger(WARCConverterJob.class);
+	public static final Logger LOG = LoggerFactory
+			.getLogger(WARCConverterJob.class);
 
-    public WARCConverterJob() {
-        this(null);
-    }
+	public WARCConverterJob() {
+		this(null);
+	}
 
-    public WARCConverterJob(Configuration conf) {
-        super(conf);
-    }
+	public WARCConverterJob(Configuration conf) {
+		super(conf);
+	}
 
-    public void configure(JobConf job) {
-        setConf(job);
-    }
+	public void configure(JobConf job) {
+		setConf(job);
+	}
 
-    public void close() {
-    }
+	public void close() {
+	}
 
-    private Text newKey = new Text();
+	private static class AvroMapper extends MapReduceBase
+			implements
+			Mapper<LongWritable, WritableWarcRecord, AvroWrapper<BehemothDocument>, NullWritable> {
 
-    public void map(LongWritable key, WritableWarcRecord record,
-            OutputCollector<Text, BehemothDocument> output, Reporter reporter)
-            throws IOException {
+		public void map(
+				LongWritable key,
+				WritableWarcRecord record,
+				OutputCollector<AvroWrapper<BehemothDocument>, NullWritable> out,
+				Reporter reporter) throws IOException {
 
-        BehemothDocument behemothDocument = new BehemothDocument();
+			BehemothDocument behemothDocument = new BehemothDocument();
 
-        WarcRecord wr = record.getRecord();
+			WarcRecord wr = record.getRecord();
 
-        if (wr.getHeaderRecordType().equals("response") == false)
-            return;
+			if (wr.getHeaderRecordType().equals("response") == false)
+				return;
 
-        byte[] binarycontent = wr.getContent();
+			byte[] binarycontent = wr.getContent();
 
-        String uri = wr.getHeaderMetadataItem("WARC-Target-URI");
+			String uri = wr.getHeaderMetadataItem("WARC-Target-URI");
 
-        // skip non http documents
-        if (uri.startsWith("http") == false)
-            return;
+			// skip non http documents
+			if (uri.startsWith("http") == false)
+				return;
 
-        HttpResponse response;
-        try {
-            response = new HttpResponse(binarycontent);
-        } catch (ProtocolException e) {
-            return;
-        }
+			HttpResponse response;
+			try {
+				response = new HttpResponse(binarycontent);
+			} catch (ProtocolException e) {
+				return;
+			}
 
-        behemothDocument.setUrl(uri);
-        newKey.set(uri);
+			behemothDocument.setUrl(uri);
 
-        String contentType = response.getHeader(HttpHeaders.CONTENT_TYPE);
-        behemothDocument.setContentType(contentType);
-        behemothDocument.setContent(response.getContent());
+			String contentType = response.getHeader(HttpHeaders.CONTENT_TYPE);
+			behemothDocument.setContentType(contentType);
+			behemothDocument.setContent(ByteBuffer.wrap(response.getContent()));
 
-        output.collect(newKey, behemothDocument);
-    }
+			out.collect(new AvroWrapper<BehemothDocument>(behemothDocument),
+					NullWritable.get());
+		}
+	}
 
-    public void convert(Path warcpath, Path output) throws IOException {
+	public void convert(Path warcpath, Path output) throws IOException {
 
-        JobConf job = new JobConf(getConf());
-        job.setJobName("Convert WARC " + warcpath);
+		JobConf job = new JobConf(getConf());
+		job.setJobName("Convert WARC " + warcpath);
 
-        job.setJarByClass(this.getClass());
+		job.setJarByClass(this.getClass());
 
-        FileInputFormat.addInputPath(job, warcpath);
-        job.setInputFormat(WarcFileInputFormat.class);
+		FileInputFormat.addInputPath(job, warcpath);
+		job.setInputFormat(WarcFileInputFormat.class);
 
-        job.setMapperClass(WARCConverterJob.class);
+		job.setMapperClass(AvroMapper.class);
 
-        // no reducers
-        job.setNumReduceTasks(0);
+		// no reducers
+		job.setNumReduceTasks(0);
 
-        FileOutputFormat.setOutputPath(job, output);
-        job.setOutputFormat(SequenceFileOutputFormat.class);
-        job.setOutputKeyClass(Text.class);
-        job.setOutputValueClass(BehemothDocument.class);
+		FileOutputFormat.setOutputPath(job, output);
 
-        long start = System.currentTimeMillis();
-        JobClient.runJob(job);
-        long finish = System.currentTimeMillis();
-        if (LOG.isInfoEnabled()) {
-            LOG.info("WARCConverterJob completed. Timing: " + (finish - start)
-                    + " ms");
-        }
-    }
+		AvroJob.setOutputSchema(job, BehemothDocument.getClassSchema());
 
-    public static void main(String[] args) throws Exception {
-        int res = ToolRunner.run(BehemothConfiguration.create(),
-                new WARCConverterJob(), args);
-        System.exit(res);
-    }
+		long start = System.currentTimeMillis();
+		JobClient.runJob(job);
+		long finish = System.currentTimeMillis();
+		if (LOG.isInfoEnabled()) {
+			LOG.info("WARCConverterJob completed. Timing: " + (finish - start)
+					+ " ms");
+		}
+	}
 
-    public int run(String[] args) throws Exception {
-        String usage = "Usage: WARCConverterJob archive output";
+	public static void main(String[] args) throws Exception {
+		int res = ToolRunner.run(BehemothConfiguration.create(),
+				new WARCConverterJob(), args);
+		System.exit(res);
+	}
 
-        if (args.length == 0) {
-            System.err.println(usage);
-            System.exit(-1);
-        }
-        Path segment = new Path(args[0]);
-        Path output = new Path(args[1]);
-        convert(segment, output);
-        return 0;
-    }
+	public int run(String[] args) throws Exception {
+		String usage = "Usage: WARCConverterJob archive output";
+
+		if (args.length == 0) {
+			System.err.println(usage);
+			System.exit(-1);
+		}
+		Path segment = new Path(args[0]);
+		Path output = new Path(args[1]);
+		convert(segment, output);
+		return 0;
+	}
 
 }
