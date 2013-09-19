@@ -55,6 +55,10 @@ public class BehemothMapper extends
     public void map(BehemothDocument inputDoc,
             AvroCollector<BehemothDocument> output, Reporter reporter)
             throws IOException {
+        if (!DocumentFilter.isRequired(this.getConf())) {
+            output.collect(inputDoc);
+            return;
+        }
         boolean keep = docFilter.keep(inputDoc);
         if (!keep) {
             reporter.incrCounter("BehemothMapper", "DOC SKIPPED BY FILTERS", 1);

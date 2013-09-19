@@ -45,6 +45,15 @@ public class BehemothDocumentUtil {
         return annots;
     }
 
+    public static Map<String, String> getOrCreateFeatures(Annotation annot) {
+        Map<String, String> features = annot.getFeatures();
+        if (features != null)
+            return features;
+        features = new HashMap<String, String>();
+        annot.setFeatures(features);
+        return features;
+    }
+    
     public static byte[] getContentAsByteArray(BehemothDocument doc) {
         if (doc.getContent() == null)
             return null;
