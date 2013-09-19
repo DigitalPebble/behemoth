@@ -16,12 +16,14 @@
  **/
 package com.digitalpebble.behemoth.solr;
 
-import com.digitalpebble.behemoth.Annotation;
-import com.digitalpebble.behemoth.BehemothDocument;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Map.Entry;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.hadoop.io.MapWritable;
-import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.util.Progressable;
 import org.apache.solr.client.solrj.SolrServer;
@@ -32,11 +34,8 @@ import org.apache.solr.client.solrj.request.UpdateRequest;
 import org.apache.solr.common.SolrInputDocument;
 import org.apache.solr.common.params.ModifiableSolrParams;
 
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Map.Entry;
+import com.digitalpebble.behemoth.Annotation;
+import com.digitalpebble.behemoth.BehemothDocument;
 
 public class SOLRWriter {
 
@@ -187,11 +186,10 @@ public class SOLRWriter {
 
         // Rely on the field mapping to handle this, or the dynamic
         // fields
-        MapWritable metadata = doc.getMetadata();
+        Map<String, String> metadata = doc.getMetadata();
         if (includeMetadata && metadata != null) {
-            for (Entry<Writable, Writable> entry : metadata.entrySet()) {
-                inputDoc.addField(entry.getKey().toString(), entry.getValue()
-                        .toString());
+            for (Entry<String, String> entry : metadata.entrySet()) {
+                inputDoc.addField(entry.getKey(), entry.getValue());
             }
         }
         // iterate on the annotations of interest and
@@ -223,8 +221,8 @@ public class SOLRWriter {
                         // special case for covering text
                         if ("*".equals(targetFeature)) {
                             value = doc.getText().substring(
-                                    (int) current.getStart(),
-                                    (int) current.getEnd());
+                                    current.getStart().intValue(),
+                                    current.getEnd().intValue());
                         }
                         // get the value for the feature
                         else {

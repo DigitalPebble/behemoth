@@ -21,6 +21,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.MapWritable;
@@ -41,6 +42,7 @@ import org.slf4j.LoggerFactory;
 import org.xml.sax.ContentHandler;
 
 import com.digitalpebble.behemoth.BehemothDocument;
+import com.digitalpebble.behemoth.BehemothDocumentUtil;
 import com.digitalpebble.behemoth.DocumentProcessor;
 
 /**
@@ -111,9 +113,10 @@ public class TikaProcessor implements DocumentProcessor, TikaConstants {
                     meta.set(Metadata.RESOURCE_NAME_KEY, inputDoc.getUrl());
                     MimeType mimetype = null;
                     try {
-                        MediaType mediaType = detector
-                                .detect(new ByteArrayInputStream(inputDoc
-                                        .getContent()), meta);
+                        byte[] content = BehemothDocumentUtil
+                                .getContentAsByteArray(inputDoc);
+                        MediaType mediaType = detector.detect(
+                                new ByteArrayInputStream(content), meta);
                         mimetype = mimetypes.forName(mediaType.getType() + "/"
                                 + mediaType.getSubtype());
                     } catch (IOException e) {
@@ -149,7 +152,7 @@ public class TikaProcessor implements DocumentProcessor, TikaConstants {
 
         // filter based on content length
         // optional
-        int length = inputDoc.getContent().length;
+        int length = BehemothDocumentUtil.getContentAsByteArray(inputDoc).length;
         if (contentLengthThresholdFilter != -1
                 && length > contentLengthThresholdFilter) {
             if (reporter != null)
@@ -161,7 +164,8 @@ public class TikaProcessor implements DocumentProcessor, TikaConstants {
         // otherwise parse the document and retrieve the text, metadata and
         // markup annotations
 
-        InputStream is = new ByteArrayInputStream(inputDoc.getContent());
+        InputStream is = new ByteArrayInputStream(
+                BehemothDocumentUtil.getContentAsByteArray(inputDoc));
 
         Metadata metadata = new Metadata();
         // put the mimetype in the metadata so that Tika can
@@ -171,8 +175,7 @@ public class TikaProcessor implements DocumentProcessor, TikaConstants {
         String ct = inputDoc.getContentType();
         try {
             if (reporter != null && okCounters)
-                reporter.getCounter("MIME-TYPE", ct)
-                        .increment(1);
+                reporter.getCounter("MIME-TYPE", ct).increment(1);
         } catch (Exception counterEx) {
             LOG.error("Could not add counter MIME-TYPE:" + ct, counterEx);
             okCounters = false;
@@ -254,7 +257,8 @@ public class TikaProcessor implements DocumentProcessor, TikaConstants {
      */
     protected void processMarkupAnnotations(BehemothDocument inputDoc,
             List<com.digitalpebble.behemoth.Annotation> annotations) {
-        inputDoc.getAnnotations().addAll(annotations);
+        BehemothDocumentUtil.getOrCreateAnnotations(inputDoc).addAll(
+                annotations);
     }
 
     /**
@@ -264,7 +268,9 @@ public class TikaProcessor implements DocumentProcessor, TikaConstants {
      *            the extracted {@link org.apache.tika.metadata.Metadata}
      */
     protected void processMetadata(BehemothDocument inputDoc, Metadata metadata) {
-        MapWritable mapW = inputDoc.getMetadata(true);
+        Map<String, String> mapW = BehemothDocumentUtil
+                .getOrCreateMetadata(inputDoc);
+        // MapWritable mapW = inputDoc.getMetadata(true);
         for (String name : metadata.names()) {
             String[] values = metadata.getValues(name);
             // temporary fix to avoid
@@ -281,7 +287,7 @@ public class TikaProcessor implements DocumentProcessor, TikaConstants {
                 buff.append(values[i]);
             }
             // TODO prefix md?
-            mapW.put(new Text(name), new Text(buff.toString()));
+            mapW.put(name, buff.toString());
             // mapW.put(new Text(name), new TextArrayWritable(values));
         }
         inputDoc.setMetadata(mapW);

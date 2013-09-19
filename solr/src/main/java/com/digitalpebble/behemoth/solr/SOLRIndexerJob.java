@@ -19,6 +19,8 @@ package com.digitalpebble.behemoth.solr;
 
 import java.util.Random;
 
+import org.apache.avro.mapred.AvroInputFormat;
+import org.apache.avro.mapred.AvroJob;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -37,6 +39,7 @@ import org.apache.hadoop.util.ToolRunner;
 
 import com.digitalpebble.behemoth.BehemothConfiguration;
 import com.digitalpebble.behemoth.BehemothDocument;
+import com.digitalpebble.behemoth.BehemothMapper;
 
 /**
  * Sends annotated documents to SOLR for indexing
@@ -76,14 +79,16 @@ public class SOLRIndexerJob extends Configured implements Tool {
         job.setJarByClass(this.getClass());
 
         job.setJobName("Indexing " + inputPath + " into SOLR");
+        
+        AvroJob.setInputSchema(job, BehemothDocument.getClassSchema());
+        AvroJob.setOutputSchema(job, BehemothDocument.getClassSchema());
+        AvroJob.setMapOutputSchema(job, BehemothDocument.getClassSchema());
 
-        job.setInputFormat(SequenceFileInputFormat.class);
+        AvroJob.setMapperClass(job, BehemothMapper.class);
+
+        job.setInputFormat(AvroInputFormat.class);
         job.setOutputFormat(SOLROutputFormat.class);
-
-        job.setOutputKeyClass(Text.class);
-        job.setOutputValueClass(BehemothDocument.class);
-
-        job.setMapperClass(IdentityMapper.class);
+        
         // no reducer : send straight to SOLR at end of mapping
         job.setNumReduceTasks(0);
 

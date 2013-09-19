@@ -17,6 +17,8 @@
 
 package com.digitalpebble.behemoth.tika;
 
+import java.nio.ByteBuffer;
+
 import junit.framework.TestCase;
 
 import org.apache.hadoop.conf.Configuration;
@@ -43,7 +45,7 @@ public class TikaProcessorTest extends TestCase {
         String text = "<HTML><TITLE>A TITLE</TITLE><BODY>This is a <B>simple</B> test</HTML>";
         String url = "dummyDoc.html";
         BehemothDocument doc = new BehemothDocument();
-        doc.setContent(text.getBytes());
+        doc.setContent(ByteBuffer.wrap(text.getBytes()));
         doc.setUrl(url);
         // don't set the text as such
         // or the content type

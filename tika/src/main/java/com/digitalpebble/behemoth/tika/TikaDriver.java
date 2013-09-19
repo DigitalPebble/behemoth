@@ -18,8 +18,12 @@ package com.digitalpebble.behemoth.tika;
 
 import com.digitalpebble.behemoth.BehemothConfiguration;
 import com.digitalpebble.behemoth.BehemothDocument;
+import com.digitalpebble.behemoth.BehemothMapper;
 import com.digitalpebble.behemoth.BehemothReducer;
 
+import org.apache.avro.mapred.AvroInputFormat;
+import org.apache.avro.mapred.AvroJob;
+import org.apache.avro.mapred.AvroOutputFormat;
 import org.apache.commons.cli2.CommandLine;
 import org.apache.commons.cli2.Group;
 import org.apache.commons.cli2.Option;
@@ -118,25 +122,19 @@ public class TikaDriver extends Configured implements Tool, TikaConstants {
 
             job.setJobName("Tika : " + inputPath.toString());
 
-            job.setInputFormat(SequenceFileInputFormat.class);
-            job.setOutputFormat(SequenceFileOutputFormat.class);
-
-            job.setMapOutputKeyClass(Text.class);
-            job.setMapOutputValueClass(BehemothDocument.class);
-            job.setOutputKeyClass(Text.class);
-            job.setOutputValueClass(BehemothDocument.class);
-
-            job.setMapperClass(TikaMapper.class);
-
-            boolean isFilterRequired = BehemothReducer.isRequired(job);
-            if (isFilterRequired)
-                job.setReducerClass(BehemothReducer.class);
-            else {
-                job.setNumReduceTasks(0);
-            }
-
             FileInputFormat.addInputPath(job, inputPath);
             FileOutputFormat.setOutputPath(job, outputPath);
+
+            AvroJob.setInputSchema(job, BehemothDocument.getClassSchema());
+            AvroJob.setOutputSchema(job, BehemothDocument.getClassSchema());
+            AvroJob.setMapOutputSchema(job, BehemothDocument.getClassSchema());
+
+            AvroJob.setMapperClass(job, TikaMapper.class);
+
+            job.setInputFormat(AvroInputFormat.class);
+            job.setOutputFormat(AvroOutputFormat.class);
+
+            job.setNumReduceTasks(0);
 
             try {
                 long start = System.currentTimeMillis();

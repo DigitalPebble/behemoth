@@ -20,13 +20,14 @@ package com.digitalpebble.behemoth.tika;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 import org.xml.sax.Attributes;
-import org.xml.sax.ContentHandler;
 import org.xml.sax.Locator;
 import org.xml.sax.SAXException;
 
 import com.digitalpebble.behemoth.Annotation;
+import com.digitalpebble.behemoth.BehemothDocumentUtil;
 
 /*******************************************************************************
  * SAX Handler which gets events from the Tika parser events and create Behemoth
@@ -71,14 +72,15 @@ public class TikaMarkupHandler implements BehemothHandler {
         int startOffset = textBuffer.length();
 
         Annotation annot = new Annotation();
-        annot.setStart(startOffset);
+        annot.setStart((long)startOffset);
         // use the localname as a type
         annot.setType(localName);
         // convert the attributes into features
+        Map<String,String> features = BehemothDocumentUtil.getOrCreateFeatures(annot);
         for (int i = 0; i < atts.getLength(); i++) {
             String key = atts.getLocalName(i);
             String value = atts.getValue(i);
-            annot.getFeatures().put(key, value);
+            features.put(key, value);
         }
         this.startedAnnotations.addLast(annot);
     }
@@ -111,7 +113,7 @@ public class TikaMarkupHandler implements BehemothHandler {
             return;
         }
 
-        startedAnnot.setEnd(endOffset);
+        startedAnnot.setEnd((long)endOffset);
         startedAnnotations.remove(startedAnnot);
         annotationBuffer.add(startedAnnot);
     }

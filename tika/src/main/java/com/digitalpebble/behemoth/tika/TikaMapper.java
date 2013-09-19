@@ -17,6 +17,10 @@
 package com.digitalpebble.behemoth.tika;
 
 import com.digitalpebble.behemoth.BehemothDocument;
+import com.digitalpebble.behemoth.BehemothMapper;
+
+import org.apache.avro.mapred.AvroCollector;
+import org.apache.avro.mapred.AvroMapper;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.MapReduceBase;
@@ -35,22 +39,20 @@ import java.io.IOException;
  * qualified class name. The implementation must extend TikaProcessor and it
  * must have a zero arg. constructor.
  */
-public class TikaMapper extends MapReduceBase implements
-        Mapper<Text, BehemothDocument, Text, BehemothDocument> {
+public class TikaMapper extends BehemothMapper {
     private static final Logger LOG = LoggerFactory.getLogger(TikaMapper.class);
 
     protected TikaProcessor processor;
 
-    @Override
-    public void map(Text text, BehemothDocument inputDoc,
-            OutputCollector<Text, BehemothDocument> outputCollector,
-            Reporter reporter) throws IOException {
+    public void map(BehemothDocument inputDoc,
+            AvroCollector<BehemothDocument> output, Reporter reporter)
+            throws IOException {
 
         BehemothDocument[] documents = processor.process(inputDoc, reporter);
         if (documents != null) {
             for (int i = 0; i < documents.length; i++) {
                 try {
-                    outputCollector.collect(text, documents[i]);
+                    super.map(inputDoc, output, reporter);
                 } catch (Error e) {
                     LOG.error("Error with writing doc", inputDoc.getUrl());
                 }
