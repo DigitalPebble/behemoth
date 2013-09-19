@@ -10,13 +10,13 @@
 
 	<modules>
 		<module>core</module>
-		<module>gate</module>
-		<module>tika</module>
+		<!-- <module>gate</module> -->
+		<!-- <module>tika</module> -->
 		<module>uima</module>
 		<module>io</module>
-		<module>mahout</module>
+		<!-- <module>mahout</module>-->
 		<module>solr</module>
-		<module>language-id</module>
+		<!-- <module>language-id</module>-->
 	</modules>
 
 	<licenses>
