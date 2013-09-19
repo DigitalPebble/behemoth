@@ -19,11 +19,15 @@ package com.digitalpebble.behemoth.io.nutch;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.avro.mapred.AvroJob;
 import org.apache.avro.mapred.AvroWrapper;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
+import org.apache.hadoop.fs.FileStatus;
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
@@ -41,6 +45,7 @@ import org.apache.hadoop.util.ToolRunner;
 import org.apache.nutch.crawl.CrawlDatum;
 import org.apache.nutch.metadata.Nutch;
 import org.apache.nutch.protocol.Content;
+import org.apache.nutch.util.HadoopFSUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -101,19 +106,21 @@ public class NutchSegmentConverterJob extends Configured implements Tool {
 			behemothDocument.setContent(ByteBuffer.wrap(binarycontent));
 			behemothDocument.setContentType(contentType);
 
-			out.collect(new AvroWrapper<BehemothDocument>(behemothDocument),NullWritable.get());
+			out.collect(new AvroWrapper<BehemothDocument>(behemothDocument),
+					NullWritable.get());
 		}
 	}
 
-	public void convert(Path nutchsegment, Path output) throws IOException {
+	public void convert(List<Path> list, Path output) throws IOException {
 
 		JobConf job = new JobConf(getConf());
-		job.setJobName("Convert Nutch segment" + nutchsegment);
+		job.setJobName("Converting Nutch segments");
 		job.setJarByClass(this.getClass());
 
-		FileInputFormat.addInputPath(job, new Path(nutchsegment,
-				Content.DIR_NAME));
-		job.set(Nutch.SEGMENT_NAME_KEY, nutchsegment.getName());
+		for (Path p : list) {
+			FileInputFormat.addInputPath(job, new Path(p, Content.DIR_NAME));
+		}
+
 		job.setInputFormat(SequenceFileInputFormat.class);
 		job.setMapperClass(NonAvroMapper.class);
 
@@ -123,14 +130,12 @@ public class NutchSegmentConverterJob extends Configured implements Tool {
 		FileOutputFormat.setOutputPath(job, output);
 
 		AvroJob.setOutputSchema(job, BehemothDocument.getClassSchema());
-
-		// job.setOutputFormat(SequenceFileOutputFormat.class);
-		// job.setOutputKeyClass(Text.class);
-		// job.setOutputValueClass(BehemothDocument.class);
-
+		long start = System.currentTimeMillis();
 		JobClient.runJob(job);
+		long finish = System.currentTimeMillis();
 		if (LOG.isInfoEnabled()) {
-			LOG.info("Conversion: done");
+			LOG.info("NutchSegmentConverter completed. Timing: "
+					+ (finish - start) + " ms");
 		}
 	}
 
@@ -141,15 +146,32 @@ public class NutchSegmentConverterJob extends Configured implements Tool {
 	}
 
 	public int run(String[] args) throws Exception {
-		String usage = "Usage: SegmentConverter segment output";
+		String usage = "Usage: SegmentConverter [-dir segdir | segment] output";
 
-		if (args.length == 0) {
+		if (args.length < 2) {
 			System.err.println(usage);
 			System.exit(-1);
 		}
-		Path segment = new Path(args[0]);
-		Path output = new Path(args[1]);
-		convert(segment, output);
+
+		final List<Path> segments = new ArrayList<Path>();
+
+		if (args[0].equals("-dir")) {
+			Path dir = new Path(args[1]);
+			FileSystem fs = dir.getFileSystem(getConf());
+			FileStatus[] fstats = fs.listStatus(dir,
+					HadoopFSUtil.getPassDirectoriesFilter(fs));
+			Path[] files = HadoopFSUtil.getPaths(fstats);
+			for (Path p : files) {
+				segments.add(p);
+			}
+		}
+
+		else {
+			segments.add(new Path(args[0]));
+		}
+
+		Path output = new Path(args[args.length - 1]);
+		convert(segments, output);
 		return 0;
 	}
 
