@@ -17,7 +17,7 @@
 
 package com.digitalpebble.behemoth.uima;
 
-import java.io.File;
+import java.nio.ByteBuffer;
 
 import junit.framework.TestCase;
 
@@ -52,7 +52,7 @@ public class UIMAProcessorTest extends TestCase {
         String text = "This is a simple test";
         String url = "dummyURL";
         BehemothDocument doc = new BehemothDocument();
-        doc.setContent(text.getBytes());
+        doc.setContent(ByteBuffer.wrap(text.getBytes()));
         doc.setText(text);
         doc.setUrl(url);
         doc.setContentType("text/plain");

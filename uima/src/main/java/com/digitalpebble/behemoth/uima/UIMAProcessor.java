@@ -33,6 +33,7 @@ import org.apache.uima.resource.ResourceSpecifier;
 import org.apache.uima.util.XMLInputSource;
 
 import com.digitalpebble.behemoth.BehemothDocument;
+import com.digitalpebble.behemoth.BehemothDocumentUtil;
 import com.digitalpebble.behemoth.DocumentProcessor;
 
 public class UIMAProcessor implements DocumentProcessor {
@@ -194,8 +195,8 @@ public class UIMAProcessor implements DocumentProcessor {
                 target.setType(annotation.getType().getShortName());
             else
                 target.setType(atype);
-            target.setStart(annotation.getBegin());
-            target.setEnd(annotation.getEnd());
+            target.setStart((long)annotation.getBegin());
+            target.setEnd((long)annotation.getEnd());
             // now get the features for this annotation
             Set<Feature> possiblefeatures = featfilts.get(atype);
             if (possiblefeatures != null) {
@@ -209,12 +210,12 @@ public class UIMAProcessor implements DocumentProcessor {
                     if (fvalue == null)
                         fvalue = "null";
                     // always use the short names for the features
-                    target.getFeatures().put(expectedFeature.getShortName(),
+                    BehemothDocumentUtil.getOrCreateFeatures(target).put(expectedFeature.getShortName(),
                             fvalue);
                 }
             }
             // add current annotation to Behemoth document
-            behemoth.getAnnotations().add(target);
+            BehemothDocumentUtil.getOrCreateAnnotations(behemoth).add(target);
         }
 
     }

@@ -21,6 +21,9 @@ import java.net.URI;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.apache.avro.mapred.AvroInputFormat;
+import org.apache.avro.mapred.AvroJob;
+import org.apache.avro.mapred.AvroOutputFormat;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.filecache.DistributedCache;
@@ -38,6 +41,7 @@ import org.apache.hadoop.util.ToolRunner;
 
 import com.digitalpebble.behemoth.BehemothConfiguration;
 import com.digitalpebble.behemoth.BehemothDocument;
+import com.digitalpebble.behemoth.BehemothMapper;
 
 public class UIMADriver extends Configured implements Tool {
 
@@ -83,15 +87,14 @@ public class UIMADriver extends Configured implements Tool {
         job.setJarByClass(this.getClass());
         job.setJobName("Processing with UIMA application : " + pearPath);
 
-        job.setInputFormat(SequenceFileInputFormat.class);
-        job.setOutputFormat(SequenceFileOutputFormat.class);
+        job.setInputFormat(AvroInputFormat.class);
+        job.setOutputFormat(AvroOutputFormat.class);
 
-        job.setMapOutputKeyClass(Text.class);
-        job.setMapOutputValueClass(BehemothDocument.class);
-        job.setOutputKeyClass(Text.class);
-        job.setOutputValueClass(BehemothDocument.class);
+        AvroJob.setInputSchema(job, BehemothDocument.getClassSchema());
+        AvroJob.setOutputSchema(job, BehemothDocument.getClassSchema());
+        AvroJob.setMapOutputSchema(job, BehemothDocument.getClassSchema());
 
-        job.setMapperClass(UIMAMapper.class);
+        AvroJob.setMapperClass(job, UIMAMapper.class);
 
         job.setNumReduceTasks(0);
 
