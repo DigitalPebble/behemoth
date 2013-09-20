@@ -16,6 +16,7 @@
  */
 package com.digitalpebble.behemoth;
 
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -55,10 +56,13 @@ public class BehemothDocumentUtil {
     }
     
     public static byte[] getContentAsByteArray(BehemothDocument doc) {
-        if (doc.getContent() == null)
+        ByteBuffer buffer = doc.getContent();
+        if (buffer == null)
             return null;
-        byte[] b = new byte[doc.getContent().remaining()];
-        doc.getContent().get(b, 0, b.length);
+        byte[] b = new byte[buffer.remaining()];
+        buffer.get(b, 0, b.length);
+        // rewind to initial position
+        buffer.position(0);
         return b;
     }
 
