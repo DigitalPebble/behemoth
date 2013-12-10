@@ -151,6 +151,11 @@ public class SequenceFileConverterMapperTest {
         public void setStatus(String status) {
         }
 
+        @Override
+        public float getProgress() {
+          return 0;
+        }
+
     }
 
 }
