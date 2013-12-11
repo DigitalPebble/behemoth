@@ -18,6 +18,7 @@ package com.digitalpebble.behemoth.solr;
 
 import com.digitalpebble.behemoth.Annotation;
 import com.digitalpebble.behemoth.BehemothDocument;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.io.MapWritable;
@@ -50,6 +51,7 @@ public class SOLRWriter {
     private boolean includeMetadata = false;
     protected boolean includeAnnotations = false;
     protected boolean includeAllAnnotations = false;
+    protected boolean dynamicFields = false;
     protected ModifiableSolrParams params = null;
 
     public SOLRWriter(Progressable progress) {
@@ -88,6 +90,7 @@ public class SOLRWriter {
 
         includeMetadata = job.getBoolean("solr.metadata", false);
         includeAnnotations = job.getBoolean("solr.annotations", false);
+        dynamicFields = job.getBoolean("dynamic.fields", false);
         populateSolrFieldMappingsFromBehemothAnnotationsTypesAndFeatures(job);
     }
 
@@ -190,8 +193,13 @@ public class SOLRWriter {
         MapWritable metadata = doc.getMetadata();
         if (includeMetadata && metadata != null) {
             for (Entry<Writable, Writable> entry : metadata.entrySet()) {
-                inputDoc.addField(entry.getKey().toString(), entry.getValue()
-                        .toString());
+              if (dynamicFields) {
+                String key = "attr_" + entry.getKey().toString();
+                inputDoc.addField(key, entry.getValue().toString());
+              }
+              else {
+                inputDoc.addField(entry.getKey().toString(), entry.getValue().toString()); 
+              }
             }
         }
         // iterate on the annotations of interest and
