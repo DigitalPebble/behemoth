@@ -51,7 +51,10 @@ public class SOLRWriter {
     private boolean includeMetadata = false;
     protected boolean includeAnnotations = false;
     protected boolean includeAllAnnotations = false;
-    protected boolean dynamicFields = false;
+    protected boolean useMetadataPrefix = false;
+    protected String metadataPrefix = null;
+    protected String annotationPrefix = null;
+    protected boolean useAnnotationPrefix = false;
     protected ModifiableSolrParams params = null;
 
     public SOLRWriter(Progressable progress) {
@@ -90,7 +93,10 @@ public class SOLRWriter {
 
         includeMetadata = job.getBoolean("solr.metadata", false);
         includeAnnotations = job.getBoolean("solr.annotations", false);
-        dynamicFields = job.getBoolean("dynamic.fields", false);
+        useMetadataPrefix = job.getBoolean("solr.metadata.use.prefix", false);
+        metadataPrefix = job.get("solr.metadata.prefix", "attr_");
+        annotationPrefix = job.get("solr.annotation.prefix", "annotate_");
+        useAnnotationPrefix = job.getBoolean("solr.annotation.use.prefix", false);
         populateSolrFieldMappingsFromBehemothAnnotationsTypesAndFeatures(job);
     }
 
@@ -109,22 +115,34 @@ public class SOLRWriter {
             String solrFieldName = entry.getKey().substring("solr.f.".length());
             populateMapping(solrFieldName, entry.getValue());
         }
-        // TODO document this param on the wiki
-        // process solr.annotations.list
+        
         String list = job.get("solr.annotations.list");
-        if (list == null || list.trim().length() == 0) {
-            return;
-        }
-        String[] names = list.split("\\s+");
-        for (String name : names) {
-            // support all annotations denoted by '*'
-            if (name.equals("*")) {
-                includeAllAnnotations = true;
-            } else {
-                String solrFieldName = "annotation_" + name;
+        if (useAnnotationPrefix){
+          if ( list == null || list.trim().length() == 0) 
+            // Include all annotations if no annotations list is not defined
+            includeAllAnnotations = true;
+          else {
+            // Include only annotations defined in the "solr.annotations.list" with the prefix
+            String[] names = list.split("\\s+");
+            for (String name : names){
+              String solrFieldName = annotationPrefix + name;
+              populateMapping(solrFieldName, name);
+            }
+          }
+        } else {
+         // Include specified annotations without prefix if annotations list is defined. 
+         // These fields would have to explicitly defined in Solr schema since solr.annotation.use.prefix 
+         // is not defined or field mapping has to be defined
+            if (list == null || list.trim().length() == 0) {
+              return;
+            }
+            String[] names = list.split("\\s+");
+            for (String name : names) {
+                String solrFieldName = name;
                 populateMapping(solrFieldName, name);
             }
         }
+
     }
 
     private void populateMapping(String solrFieldName, String value) {
@@ -193,8 +211,8 @@ public class SOLRWriter {
         MapWritable metadata = doc.getMetadata();
         if (includeMetadata && metadata != null) {
             for (Entry<Writable, Writable> entry : metadata.entrySet()) {
-              if (dynamicFields) {
-                String key = "attr_" + entry.getKey().toString();
+              if (useMetadataPrefix) {
+                String key = metadataPrefix + entry.getKey().toString();
                 inputDoc.addField(key, entry.getValue().toString());
               }
               else {
@@ -247,7 +265,7 @@ public class SOLRWriter {
                 } else {
                     for (Entry<String, String> e : current.getFeatures()
                             .entrySet()) {
-                        inputDoc.addField("annotation_" + current.getType()
+                        inputDoc.addField(annotationPrefix + current.getType()
                                 + "." + e.getKey(), e.getValue());
                     }
                 }
