@@ -92,7 +92,7 @@ public class CorpusReader extends Configured implements Tool {
         Path inputPath = new Path(line.getOptionValue("i"));
 
         Configuration conf = getConf();
-        FileSystem fs = FileSystem.get(conf);
+        FileSystem fs = inputPath.getFileSystem(conf);
 
         // filter input
         DocumentFilter filters = DocumentFilter.getFilters(conf);
