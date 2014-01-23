@@ -21,6 +21,7 @@ import java.io.IOException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.Path;
@@ -87,11 +88,13 @@ public class WARCConverterJob extends Configured implements Tool,
 		byte[] binarycontent = wr.getContent();
 
 		String uri = wr.getHeaderMetadataItem("WARC-Target-URI");
-
+		
 		// skip non http documents
 		if (uri.startsWith("http") == false)
 			return;
 
+		String ip = wr.getHeaderMetadataItem("WARC-IP-Address");
+	
 		HttpResponse response;
 		try {
 			response = new HttpResponse(binarycontent);
@@ -113,6 +116,10 @@ public class WARCConverterJob extends Configured implements Tool,
 			String value = response.getHeaders().get(mdkey);
 			md.put(new Text(mdkey), new Text(value));
 		}
+		
+		// store the IP address as metadata
+		if (StringUtils.isNotBlank(ip))
+			md.put(new Text("IP"), new Text(ip));
 
 		output.collect(newKey, behemothDocument);
 	}
