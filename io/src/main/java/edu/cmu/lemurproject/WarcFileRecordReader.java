@@ -65,13 +65,14 @@ public class WarcFileRecordReader<K extends WritableComparable, V extends Writab
     private FSDataInputStream currentFile = null;
     private CompressionCodec compressionCodec = null;
     private DataInputStream compressionInput = null;
-    private FileSystem fs = null;
+    private Configuration conf = null;
     private long totalFileSize = 0;
     private long totalNumBytesRead = 0;
 
     public WarcFileRecordReader(Configuration conf, InputSplit split)
             throws IOException {
-        this.fs = FileSystem.get(conf);
+    	this.conf = conf;
+    	// this.fs = FileSystem.get(conf);
         if (split instanceof FileSplit) {
             this.filePathList = new Path[1];
             this.filePathList[0] = ((FileSplit) split).getPath();
@@ -84,7 +85,9 @@ public class WarcFileRecordReader<K extends WritableComparable, V extends Writab
 
         // get the total file sizes
         for (int i = 0; i < filePathList.length; i++) {
-            totalFileSize += fs.getFileStatus(filePathList[i]).getLen();
+        	// get FS from input
+        	totalFileSize += filePathList[i].getFileSystem(conf).getFileStatus(filePathList[i]).getLen();
+            // totalFileSize += fs.getFileStatus(filePathList[i]).getLen();
         }
 
         Class<? extends CompressionCodec> codecClass = null;
@@ -118,7 +121,8 @@ public class WarcFileRecordReader<K extends WritableComparable, V extends Writab
                 return false;
             }
 
-            currentFile = this.fs.open(filePathList[currentFilePath]);
+            currentFile =   filePathList[currentFilePath].getFileSystem(conf).open(filePathList[currentFilePath]);
+            // currentFile = this.fs.open(filePathList[currentFilePath]);
 
             // is the file gzipped?
             if ((compressionCodec != null)
