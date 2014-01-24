@@ -43,6 +43,7 @@ import org.apache.nutch.protocol.ProtocolException;
 
 import com.digitalpebble.behemoth.BehemothConfiguration;
 import com.digitalpebble.behemoth.BehemothDocument;
+import com.digitalpebble.behemoth.DocumentFilter;
 
 import edu.cmu.lemurproject.WarcFileInputFormat;
 import edu.cmu.lemurproject.WarcRecord;
@@ -67,12 +68,15 @@ public class WARCConverterJob extends Configured implements Tool,
 
 	public void configure(JobConf job) {
 		setConf(job);
+        filter = DocumentFilter.getFilters(job);
 	}
 
 	public void close() {
 	}
 
 	private Text newKey = new Text();
+
+	private DocumentFilter filter;
 
 	public void map(LongWritable key, WritableWarcRecord record,
 			OutputCollector<Text, BehemothDocument> output, Reporter reporter)
@@ -88,13 +92,13 @@ public class WARCConverterJob extends Configured implements Tool,
 		byte[] binarycontent = wr.getContent();
 
 		String uri = wr.getHeaderMetadataItem("WARC-Target-URI");
-		
+
 		// skip non http documents
 		if (uri.startsWith("http") == false)
 			return;
 
 		String ip = wr.getHeaderMetadataItem("WARC-IP-Address");
-	
+
 		HttpResponse response;
 		try {
 			response = new HttpResponse(binarycontent);
@@ -116,12 +120,17 @@ public class WARCConverterJob extends Configured implements Tool,
 			String value = response.getHeaders().get(mdkey);
 			md.put(new Text(mdkey), new Text(value));
 		}
-		
+
 		// store the IP address as metadata
 		if (StringUtils.isNotBlank(ip))
 			md.put(new Text("IP"), new Text(ip));
 
-		output.collect(newKey, behemothDocument);
+		if (filter.keep(behemothDocument)) {
+			output.collect(newKey, behemothDocument);
+			reporter.getCounter("WARCCONVERTER", "KEPT").increment(1l);
+		} else
+			reporter.getCounter("WARCCONVERTER", "FILTERED").increment(1l);
+
 	}
 
 	public void convert(Path warcpath, Path output) throws IOException {
