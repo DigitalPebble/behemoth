@@ -68,7 +68,7 @@ public class WARCConverterJob extends Configured implements Tool,
 
 	public void configure(JobConf job) {
 		setConf(job);
-        filter = DocumentFilter.getFilters(job);
+		filter = DocumentFilter.getFilters(job);
 	}
 
 	public void close() {
@@ -81,8 +81,6 @@ public class WARCConverterJob extends Configured implements Tool,
 	public void map(LongWritable key, WritableWarcRecord record,
 			OutputCollector<Text, BehemothDocument> output, Reporter reporter)
 			throws IOException {
-
-		BehemothDocument behemothDocument = new BehemothDocument();
 
 		WarcRecord wr = record.getRecord();
 
@@ -105,6 +103,8 @@ public class WARCConverterJob extends Configured implements Tool,
 		} catch (ProtocolException e) {
 			return;
 		}
+
+		BehemothDocument behemothDocument = new BehemothDocument();
 
 		behemothDocument.setUrl(uri);
 		newKey.set(uri);
