@@ -31,6 +31,7 @@ import org.apache.hadoop.mapred.FileInputFormat;
 import org.apache.hadoop.mapred.FileOutputFormat;
 import org.apache.hadoop.mapred.JobClient;
 import org.apache.hadoop.mapred.JobConf;
+import org.apache.hadoop.mapred.RunningJob;
 import org.apache.hadoop.mapred.SequenceFileInputFormat;
 import org.apache.hadoop.mapred.SequenceFileOutputFormat;
 import org.apache.hadoop.util.Tool;
@@ -123,21 +124,26 @@ public class GATEDriver extends Configured implements Tool {
 
         job.set("gate.application.path", zip_application_path.toString());
 
+        int retValue = -1;
+
         try {
             long start = System.currentTimeMillis();
-            JobClient.runJob(job);
+            RunningJob rj = JobClient.runJob(job);
             long finish = System.currentTimeMillis();
             if (LOG.isInfoEnabled()) {
                 LOG.info("GATEDriver completed. Timing: " + (finish - start)
                         + " ms");
             }
+            if (rj.isSuccessful())
+                retValue = 0;
         } catch (Exception e) {
             LOG.error("Exception caught", e);
+            return -1;
             // leave even partial output
             // fs.delete(outputPath, true);
         } finally {
         }
 
-        return 0;
+        return retValue;
     }
 }
