@@ -39,6 +39,7 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.io.Text;
@@ -266,50 +267,21 @@ public class GATEProcessor implements DocumentProcessor {
         return config;
     }
 
-    private gate.Document generateGATEDocFromLocalDump(BehemothDocument inputDoc)
+    private gate.Document generateGATEDocFromBinary(BehemothDocument inputDoc)
             throws ResourceInstantiationException, IOException {
 
-        // can't get that to work
-        // File tempDirectory = new
-        // File(this.config.get("hadoop.tmp.dir","/tmp"),this.config.get("user.name",
-        // "./tmp"));
-        // LOG.info("tempDirectory "+tempDirectory);
-        //
-        // tempDirectory.mkdirs();
-        //
-        // File tempInputFile = File.createTempFile("gateInput-",
-        // inputDoc.getUrl(),tempDirectory);
-        //
-        // FileOutputStream fos = new FileOutputStream(tempInputFile);
-        // OutputStream bout = new BufferedOutputStream(fos);
-        // bout.write(inputDoc.getContent());
-        // bout.flush();
-        // bout.close();
-        //
-        // URL url;
-        // try {
-        // url = tempInputFile.toURI().toURL();
-        // } catch (MalformedURLException e) {
-        // // delete the input doc
-        // tempInputFile.delete();
-        // throw e;
-        // }
-
         FeatureMap params = Factory.newFeatureMap();
+        // TODO make sure that we pass the right charset
         params.put(Document.DOCUMENT_STRING_CONTENT_PARAMETER_NAME, new String(
                 inputDoc.getContent()));
         String ct = inputDoc.getContentType();
         if (ct != null)
             params.put(Document.DOCUMENT_MIME_TYPE_PARAMETER_NAME, ct);
 
-        gate.Document gatedocument;
-        try {
-            gatedocument = (Document) Factory.createResource(
-                    "gate.corpora.DocumentImpl", params);
-        } finally {
-            // delete the input doc
-            // tempInputFile.delete();
-        }
+        params.put(Document.DOCUMENT_MARKUP_AWARE_PARAMETER_NAME, Boolean.TRUE);
+
+        gate.Document gatedocument = (Document) Factory.createResource(
+                "gate.corpora.DocumentImpl", params);
 
         return gatedocument;
     }
@@ -332,10 +304,14 @@ public class GATEProcessor implements DocumentProcessor {
         gate.Document gatedocument = null;
 
         // if no text is available (e.g. Tika has not extracted it)
+        // or want to re-parse with GATE
         // let GATE do the parsing itself from the binary content
-        if (inputDoc.getText() == null) {
+        boolean reparseText = getConf().getBoolean("gate.reparse.text",
+                false);
+
+        if (reparseText || StringUtils.isBlank(inputDoc.getText())) {
             try {
-                gatedocument = generateGATEDocFromLocalDump(inputDoc);
+                gatedocument = generateGATEDocFromBinary(inputDoc);
 
                 // transfer the text from GATE to Behemoth
                 String textContent = gatedocument.getContent().toString();
@@ -343,20 +319,19 @@ public class GATEProcessor implements DocumentProcessor {
 
                 return gatedocument;
             } catch (Exception e) {
-                LOG.error("Can't generate GATE doc from byte dump", e);
+                LOG.error("Can't generate GATE doc from binary content", e);
             }
         }
 
-        // if the input document does not have any text -> create a doc with an
-        // empty text
+        FeatureMap params = Factory.newFeatureMap();
+        params.put(Document.DOCUMENT_STRING_CONTENT_PARAMETER_NAME,
+                inputDoc.getText());
+        // no need to generate markup from it
+        params.put(Document.DOCUMENT_MARKUP_AWARE_PARAMETER_NAME, Boolean.FALSE);
 
-        String text = inputDoc.getText();
-        if (inputDoc.getText() == null)
-            text = "";
-        else
-            text = inputDoc.getText();
-
-        gatedocument = Factory.newDocument(text);
+        gatedocument = (Document) Factory.createResource(
+                "gate.corpora.DocumentImpl", params);
+        gatedocument.setSourceUrl(null);
 
         // then the metadata as document features
         FeatureMap docFeatures = gatedocument.getFeatures();

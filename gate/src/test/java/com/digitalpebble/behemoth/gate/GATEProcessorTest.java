@@ -76,6 +76,47 @@ public class GATEProcessorTest extends TestCase {
         assertEquals(5, output.getAnnotations().size());
     }
 
+    public void testTokenizationANNIE2() {
+        // Create a very simple Behemoth document
+        String text = "This is a simple test";
+        String url = "dummyURL";
+        BehemothDocument doc = new BehemothDocument();
+        doc.setText(text);
+        doc.setUrl(url);
+        doc.setContentType("text/plain");
+        // don't set the text as such
+        // or any metadata at all
+        BehemothDocument[] outputs = gate.process(doc, null);
+        // the output should contain only one document
+        assertEquals(1, outputs.length);
+        BehemothDocument output = outputs[0];
+        // the output document must have 5 annotations of type token
+        // see gate.annotations.filter in Configuration above
+        assertEquals(5, output.getAnnotations().size());
+    }
+
+    public void testTokenizationANNIE3() {
+        // Create a very simple Behemoth document
+        String content = "<H1>This is a simple test</H1>";
+        String url = "dummyURL";
+        BehemothDocument doc = new BehemothDocument();
+        doc.setContent(content.getBytes());
+        doc.setUrl(url);
+        doc.setContentType("text/html");
+        // don't set the text as such
+        // or any metadata at all
+        BehemothDocument[] outputs = gate.process(doc, null);
+        // the output should contain only one document
+        assertEquals(1, outputs.length);
+        BehemothDocument output = outputs[0];
+        // the output document must have 5 annotations of type token
+        // see gate.annotations.filter in Configuration above
+        assertEquals(5, output.getAnnotations().size());
+
+        assertEquals(content.length() - 8, output.getText().length());
+        // TODO test that there is initial markup as well
+    }
+
     static final int BUFFER = 2048;
 
     /**
