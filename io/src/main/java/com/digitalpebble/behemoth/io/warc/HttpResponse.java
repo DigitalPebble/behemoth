@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PushbackInputStream;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.nutch.metadata.Metadata;
 import org.apache.nutch.net.protocols.Response;
 import org.apache.nutch.protocol.ProtocolException;
@@ -81,7 +82,7 @@ public class HttpResponse {
 
         int contentLength = Integer.MAX_VALUE; // get content length
         String contentLengthString = headers.get(Response.CONTENT_LENGTH);
-        if (contentLengthString != null) {
+        if (StringUtils.isNotBlank(contentLengthString)) {
             contentLengthString = contentLengthString.trim();
             try {
                 contentLength = Integer.parseInt(contentLengthString);
