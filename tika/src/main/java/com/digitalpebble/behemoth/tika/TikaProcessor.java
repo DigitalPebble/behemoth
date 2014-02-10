@@ -61,11 +61,14 @@ public class TikaProcessor implements DocumentProcessor, TikaConstants {
             .getMimeRepository();
     private Detector detector = TikaConfig.getDefaultConfig().getDetector();
 
-    private static String contentLengthThresholdFilterParamName = "tika.filter.content.byte";
-    private static String forceMTDetectionParamName = "tika.forceMimetypeDetection";
+    private static final String contentLengthThresholdFilterParamName = "tika.filter.content.byte";
+    private static final String forceMTDetectionParamName = "tika.forceMimetypeDetection";
+    private static final String forceReparseParamName = "tika.forceReparse";
 
     private int contentLengthThresholdFilter = -1;
     private boolean forceMTDetection = false;
+    
+    private boolean forceReparse = false;
 
     private boolean okCounters = true;
 
@@ -79,6 +82,7 @@ public class TikaProcessor implements DocumentProcessor, TikaConstants {
         contentLengthThresholdFilter = config.getInt(
                 contentLengthThresholdFilterParamName, -1);
         forceMTDetection = config.getBoolean(forceMTDetectionParamName, false);
+        forceReparse = config.getBoolean(forceReparseParamName, false);
     }
 
     public void close() {
@@ -140,7 +144,7 @@ public class TikaProcessor implements DocumentProcessor, TikaConstants {
         Parser parser = TikaConfig.getDefaultConfig().getParser();
 
         // skip the processing if the input document already has some text
-        if (inputDoc.getText() != null) {
+        if (inputDoc.getText() != null && !forceReparse) {
             if (reporter != null)
                 reporter.getCounter("TIKA", "TEXT ALREADY AVAILABLE")
                         .increment(1);
