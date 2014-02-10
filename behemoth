@@ -61,7 +61,7 @@ else
    exit -1;
 fi
 
-BEHE_JOB=$(dirname $0)/$MODULE/target/behemoth-$MODULE-1.1-SNAPSHOT-job.jar
+BEHE_JOB=$(dirname $0)/$MODULE/target/behemoth-$MODULE-*-job.jar
 EXEC_CALL="hadoop jar $BEHE_JOB"
 
 # check that hadoop can be found on the path
