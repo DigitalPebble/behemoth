@@ -4,11 +4,11 @@
 	<parent>
 		<groupId>com.digitalpebble.behemoth</groupId>
 		<artifactId>behemoth-parent</artifactId>
-		<version>1.1-SNAPSHOT</version>
+		<version>1.1</version>
 	</parent>
 
 	<artifactId>behemoth-uima</artifactId>
-	<version>1.1-SNAPSHOT</version>
+	<version>1.1</version>
 	<packaging>jar</packaging>
 
 	<name>uima</name>
@@ -53,7 +53,7 @@
 		<dependency>
 			<groupId>com.digitalpebble.behemoth</groupId>
 			<artifactId>behemoth-core</artifactId>
-			<version>1.1-SNAPSHOT</version>
+			<version>1.1</version>
 		</dependency>
 
 		<dependency>
