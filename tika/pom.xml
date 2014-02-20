@@ -12,6 +12,8 @@
 	<packaging>jar</packaging>
 
 	<name>tika</name>
+	<description>Behemoth module for Apache Tika</description>
+
 	<url>https://github.com/DigitalPebble/behemoth/wiki/Tika-module</url>
 
 	<properties>
@@ -59,7 +61,7 @@
 		<dependency>
 			<groupId>org.apache.tika</groupId>
 			<artifactId>tika-parsers</artifactId>
-			<version>1.4</version>
+			<version>1.5</version>
 		</dependency>
 
 		<dependency>
