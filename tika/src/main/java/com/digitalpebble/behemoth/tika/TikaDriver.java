@@ -31,7 +31,7 @@ import org.apache.commons.cli2.commandline.Parser;
 import org.apache.commons.cli2.util.HelpFormatter;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
-import org.apache.hadoop.fs.FileSystem;
+//import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.FileInputFormat;
@@ -68,7 +68,7 @@ public class TikaDriver extends Configured implements Tool, TikaConstants {
 
     public int run(String[] args) throws Exception {
 
-        final FileSystem fs = FileSystem.get(getConf());
+        //final FileSystem fs = FileSystem.get(getConf());
         GroupBuilder gBuilder = new GroupBuilder().withName("Options:");
         List<Option> options = new ArrayList<Option>();
         Option inputOpt = buildOption("input", "i", "The input path", true,

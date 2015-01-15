@@ -38,7 +38,6 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.html.HtmlMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.xml.sax.ContentHandler;
 
 import com.digitalpebble.behemoth.BehemothDocument;
 import com.digitalpebble.behemoth.DocumentProcessor;
@@ -198,6 +197,7 @@ public class TikaProcessor implements DocumentProcessor, TikaConstants {
         String customMapper = config.get("tika.context.HtmlMapper.class");
         if (customMapper != null) {
             try {
+                @SuppressWarnings("unchecked")
                 Class<HtmlMapper> customMapperClass = (Class<HtmlMapper>) Class
                         .forName(customMapper);
                 // specify a custom HTML mapper via the Context

@@ -17,6 +17,7 @@
 package com.digitalpebble.behemoth.tika;
 
 import com.digitalpebble.behemoth.BehemothDocument;
+
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.MapReduceBase;
@@ -63,7 +64,7 @@ public class TikaMapper extends MapReduceBase implements
 
         String handlerName = job.get(TikaConstants.TIKA_PROCESSOR_KEY);
         if (handlerName != null) {
-            Class handlerClass = job.getClass(handlerName, TikaProcessor.class);
+            Class<?> handlerClass = job.getClass(handlerName, TikaProcessor.class);
             try {
                 processor = (TikaProcessor) handlerClass.newInstance();
             } catch (InstantiationException e) {
