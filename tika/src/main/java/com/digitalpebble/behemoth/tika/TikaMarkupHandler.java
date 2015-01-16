@@ -22,7 +22,6 @@ import java.util.LinkedList;
 import java.util.List;
 
 import org.xml.sax.Attributes;
-import org.xml.sax.ContentHandler;
 import org.xml.sax.Locator;
 import org.xml.sax.SAXException;
 
