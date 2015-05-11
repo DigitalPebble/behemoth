@@ -39,14 +39,13 @@ import org.apache.mahout.common.HadoopUtil;
 import org.apache.mahout.common.Pair;
 import org.apache.mahout.common.commandline.DefaultOptionCreator;
 import org.apache.mahout.math.hadoop.stats.BasicStats;
-import org.apache.mahout.vectorizer.DefaultAnalyzer;
 import org.apache.mahout.vectorizer.DictionaryVectorizer;
 import org.apache.mahout.vectorizer.DocumentProcessor;
 import org.apache.mahout.vectorizer.HighDFWordsPruner;
 import org.apache.mahout.vectorizer.collocations.llr.LLRReducer;
 import org.apache.mahout.vectorizer.common.PartialVectorMerger;
 import org.apache.mahout.vectorizer.tfidf.TFIDFConverter;
-import org.jfree.util.Log;
+//import org.jfree.util.Log;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -321,7 +320,7 @@ public final class SparseVectorsFromBehemoth extends AbstractJob implements
         }
         log.info("Number of reduce tasks: {}", reduceTasks);
 
-        Class<? extends Analyzer> analyzerClass = DefaultAnalyzer.class;
+        Class<? extends Analyzer> analyzerClass = Analyzer.class;
         if (cmdLine.hasOption(analyzerNameOpt)) {
             String className = cmdLine.getValue(analyzerNameOpt).toString();
             analyzerClass = Class.forName(className).asSubclass(Analyzer.class);
@@ -464,11 +463,11 @@ public final class SparseVectorsFromBehemoth extends AbstractJob implements
                                 + "-partial");
                 if (processIdf) {
                     HighDFWordsPruner.pruneVectors(tfDir, prunedTFDir,
-                            prunedPartialTFDir, maxDF, conf,
+                            prunedPartialTFDir, maxDF, minDf, conf,
                             docFrequenciesFeatures, -1.0f, false, reduceTasks);
                 } else {
                     HighDFWordsPruner.pruneVectors(tfDir, prunedTFDir,
-                            prunedPartialTFDir, maxDF, conf,
+                            prunedPartialTFDir, maxDF, minDf, conf,
                             docFrequenciesFeatures, norm, logNormalize,
                             reduceTasks);
                 }
@@ -489,7 +488,7 @@ public final class SparseVectorsFromBehemoth extends AbstractJob implements
                         outputDir, "labels"), conf);
             }
         } catch (RuntimeException e) {
-            Log.error("Exception caught", e);
+            log.error("Exception caught", e);
             return -1;
         }
 

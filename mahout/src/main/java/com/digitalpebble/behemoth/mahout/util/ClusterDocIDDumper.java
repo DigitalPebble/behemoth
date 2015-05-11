@@ -58,6 +58,7 @@ import com.digitalpebble.behemoth.BehemothConfiguration;
 public class ClusterDocIDDumper extends Configured implements Tool,
         Mapper<IntWritable, WeightedVectorWritable, Text, Text> {
 
+    @SuppressWarnings("unused")
     private transient static Logger log = LoggerFactory
             .getLogger(ClusterDocIDDumper.class);
 
