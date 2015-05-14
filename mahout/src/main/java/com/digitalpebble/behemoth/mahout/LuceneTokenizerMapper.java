@@ -23,10 +23,12 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
+import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
+import org.apache.lucene.analysis.tokenattributes.OffsetAttribute;
+import org.apache.lucene.util.Version;
 import org.apache.mahout.common.ClassUtils;
 import org.apache.mahout.common.StringTuple;
-import org.apache.mahout.vectorizer.DefaultAnalyzer;
 import org.apache.mahout.vectorizer.DocumentProcessor;
 
 import com.digitalpebble.behemoth.BehemothDocument;
@@ -38,6 +40,8 @@ public class LuceneTokenizerMapper extends
         Mapper<Text, BehemothDocument, Text, StringTuple> {
 
     private Analyzer analyzer;
+    
+    private Version matchVersion = Version.LUCENE_46;
 
     @Override
     protected void map(Text key, BehemothDocument value, Context context)
@@ -49,17 +53,27 @@ public class LuceneTokenizerMapper extends
                     .increment(1);
             return;
         }
-        TokenStream stream = analyzer.reusableTokenStream(key.toString(),
-                new StringReader(sContent.toString()));
-        CharTermAttribute termAtt = stream
+        analyzer = new StandardAnalyzer(matchVersion); // or any other analyzer
+        TokenStream ts = analyzer.tokenStream(key.toString(), new StringReader(sContent.toString()));
+        // The Analyzer class will construct the Tokenizer, TokenFilter(s), and CharFilter(s),
+        //   and pass the resulting Reader to the Tokenizer.
+        @SuppressWarnings("unused")
+        OffsetAttribute offsetAtt = ts.addAttribute(OffsetAttribute.class);
+
+        CharTermAttribute termAtt = ts
                 .addAttribute(CharTermAttribute.class);
         StringTuple document = new StringTuple();
-        stream.reset();
-        while (stream.incrementToken()) {
-            if (termAtt.length() > 0) {
-                document.add(new String(termAtt.buffer(), 0, termAtt.length()));
+        try {
+            ts.reset(); // Resets this stream to the beginning. (Required)
+            while (ts.incrementToken()) {
+                if (termAtt.length() > 0) {
+                    document.add(new String(termAtt.buffer(), 0, termAtt.length()));
+                }
             }
-        }
+            ts.end();   // Perform end-of-stream operations, e.g. set the final offset.
+        } finally {
+            ts.close(); // Release resources associated with this stream.
+      }
         context.write(key, document);
     }
 
@@ -70,6 +84,6 @@ public class LuceneTokenizerMapper extends
         analyzer = ClassUtils.instantiateAs(
                 context.getConfiguration().get(
                         DocumentProcessor.ANALYZER_CLASS,
-                        DefaultAnalyzer.class.getName()), Analyzer.class);
+                        StandardAnalyzer.class.getName()), Analyzer.class); 
     }
 }
