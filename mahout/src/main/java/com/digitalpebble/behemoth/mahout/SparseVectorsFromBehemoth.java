@@ -32,6 +32,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 import org.apache.lucene.analysis.Analyzer;
+import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.mahout.common.AbstractJob;
 import org.apache.mahout.common.ClassUtils;
 import org.apache.mahout.common.CommandLineUtil;
@@ -320,7 +321,7 @@ public final class SparseVectorsFromBehemoth extends AbstractJob implements
         }
         log.info("Number of reduce tasks: {}", reduceTasks);
 
-        Class<? extends Analyzer> analyzerClass = Analyzer.class;
+        Class<? extends Analyzer> analyzerClass = StandardAnalyzer.class;
         if (cmdLine.hasOption(analyzerNameOpt)) {
             String className = cmdLine.getValue(analyzerNameOpt).toString();
             analyzerClass = Class.forName(className).asSubclass(Analyzer.class);
