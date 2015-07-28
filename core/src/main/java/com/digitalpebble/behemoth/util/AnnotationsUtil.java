@@ -21,13 +21,13 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Set;
 
 import com.digitalpebble.behemoth.Annotation;
 
 public class AnnotationsUtil {
 
     /** Sort the annotations by startOffset **/
+    @SuppressWarnings("unchecked")
     public static void sort(List<Annotation> input) {
         Collections.sort(input, new AnnotationComparator());
     }
