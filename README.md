@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/DigitalPebble/behemoth.svg?branch=master)](https://travis-ci.org/DigitalPebble/behemoth)
+
 Behemoth is an open source platform for large scale document processing based on Apache Hadoop.
 
 It consists of a simple annotation-based implementation of a document and a number of modules operating on these documents.
