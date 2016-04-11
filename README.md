@@ -12,6 +12,8 @@ Its modular architecture simplifies the development of custom annotators based o
 
 Note that Behemoth does not implement any NLP or Machine Learning components as such but serves as a 'large-scale glueware' for existing resources. Being Hadoop-based, it benefits from all its features, namely scalability, fault-tolerance and most notably the back up of a thriving open source community. 
 
-WIKI : https://github.com/DigitalPebble/behemoth/wiki
+WIKI \: https://github.com/DigitalPebble/behemoth/wiki
 
-Mailing list : http://groups.google.com/group/digitalpebble 
+Mailing list \: http://groups.google.com/group/digitalpebble 
+
+StackOverflow \: http://stackoverflow.com/questions/tagged/behemoth
