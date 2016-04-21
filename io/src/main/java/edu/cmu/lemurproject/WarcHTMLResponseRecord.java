@@ -39,9 +39,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URISyntaxException;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Vector;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -64,7 +62,7 @@ public class WarcHTMLResponseRecord {
             .compile("^[hH][tT][tT][pP][sS]?://.*");
 
     // create our pattern set
-    private Vector<Pattern> patternSet = new Vector<Pattern>();
+    private List<Pattern> patternSet = new ArrayList<Pattern>();
 
     /**
      * Default constructor
@@ -142,7 +140,7 @@ public class WarcHTMLResponseRecord {
         return "";
     }
 
-    private HashSet<String> getMatchesOutputSet(Vector<String> tagSet,
+    private HashSet<String> getMatchesOutputSet(List<String> tagSet,
             String baseURL) {
         HashSet<String> retSet = new HashSet<String>();
 
@@ -179,8 +177,8 @@ public class WarcHTMLResponseRecord {
      * 
      * @return
      */
-    public Vector<String> getURLOutlinks() {
-        Vector<String> retVec = new Vector<String>();
+    public List<String> getURLOutlinks() {
+        List<String> retVec = new ArrayList<String>();
 
         String baseURL = getTargetURI();
         if ((baseURL == null) || (baseURL.length() == 0)) {
@@ -207,7 +205,7 @@ public class WarcHTMLResponseRecord {
             // now we have the rest of the lines
             // read them all into a string buffer
             // to remove all new lines
-            Vector<String> htmlTags = new Vector<String>();
+            List<String> htmlTags = new ArrayList<String>();
             while ((line = inReader.readLine()) != null) {
                 // get all HTML tags from the line...
                 Matcher HTMLMatcher = ALL_HTML_TAGS.matcher(line);

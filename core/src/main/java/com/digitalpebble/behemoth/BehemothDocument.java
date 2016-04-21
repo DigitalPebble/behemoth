@@ -325,41 +325,41 @@ public class BehemothDocument implements Writable {
      **/
     public String toString(boolean showContent, boolean showAnnotations,
             boolean showText, boolean showMD) {
-        StringBuffer buffer = new StringBuffer();
+        StringBuilder builder = new StringBuilder();
 
-        buffer.append("\nurl: ").append(url);
-        buffer.append("\ncontentType: ").append(contentType);
+        builder.append("\nurl: ").append(url);
+        builder.append("\ncontentType: ").append(contentType);
         if (metadata != null && showMD) {
-            buffer.append("\nmetadata: ");
+            builder.append("\nmetadata: ");
             for (Entry<Writable, Writable> e : metadata.entrySet()) {
-                buffer.append("\n\t");
-                buffer.append(e.getKey());
-                buffer.append(": ");
-                buffer.append(e.getValue());
+                builder.append("\n\t");
+                builder.append(e.getKey());
+                builder.append(": ");
+                builder.append(e.getValue());
             }
         }
         if (showContent) {
-            buffer.append("\nContent:\n");
+            builder.append("\nContent:\n");
             int maxLengthText = Math.min(200, content.length);
-            buffer.append(new String(Arrays.copyOfRange(content, 0,
+            builder.append(new String(Arrays.copyOfRange(content, 0,
                     maxLengthText)));
         }
         // try
         // default
         // encoding
         if (this.text != null && showText) {
-            buffer.append("\nText:\n");
+            builder.append("\nText:\n");
             int maxLengthText = Math.min(200, text.length());
-            buffer.append(text.substring(0, maxLengthText));
+            builder.append(text.substring(0, maxLengthText));
         }
         if (annotations == null || !showAnnotations)
-            return buffer.toString();
-        buffer.append("\nAnnotations:\n");
+            return builder.toString();
+        builder.append("\nAnnotations:\n");
         for (Annotation ann : annotations) {
-            buffer.append("\t").append(ann.toString()).append("\n");
+            builder.append("\t").append(ann.toString()).append("\n");
         }
 
-        return buffer.toString();
+        return builder.toString();
     }
 
 }

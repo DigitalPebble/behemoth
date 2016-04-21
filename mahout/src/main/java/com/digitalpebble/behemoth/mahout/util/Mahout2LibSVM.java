@@ -272,7 +272,7 @@ public class Mahout2LibSVM extends Configured implements Tool,
             OutputCollector<Text, Text> output, Reporter reporter)
             throws IOException {
         Vector v = value.get();
-        StringBuffer buffer = new StringBuffer();
+        StringBuilder buffer = new StringBuilder();
         for (int i = 0; i < v.size(); i++) {
             Element el = v.getElement(i);
             int index = el.index();

@@ -43,7 +43,7 @@ public class HttpResponse {
         PushbackInputStream in = // process response
         new PushbackInputStream(new ByteArrayInputStream(response), BUFFER_SIZE);
 
-        StringBuffer line = new StringBuffer();
+        StringBuilder line = new StringBuilder();
 
         boolean haveSeenNonContinueStatus = false;
         while (!haveSeenNonContinueStatus) {
@@ -105,7 +105,7 @@ public class HttpResponse {
         content = out.toByteArray();
     }
 
-    private int parseStatusLine(PushbackInputStream in, StringBuffer line)
+    private int parseStatusLine(PushbackInputStream in, StringBuilder line)
             throws IOException {
         // skip first character if "\n"
         if (peek(in) == '\n') {
@@ -132,7 +132,7 @@ public class HttpResponse {
         return code;
     }
 
-    private void processHeaderLine(StringBuffer line) throws IOException {
+    private void processHeaderLine(StringBuilder line) throws IOException {
 
         int colonIndex = line.indexOf(":"); // key is up to colon
         if (colonIndex == -1) {
@@ -158,7 +158,7 @@ public class HttpResponse {
     }
 
     // Adds headers to our headers Metadata
-    private void parseHeaders(PushbackInputStream in, StringBuffer line)
+    private void parseHeaders(PushbackInputStream in, StringBuilder line)
             throws IOException {
 
         while (readLine(in, line, true) != 0) {
@@ -189,7 +189,7 @@ public class HttpResponse {
         }
     }
 
-    private static int readLine(PushbackInputStream in, StringBuffer line,
+    private static int readLine(PushbackInputStream in, StringBuilder line,
             boolean allowContinuedLine) throws IOException {
         line.setLength(0);
         for (int c = in.read(); c != -1; c = in.read()) {
