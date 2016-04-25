@@ -63,6 +63,11 @@ import java.util.Set;
  * @author mhoy
  */
 public class WarcRecord {
+    private static final String CONTENT_LENGTH = "Content-Length";
+    private static final String WARC_TYPE = "WARC-Type";
+    private static final String WARC_DATE = "WARC-Date";
+    private static final String WARC_RECORD_ID = "WARC-Record-ID";
+    private static final String CONTENT_TYPE = "Content-Type";
 
     // public static final Log LOG = LogFactory.getLog(WarcRecord.class);
 
@@ -216,7 +221,7 @@ public class WarcRecord {
                 // find the content length designated by Content-Length:
                 // <length>
                 String[] parts = line.split(":", 2);
-                if (parts.length == 2 && parts[0].equals("Content-Length")) {
+                if (parts.length == 2 && parts[0].equals(CONTENT_LENGTH)) {
                     try {
                         contentLength = Integer.parseInt(parts[1].trim());
                         // LOG.info("WARC record content length: " +
@@ -300,15 +305,15 @@ public class WarcRecord {
             String thisValue = pieces[1].trim();
 
             // check for known keys
-            if (thisKey.equals("WARC-Type")) {
+            if (thisKey.equals(WARC_TYPE)) {
                 // LOG.info("Setting WARC record type: " + thisValue);
                 retRecord.setWarcRecordType(thisValue);
-            } else if (thisKey.equals("WARC-Date")) {
+            } else if (thisKey.equals(WARC_DATE)) {
                 retRecord.setWarcDate(thisValue);
-            } else if (thisKey.equals("WARC-Record-ID")) {
+            } else if (thisKey.equals(WARC_RECORD_ID)) {
                 // LOG.info("Setting WARC record ID: " + thisValue);
                 retRecord.setWarcUUID(thisValue);
-            } else if (thisKey.equals("Content-Type")) {
+            } else if (thisKey.equals(CONTENT_TYPE)) {
                 retRecord.setWarcContentType(thisValue);
             } else {
                 retRecord.addHeaderMetadata(thisKey, thisValue);
@@ -450,19 +455,19 @@ public class WarcRecord {
 
     public void addHeaderMetadata(String key, String value) {
         // don't allow addition of known keys
-        if (key.equals("WARC-Type")) {
+        if (key.equals(WARC_TYPE)) {
             return;
         }
-        if (key.equals("WARC-Date")) {
+        if (key.equals(WARC_DATE)) {
             return;
         }
-        if (key.equals("WARC-Record-ID")) {
+        if (key.equals(WARC_RECORD_ID)) {
             return;
         }
-        if (key.equals("Content-Type")) {
+        if (key.equals(CONTENT_TYPE)) {
             return;
         }
-        if (key.equals("Content-Length")) {
+        if (key.equals(CONTENT_LENGTH)) {
             return;
         }
 
@@ -479,19 +484,19 @@ public class WarcRecord {
 
     public String getHeaderMetadataItem(String key) {
 
-        if (key.equals("WARC-Type")) {
+        if (key.equals(WARC_TYPE)) {
             return warcHeader.recordType;
         }
-        if (key.equals("WARC-Date")) {
+        if (key.equals(WARC_DATE)) {
             return warcHeader.dateString;
         }
-        if (key.equals("WARC-Record-ID")) {
+        if (key.equals(WARC_RECORD_ID)) {
             return warcHeader.UUID;
         }
-        if (key.equals("Content-Type")) {
+        if (key.equals(CONTENT_TYPE)) {
             return warcHeader.contentType;
         }
-        if (key.equals("Content-Length")) {
+        if (key.equals(CONTENT_LENGTH)) {
             return Integer.toString(warcHeader.contentLength);
         }
 

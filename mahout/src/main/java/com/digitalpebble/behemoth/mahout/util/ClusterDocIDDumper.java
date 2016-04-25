@@ -58,6 +58,7 @@ import com.digitalpebble.behemoth.BehemothConfiguration;
 public class ClusterDocIDDumper extends Configured implements Tool,
         Mapper<IntWritable, WeightedVectorWritable, Text, Text> {
 
+    private static final String CLUSTER_DOC_ID_DUMPER = "ClusterDocIDDumper";
     @SuppressWarnings("unused")
     private transient static Logger log = LoggerFactory
             .getLogger(ClusterDocIDDumper.class);
@@ -90,15 +91,15 @@ public class ClusterDocIDDumper extends Configured implements Tool,
         try {
             line = parser.parse(options, args);
             if (line.hasOption("help")) {
-                formatter.printHelp("ClusterDocIDDumper", options);
+                formatter.printHelp(CLUSTER_DOC_ID_DUMPER, options);
                 return 0;
             }
             if (!line.hasOption("o") | !line.hasOption("i")) {
-                formatter.printHelp("ClusterDocIDDumper", options);
+                formatter.printHelp(CLUSTER_DOC_ID_DUMPER, options);
                 return -1;
             }
         } catch (ParseException e) {
-            formatter.printHelp("ClusterDocIDDumper", options);
+            formatter.printHelp(CLUSTER_DOC_ID_DUMPER, options);
         }
 
         Path inPath = new Path(line.getOptionValue("i"));
@@ -150,9 +151,9 @@ public class ClusterDocIDDumper extends Configured implements Tool,
             if (name != null & name.length() > 2)
                 output.collect(new Text(name), new Text(key.toString()));
             else
-                reporter.incrCounter("ClusterDocIDDumper", "Missing name", 1);
+                reporter.incrCounter(CLUSTER_DOC_ID_DUMPER, "Missing name", 1);
         } else
-            reporter.incrCounter("ClusterDocIDDumper", "Unnamed vector", 1);
+            reporter.incrCounter(CLUSTER_DOC_ID_DUMPER, "Unnamed vector", 1);
     }
 
 }

@@ -48,6 +48,7 @@ import com.digitalpebble.behemoth.BehemothReducer;
 import com.digitalpebble.behemoth.DocumentFilter;
 
 public class LanguageIdDriver extends Configured implements Tool {
+    private static final String LANGUAGE_ID_DRIVER = "LanguageIdDriver";
     private transient static Logger log = LoggerFactory
             .getLogger(LanguageIdDriver.class);
 
@@ -92,11 +93,11 @@ public class LanguageIdDriver extends Configured implements Tool {
             String input = cmdLine.getOptionValue("i");
             String output = cmdLine.getOptionValue("o");
             if (cmdLine.hasOption("help")) {
-                formatter.printHelp("LanguageIdDriver", options);
+                formatter.printHelp(LANGUAGE_ID_DRIVER, options);
                 return 0;
             }
             if (input == null | output == null) {
-                formatter.printHelp("LanguageIdDriver", options);
+                formatter.printHelp(LANGUAGE_ID_DRIVER, options);
                 return -1;
             }
             inputPath = new Path(input);
@@ -105,7 +106,7 @@ public class LanguageIdDriver extends Configured implements Tool {
                 overWrite = true;
             }
         } catch (ParseException e) {
-            formatter.printHelp("LanguageIdDriver", options);
+            formatter.printHelp(LANGUAGE_ID_DRIVER, options);
         }
 
         // check whether needs overwriting

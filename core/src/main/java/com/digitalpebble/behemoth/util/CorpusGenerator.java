@@ -62,6 +62,7 @@ import com.digitalpebble.behemoth.BehemothDocument;
  */
 
 public class CorpusGenerator extends Configured implements Tool {
+    private static final String CORPUS_GENERATOR = "CorpusGenerator";
     private transient static Logger log = LoggerFactory
             .getLogger(CorpusGenerator.class);
     private Path input, output;
@@ -151,19 +152,19 @@ public class CorpusGenerator extends Configured implements Tool {
         try {
             line = parser.parse(options, args);
             if (line.hasOption("help")) {
-                formatter.printHelp("CorpusGenerator", options);
+                formatter.printHelp(CORPUS_GENERATOR, options);
                 return 0;
             }
             if (!line.hasOption("i")) {
-                formatter.printHelp("CorpusGenerator", options);
+                formatter.printHelp(CORPUS_GENERATOR, options);
                 return -1;
             }
             if (!line.hasOption("o")) {
-                formatter.printHelp("CorpusGenerator", options);
+                formatter.printHelp(CORPUS_GENERATOR, options);
                 return -1;
             }
         } catch (ParseException e) {
-            formatter.printHelp("CorpusGenerator", options);
+            formatter.printHelp(CORPUS_GENERATOR, options);
         }
 
         boolean recurse = true;

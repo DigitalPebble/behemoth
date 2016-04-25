@@ -56,7 +56,8 @@ public class ContentExtractor extends Configured implements Tool {
     private static final Logger LOG = LoggerFactory
             .getLogger(ContentExtractor.class);
 
-    public static final String numEntriesPerArchiveParamName = "numEntriesPerArchive";
+    private static final String numEntriesPerArchiveParamName = "numEntriesPerArchive";
+    private static final String CONTENT_EXTRACTOR = "ContentExtractor";
 
     public enum FileNamingMode {
         URL, UUID, NUM;
@@ -114,11 +115,11 @@ public class ContentExtractor extends Configured implements Tool {
             String input = line.getOptionValue("i");
             String output = line.getOptionValue("o");
             if (line.hasOption("help")) {
-                formatter.printHelp("ContentExtractor", options);
+                formatter.printHelp(CONTENT_EXTRACTOR, options);
                 return 0;
             }
             if (input == null || output == null) {
-                formatter.printHelp("ContentExtractor", options);
+                formatter.printHelp(CONTENT_EXTRACTOR, options);
                 return -1;
             }
             dumpBinary = line.hasOption("binary");
@@ -131,7 +132,7 @@ public class ContentExtractor extends Configured implements Tool {
             return generateDocs(input, output);
 
         } catch (ParseException e) {
-            formatter.printHelp("ContentExtractor", options);
+            formatter.printHelp(CONTENT_EXTRACTOR, options);
             return -1;
         }
     }

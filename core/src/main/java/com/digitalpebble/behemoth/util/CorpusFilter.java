@@ -47,6 +47,8 @@ import com.digitalpebble.behemoth.BehemothMapper;
  **/
 public class CorpusFilter extends Configured implements Tool {
 
+    private static final String CORPUS_FILTER = "CorpusFilter";
+
     public static void main(String[] args) throws Exception {
         int res = ToolRunner.run(BehemothConfiguration.create(),
                 new CorpusFilter(), args);
@@ -72,15 +74,15 @@ public class CorpusFilter extends Configured implements Tool {
             String input = line.getOptionValue("i");
             String output = line.getOptionValue("o");
             if (line.hasOption("help")) {
-                formatter.printHelp("CorpusFilter", options);
+                formatter.printHelp(CORPUS_FILTER, options);
                 return 0;
             }
             if (input == null | output == null) {
-                formatter.printHelp("CorpusFilter", options);
+                formatter.printHelp(CORPUS_FILTER, options);
                 return -1;
             }
         } catch (ParseException e) {
-            formatter.printHelp("CorpusFilter", options);
+            formatter.printHelp(CORPUS_FILTER, options);
         }
 
         final FileSystem fs = FileSystem.get(getConf());
