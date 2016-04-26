@@ -71,6 +71,7 @@ public class Mahout2LibSVM extends Configured implements Tool,
         Reducer<Text, Text, Text, Text>,
         Mapper<Text, VectorWritable, Text, Text> {
 
+    private static final String CORPUS_GENERATOR = "CorpusGenerator";
     private transient static Logger log = LoggerFactory
             .getLogger(Mahout2LibSVM.class);
 
@@ -103,16 +104,16 @@ public class Mahout2LibSVM extends Configured implements Tool,
         try {
             line = parser.parse(options, args);
             if (line.hasOption("help")) {
-                formatter.printHelp("CorpusGenerator", options);
+                formatter.printHelp(CORPUS_GENERATOR, options);
                 return 0;
             }
             if (!line.hasOption("v") | !line.hasOption("o")
                     | !line.hasOption("l")) {
-                formatter.printHelp("CorpusGenerator", options);
+                formatter.printHelp(CORPUS_GENERATOR, options);
                 return -1;
             }
         } catch (ParseException e) {
-            formatter.printHelp("CorpusGenerator", options);
+            formatter.printHelp(CORPUS_GENERATOR, options);
         }
 
         Path vectorPath = new Path(line.getOptionValue("v"));

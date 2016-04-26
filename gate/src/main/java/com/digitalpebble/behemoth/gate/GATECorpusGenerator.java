@@ -57,6 +57,7 @@ public class GATECorpusGenerator extends Configured implements Tool {
 
     private static final Logger LOG = LoggerFactory
             .getLogger(GATECorpusGenerator.class);
+    private static final String GATE_CORPUS_GENERATOR = "GATECorpusGenerator";
 
     public GATECorpusGenerator() throws GateException {
         Gate.runInSandbox(true);
@@ -87,17 +88,17 @@ public class GATECorpusGenerator extends Configured implements Tool {
             String input = line.getOptionValue("i");
             String output = line.getOptionValue("o");
             if (line.hasOption("help")) {
-                formatter.printHelp("GATECorpusGenerator", options);
+                formatter.printHelp(GATE_CORPUS_GENERATOR, options);
                 return 0;
             }
             if (input == null || output == null) {
-                formatter.printHelp("GATECorpusGenerator", options);
+                formatter.printHelp(GATE_CORPUS_GENERATOR, options);
                 return -1;
             }
             generateXMLdocs(input, output);
 
         } catch (ParseException e) {
-            formatter.printHelp("GATECorpusGenerator", options);
+            formatter.printHelp(GATE_CORPUS_GENERATOR, options);
         }
         return 0;
     }

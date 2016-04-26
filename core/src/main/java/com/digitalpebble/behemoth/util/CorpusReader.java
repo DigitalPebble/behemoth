@@ -42,6 +42,8 @@ import com.digitalpebble.behemoth.DocumentFilter;
  **/
 public class CorpusReader extends Configured implements Tool {
 
+    private static final String CORPUS_READER = "CorpusReader";
+
     public static void main(String[] args) throws Exception {
         int res = ToolRunner.run(BehemothConfiguration.create(),
                 new CorpusReader(), args);
@@ -72,15 +74,15 @@ public class CorpusReader extends Configured implements Tool {
             line = parser.parse(options, args);
             String input = line.getOptionValue("i");
             if (line.hasOption("help")) {
-                formatter.printHelp("CorpusReader", options);
+                formatter.printHelp(CORPUS_READER, options);
                 return 0;
             }
             if (input == null) {
-                formatter.printHelp("CorpusReader", options);
+                formatter.printHelp(CORPUS_READER, options);
                 return -1;
             }
         } catch (ParseException e) {
-            formatter.printHelp("CorpusReader", options);
+            formatter.printHelp(CORPUS_READER, options);
             return -1;
         }
 

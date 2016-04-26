@@ -47,6 +47,10 @@ public final class BehemothDocumentProcessor {
     public static final String FEATURE_NAME = "Feature.name";
     public static final String ANALYZER_CLASS = "analyzer.class";
     public static final String MD_LABEL = "Metadata.Key.Label";
+    private static final String IO_SERIALIZATIONS = "io.serializations";
+    private static final String ORG_APACHE_HADOOP_IO_SERIALIZER_JAVA_SERIALIZATION = "org.apache.hadoop.io.serializer.JavaSerialization,";
+    private static final String ORG_APACHE_HADOOP_IO_SERIALIZER_WRITABLE_SERIALIZATION = "org.apache.hadoop.io.serializer.WritableSerialization";
+    private static final String JOB_FAILED = "Job failed!";
 
     // public static final Charset CHARSET = Charset.forName("UTF-8");
 
@@ -83,9 +87,9 @@ public final class BehemothDocumentProcessor {
         // this conf parameter needs to be set enable serialisation of conf
         // values
         conf.set(
-                "io.serializations",
-                "org.apache.hadoop.io.serializer.JavaSerialization,"
-                        + "org.apache.hadoop.io.serializer.WritableSerialization");
+                IO_SERIALIZATIONS,
+                ORG_APACHE_HADOOP_IO_SERIALIZER_JAVA_SERIALIZATION
+                        + ORG_APACHE_HADOOP_IO_SERIALIZER_WRITABLE_SERIALIZATION);
         conf.set(TOKEN_TYPE, type);
         conf.set(FEATURE_NAME, feature);
 
@@ -107,7 +111,7 @@ public final class BehemothDocumentProcessor {
 
         boolean succeeded = job.waitForCompletion(true);
         if (!succeeded)
-            throw new IllegalStateException("Job failed!");
+            throw new IllegalStateException(JOB_FAILED);
     }
 
     /**
@@ -132,9 +136,9 @@ public final class BehemothDocumentProcessor {
         // this conf parameter needs to be set enable serialisation of conf
         // values
         conf.set(
-                "io.serializations",
-                "org.apache.hadoop.io.serializer.JavaSerialization,"
-                        + "org.apache.hadoop.io.serializer.WritableSerialization");
+                IO_SERIALIZATIONS,
+                ORG_APACHE_HADOOP_IO_SERIALIZER_JAVA_SERIALIZATION
+                        + ORG_APACHE_HADOOP_IO_SERIALIZER_WRITABLE_SERIALIZATION);
         conf.set(ANALYZER_CLASS, analyzerClass.getName());
 
         Job job = new Job(conf);
@@ -155,7 +159,7 @@ public final class BehemothDocumentProcessor {
 
         boolean succeeded = job.waitForCompletion(true);
         if (!succeeded)
-            throw new IllegalStateException("Job failed!");
+            throw new IllegalStateException(JOB_FAILED);
 
     }
 
@@ -166,9 +170,9 @@ public final class BehemothDocumentProcessor {
         // this conf parameter needs to be set enable serialisation of conf
         // values
         conf.set(
-                "io.serializations",
-                "org.apache.hadoop.io.serializer.JavaSerialization,"
-                        + "org.apache.hadoop.io.serializer.WritableSerialization");
+                IO_SERIALIZATIONS,
+                ORG_APACHE_HADOOP_IO_SERIALIZER_JAVA_SERIALIZATION
+                        + ORG_APACHE_HADOOP_IO_SERIALIZER_WRITABLE_SERIALIZATION);
 
         Job job = new Job(conf);
         job.setJobName("DocumentProcessor::LabelDumper: input-folder: " + input);
@@ -187,7 +191,7 @@ public final class BehemothDocumentProcessor {
 
         boolean succeeded = job.waitForCompletion(true);
         if (!succeeded)
-            throw new IllegalStateException("Job failed!");
+            throw new IllegalStateException(JOB_FAILED);
 
     }
 
