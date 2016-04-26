@@ -58,6 +58,10 @@ public class WARCConverterJob extends Configured implements Tool,
 	public static final Logger LOG = LoggerFactory
 			.getLogger(WARCConverterJob.class);
 
+	private Text newKey = new Text();
+
+	private DocumentFilter filter;
+
 	public WARCConverterJob() {
 		this(null);
 	}
@@ -73,10 +77,6 @@ public class WARCConverterJob extends Configured implements Tool,
 
 	public void close() {
 	}
-
-	private Text newKey = new Text();
-
-	private DocumentFilter filter;
 
 	public void map(LongWritable key, WritableWarcRecord record,
 			OutputCollector<Text, BehemothDocument> output, Reporter reporter)

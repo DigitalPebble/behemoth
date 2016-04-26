@@ -27,6 +27,9 @@ import com.digitalpebble.behemoth.Annotation;
 
 public class AnnotationsUtil {
 
+    private AnnotationsUtil() {
+    }
+
     /** Sort the annotations by startOffset **/
     public static void sort(List<Annotation> input) {
         Collections.sort(input, new AnnotationComparator());

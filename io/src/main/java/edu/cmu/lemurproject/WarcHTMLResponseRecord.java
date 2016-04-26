@@ -195,7 +195,7 @@ public class WarcHTMLResponseRecord {
         // forward to the first \n\n
         try {
             boolean inHeader = true;
-            String line = null;
+            String line;
             while (inHeader && ((line = inReader.readLine()) != null)) {
                 if (line.trim().length() == 0) {
                     inHeader = false;

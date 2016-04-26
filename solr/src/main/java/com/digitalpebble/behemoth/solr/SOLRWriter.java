@@ -245,7 +245,7 @@ public class SOLRWriter {
                     // iterate on the expected features
                     for (String targetFeature : featureField.keySet()) {
                         String SOLRFieldName = featureField.get(targetFeature);
-                        String value = null;
+                        String value;
                         // special case for covering text
                         if ("*".equals(targetFeature)) {
                             value = doc.getText().substring(

@@ -51,7 +51,7 @@ public class BehemothTokenizerMapper extends
             if (features == null)
                 continue;
 
-            String featureValue = null;
+            String featureValue;
 
             // no feature? use the underlying text
             if (tokenFeature.equals("")) {

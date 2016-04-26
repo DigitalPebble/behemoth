@@ -234,7 +234,7 @@ public class ContentExtractor extends Configured implements Tool {
                 else if (!dumpBinary && inputDoc.getText() == null)
                     continue;
 
-                String fileName = Integer.toString(count[0]);
+                String fileName;
                 String urldoc = inputDoc.getUrl();
                 if (mode.equals(FileNamingMode.URL) && urldoc != null
                         && urldoc.length() > 0) {

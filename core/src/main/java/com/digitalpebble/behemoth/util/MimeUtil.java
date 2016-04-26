@@ -19,6 +19,9 @@ package com.digitalpebble.behemoth.util;
 
 public final class MimeUtil {
 
+    private MimeUtil() {
+    }
+
     private static final String SEPARATOR = ";";
 
     /**
