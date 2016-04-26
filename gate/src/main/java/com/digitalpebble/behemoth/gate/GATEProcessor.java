@@ -301,7 +301,7 @@ public class GATEProcessor implements DocumentProcessor {
             throws ResourceInstantiationException, InvalidOffsetException,
             IOException {
 
-        gate.Document gatedocument = null;
+        gate.Document gatedocument;
 
         // if no text is available (e.g. Tika has not extracted it)
         // or want to re-parse with GATE

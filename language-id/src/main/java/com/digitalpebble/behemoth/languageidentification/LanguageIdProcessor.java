@@ -100,7 +100,7 @@ public class LanguageIdProcessor implements DocumentProcessor {
             return new BehemothDocument[] { inputDoc };
         }
 
-        String lang = null;
+        String lang;
 
         // skip docs with empty text
         if (inputDoc.getText().trim().isEmpty()) {

@@ -97,7 +97,7 @@ public class WarcRecord {
         boolean keepReading = true;
         try {
             do {
-                char thisChar = 0;
+                char thisChar;
                 byte readByte = in.readByte();
                 // check to see if it's a multibyte character
                 if ((readByte & MASK_THREE_BYTE_CHAR) == MASK_THREE_BYTE_CHAR) {
@@ -186,9 +186,9 @@ public class WarcRecord {
             return null;
         }
 
-        String line = null;
+        String line;
         boolean foundMark = false;
-        byte[] retContent = null;
+        byte[] retContent;
 
         // cannot be using a buffered reader here!!!!
         // just read the header
