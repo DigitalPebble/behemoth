@@ -112,7 +112,7 @@ public class DocumentFilter {
             String v = ent.getValue();
             k = k.substring(DocumentFilterParamNamePrefixKeep.length());
 
-            StringBuffer message = new StringBuffer();
+            StringBuilder message = new StringBuilder();
             if (filter.negativeMode)
                 message.append("Negative ");
             else

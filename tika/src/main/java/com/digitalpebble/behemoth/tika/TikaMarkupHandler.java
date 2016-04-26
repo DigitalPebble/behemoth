@@ -35,14 +35,14 @@ import com.digitalpebble.behemoth.Annotation;
 
 public class TikaMarkupHandler implements BehemothHandler {
 
-    private StringBuffer textBuffer;
+    private StringBuilder textBuffer;
 
     private List<Annotation> annotationBuffer;
 
     private LinkedList<Annotation> startedAnnotations;
 
     public TikaMarkupHandler() {
-        textBuffer = new StringBuffer();
+        textBuffer = new StringBuilder();
         annotationBuffer = new LinkedList<Annotation>();
         startedAnnotations = new LinkedList<Annotation>();
     }
@@ -53,7 +53,7 @@ public class TikaMarkupHandler implements BehemothHandler {
     }
 
     public void startDocument() throws SAXException {
-        textBuffer = new StringBuffer();
+        textBuffer = new StringBuilder();
         annotationBuffer = new LinkedList<Annotation>();
         startedAnnotations = new LinkedList<Annotation>();
     }

@@ -278,7 +278,7 @@ public class TikaProcessor implements DocumentProcessor, TikaConstants {
             // at
             // org.apache.hadoop.io.AbstractMapWritable.readFields(AbstractMapWritable.java:204)
             // simply store multiple values as a , separated Text
-            StringBuffer buff = new StringBuffer();
+            StringBuilder buff = new StringBuilder();
             for (int i = 0; i < values.length; i++) {
                 if (i > 0)
                     buff.append(",");

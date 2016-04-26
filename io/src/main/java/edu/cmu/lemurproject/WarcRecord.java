@@ -178,7 +178,7 @@ public class WarcRecord {
     }
 
     private static byte[] readNextRecord(DataInputStream in,
-            StringBuffer headerBuffer) throws IOException {
+            StringBuilder headerBuffer) throws IOException {
         if (in == null) {
             return null;
         }
@@ -282,7 +282,7 @@ public class WarcRecord {
     public static WarcRecord readNextWarcRecord(DataInputStream in)
             throws IOException {
         // LOG.info("Starting read of WARC record");
-        StringBuffer recordHeader = new StringBuffer();
+        StringBuilder recordHeader = new StringBuilder();
         byte[] recordContent = readNextRecord(in, recordHeader);
         if (recordContent == null) {
             // LOG.info("WARC content is null - file is complete");
@@ -379,7 +379,7 @@ public class WarcRecord {
 
         @Override
         public String toString() {
-            StringBuffer retBuffer = new StringBuffer();
+            StringBuilder retBuffer = new StringBuilder();
 
             retBuffer.append(WARC_VERSION_LINE);
             retBuffer.append(LINE_ENDING);
@@ -540,7 +540,7 @@ public class WarcRecord {
 
     @Override
     public String toString() {
-        StringBuffer retBuffer = new StringBuffer();
+        StringBuilder retBuffer = new StringBuilder();
         retBuffer.append(warcHeader.toString());
         retBuffer.append(LINE_ENDING);
         retBuffer.append(new String(warcContent));

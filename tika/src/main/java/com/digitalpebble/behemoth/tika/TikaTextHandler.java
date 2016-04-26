@@ -28,10 +28,10 @@ import com.digitalpebble.behemoth.Annotation;
 
 public class TikaTextHandler implements BehemothHandler {
 
-    private StringBuffer textBuffer;
+    private StringBuilder textBuffer;
 
     public TikaTextHandler() {
-        textBuffer = new StringBuffer();
+        textBuffer = new StringBuilder();
     }
 
     public void characters(char[] ch, int start, int length)
@@ -40,7 +40,7 @@ public class TikaTextHandler implements BehemothHandler {
     }
 
     public void startDocument() throws SAXException {
-        textBuffer = new StringBuffer();
+        textBuffer = new StringBuilder();
 
     }
 

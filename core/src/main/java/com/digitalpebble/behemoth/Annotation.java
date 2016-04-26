@@ -102,18 +102,18 @@ public class Annotation implements Comparable<Annotation> {
 
     /** Returns a String representation of the Annotation **/
     public String toString() {
-        StringBuffer buffer = new StringBuffer();
-        buffer.append(this.type).append("\t").append(start).append("\t")
+        StringBuilder builder = new StringBuilder();
+        builder.append(this.type).append("\t").append(start).append("\t")
                 .append(end);
         if (features != null) {
             Iterator<String> keysiter = features.keySet().iterator();
             while (keysiter.hasNext()) {
                 String key = keysiter.next();
                 String value = features.get(key).toString();
-                buffer.append("\t").append(key).append("=").append(value);
+                builder.append("\t").append(key).append("=").append(value);
             }
         }
-        return buffer.toString();
+        return builder.toString();
     }
 
 }
