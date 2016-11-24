@@ -45,7 +45,7 @@ import org.slf4j.LoggerFactory;
 import com.digitalpebble.behemoth.BehemothConfiguration;
 import com.digitalpebble.behemoth.mahout.SparseVectorsFromBehemoth;
 
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements. See the NOTICE file distributed with this
  * work for additional information regarding copyright ownership. The ASF
@@ -144,25 +144,24 @@ public class Mahout2LibSVM extends Configured implements Tool,
         }
 
         // convert tempOutput to standard file
-        BufferedWriter bow = new BufferedWriter(
-                new FileWriter(new File(output)));
 
         // the label dictionary is not dumped to text
         int labelMaxIndex = 0;
-        Map<String, Integer> labelIndex = new HashMap<String, Integer>();
+        Map<String, Integer> labelIndex = new HashMap<>();
 
         Configuration conf = getConf();
         FileSystem fs = FileSystem.get(conf);
         FileStatus[] fss = fs.listStatus(tempOutput2);
-        try {
+        try (BufferedWriter bow = new BufferedWriter(
+          new FileWriter(new File(output)))) {
             for (FileStatus status : fss) {
                 Path path = status.getPath();
                 // skips the _log or _SUCCESS files
                 if (!path.getName().startsWith("part-")
-                        && !path.getName().equals(tempOutput2.getName()))
+                  && !path.getName().equals(tempOutput2.getName()))
                     continue;
                 SequenceFile.Reader reader = new SequenceFile.Reader(fs, path,
-                        conf);
+                  conf);
                 // read the key + values in that file
                 Text key = new Text();
                 Text value = new Text();
@@ -171,7 +170,7 @@ public class Mahout2LibSVM extends Configured implements Tool,
                     // replace the label by its index
                     Integer indexLabel = labelIndex.get(label);
                     if (indexLabel == null) {
-                        indexLabel = new Integer(labelMaxIndex);
+                        indexLabel = labelMaxIndex;
                         labelIndex.put(label, indexLabel);
                         labelMaxIndex++;
                     }
@@ -185,7 +184,6 @@ public class Mahout2LibSVM extends Configured implements Tool,
             e.printStackTrace();
             return -1;
         } finally {
-            bow.close();
             fs.delete(tempOutput2, true);
         }
         return 0;
@@ -206,7 +204,7 @@ public class Mahout2LibSVM extends Configured implements Tool,
 
         RunningJob rj = JobClient.runJob(job);
 
-        if (rj.isSuccessful() == false)
+        if (!rj.isSuccessful())
             return -1;
         return 0;
     }

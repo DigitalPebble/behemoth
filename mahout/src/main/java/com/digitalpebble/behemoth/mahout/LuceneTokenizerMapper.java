@@ -54,7 +54,7 @@ public class LuceneTokenizerMapper extends
             return;
         }
         analyzer = new StandardAnalyzer(matchVersion); // or any other analyzer
-        TokenStream ts = analyzer.tokenStream(key.toString(), new StringReader(sContent.toString()));
+        TokenStream ts = analyzer.tokenStream(key.toString(), new StringReader(sContent));
         // The Analyzer class will construct the Tokenizer, TokenFilter(s), and CharFilter(s),
         //   and pass the resulting Reader to the Tokenizer.
         @SuppressWarnings("unused")

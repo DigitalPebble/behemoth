@@ -130,7 +130,7 @@ public class ClusterDocIDDumper extends Configured implements Tool,
 
         RunningJob rj = JobClient.runJob(job);
 
-        if (rj.isSuccessful() == false)
+        if (!rj.isSuccessful())
             return -1;
         return 0;
     }
@@ -148,7 +148,7 @@ public class ClusterDocIDDumper extends Configured implements Tool,
         Vector v = value.getVector();
         if (v instanceof NamedVector) {
             String name = ((NamedVector) v).getName();
-            if (name != null & name.length() > 2)
+            if (name != null && name.length() > 2)
                 output.collect(new Text(name), new Text(key.toString()));
             else
                 reporter.incrCounter(CLUSTER_DOC_ID_DUMPER, "Missing name", 1);
