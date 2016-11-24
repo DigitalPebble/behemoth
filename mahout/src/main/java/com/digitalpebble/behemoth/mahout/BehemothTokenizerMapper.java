@@ -17,15 +17,13 @@ package com.digitalpebble.behemoth.mahout;
  * limitations under the License.
  */
 
+import com.digitalpebble.behemoth.Annotation;
+import com.digitalpebble.behemoth.BehemothDocument;
 import java.io.IOException;
-import java.util.Iterator;
-
+import java.util.Map;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.mahout.common.StringTuple;
-
-import com.digitalpebble.behemoth.Annotation;
-import com.digitalpebble.behemoth.BehemothDocument;
 
 /**
  * Extracts tokens from a Behemoth document and outputs them in a StringTuple
@@ -40,14 +38,12 @@ public class BehemothTokenizerMapper extends
     protected void map(Text key, BehemothDocument value, Context context)
             throws IOException, InterruptedException {
         StringTuple document = new StringTuple();
-        Iterator<Annotation> iter = value.getAnnotations().iterator();
 
-        while (iter.hasNext()) {
-            Annotation annot = iter.next();
+        for (Annotation annot : value.getAnnotations()) {
             // check the type
             if (!annot.getType().equals(tokenType))
                 continue;
-            java.util.Map<String, String> features = annot.getFeatures();
+            Map<String, String> features = annot.getFeatures();
             if (features == null)
                 continue;
 
@@ -56,7 +52,7 @@ public class BehemothTokenizerMapper extends
             // no feature? use the underlying text
             if (tokenFeature.equals("")) {
                 featureValue = value.getText().substring(
-                        (int) annot.getStart(), (int) annot.getEnd());
+                  (int) annot.getStart(), (int) annot.getEnd());
             } else
                 featureValue = features.get(tokenFeature);
             if (featureValue == null)

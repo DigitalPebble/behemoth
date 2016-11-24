@@ -112,14 +112,13 @@ public class GATECorpusGenerator extends Configured implements Tool {
             System.err.println("Output " + outputf + " already exists");
             return;
         }
-        if (output.exists() == false)
+        if (!output.exists())
             output.mkdirs();
 
         FileSystem fs = input.getFileSystem(getConf());
         FileStatus[] statuses = fs.listStatus(input);
         int count[] = { 0 };
-        for (int i = 0; i < statuses.length; i++) {
-            FileStatus status = statuses[i];
+        for (FileStatus status : statuses) {
             Path suPath = status.getPath();
             if (suPath.getName().equals("_SUCCESS"))
                 continue;
@@ -151,7 +150,7 @@ public class GATECorpusGenerator extends Configured implements Tool {
 
                     // then save as XML
                     File outputFile = new File(dir, count[0] + ".xml");
-                    if (outputFile.exists() == false)
+                    if (!outputFile.exists())
                         outputFile.createNewFile();
 
                     writer = new BufferedWriter(new FileWriter(outputFile));

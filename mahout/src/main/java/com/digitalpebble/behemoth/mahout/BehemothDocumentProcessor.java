@@ -93,7 +93,7 @@ public final class BehemothDocumentProcessor {
         conf.set(TOKEN_TYPE, type);
         conf.set(FEATURE_NAME, feature);
 
-        Job job = new Job(conf);
+        Job job = Job.getInstance(conf);
         job.setJobName("DocumentProcessor::BehemothTokenizer: input-folder: "
                 + input);
         job.setJarByClass(BehemothDocumentProcessor.class);
@@ -141,7 +141,7 @@ public final class BehemothDocumentProcessor {
                         + ORG_APACHE_HADOOP_IO_SERIALIZER_WRITABLE_SERIALIZATION);
         conf.set(ANALYZER_CLASS, analyzerClass.getName());
 
-        Job job = new Job(conf);
+        Job job = Job.getInstance(conf);
         job.setJobName("DocumentProcessor::LuceneTokenizer: input-folder: "
                 + input);
         job.setJarByClass(BehemothDocumentProcessor.class);
@@ -174,7 +174,7 @@ public final class BehemothDocumentProcessor {
                 ORG_APACHE_HADOOP_IO_SERIALIZER_JAVA_SERIALIZATION
                         + ORG_APACHE_HADOOP_IO_SERIALIZER_WRITABLE_SERIALIZATION);
 
-        Job job = new Job(conf);
+        Job job = Job.getInstance(conf);
         job.setJobName("DocumentProcessor::LabelDumper: input-folder: " + input);
         job.setJarByClass(BehemothDocumentProcessor.class);
 

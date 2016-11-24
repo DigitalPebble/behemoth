@@ -81,7 +81,7 @@ public class GATEDriver extends Configured implements Tool {
 
         // check that the GATE application has been stored on HDFS
         Path zap = new Path(zip_application_path);
-        if (fs.exists(zap) == false) {
+        if (!fs.exists(zap)) {
             System.err.println("The GATE application " + zip_application_path
                     + "can't be found on HDFS - aborting");
             return -1;
@@ -122,7 +122,7 @@ public class GATEDriver extends Configured implements Tool {
         // push the zipped_gate_application onto the DistributedCache
         DistributedCache.addCacheArchive(new URI(zip_application_path), job);
 
-        job.set("gate.application.path", zip_application_path.toString());
+        job.set("gate.application.path", zip_application_path);
 
         int retValue = -1;
 
@@ -141,7 +141,6 @@ public class GATEDriver extends Configured implements Tool {
             return -1;
             // leave even partial output
             // fs.delete(outputPath, true);
-        } finally {
         }
 
         return retValue;

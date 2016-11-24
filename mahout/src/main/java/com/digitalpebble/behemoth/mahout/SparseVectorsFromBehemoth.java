@@ -248,7 +248,7 @@ public final class SparseVectorsFromBehemoth extends AbstractJob implements
                 .withOption(sequentialAccessVectorOpt)
                 .withOption(namedVectorOpt).withOption(logNormalizeOpt)
                 .withOption(labelMDOpt).create();
-        CommandLine cmdLine = null;
+        CommandLine cmdLine;
         try {
             Parser parser = new Parser();
             parser.setGroup(group);
@@ -337,8 +337,7 @@ public final class SparseVectorsFromBehemoth extends AbstractJob implements
             Object tempFN = cmdLine.getValue(featureNameOpt);
             if (tempFN != null) {
                 featureName = tempFN.toString();
-                log.info("Getting tokens from " + type + "."
-                        + featureName.toString());
+                log.info("Getting tokens from " + type + "." + featureName);
             } else
                 log.info("Getting tokens from " + type);
         }

@@ -86,7 +86,7 @@ public class GATEProcessor implements DocumentProcessor {
     public synchronized String processNative(BehemothDocument inputDoc,
             Reporter reporter) {
         if (reporter != null)
-            reporter.setStatus("GATE : " + inputDoc.getUrl().toString());
+            reporter.setStatus("GATE : " + inputDoc.getUrl());
         // process the text passed as value with the application
         // a) create a GATE document based on the text value
         gate.Document gatedocument = null;
@@ -108,7 +108,7 @@ public class GATEProcessor implements DocumentProcessor {
             return gatedocument.toXml();
 
         } catch (Exception e) {
-            LOG.error(inputDoc.getUrl().toString(), e);
+            LOG.error(inputDoc.getUrl(), e);
             if (reporter != null)
                 reporter.incrCounter("GATE", "Exceptions", 1);
         } finally {
@@ -125,7 +125,7 @@ public class GATEProcessor implements DocumentProcessor {
     public synchronized BehemothDocument[] process(BehemothDocument inputDoc,
             Reporter reporter) {
         if (reporter != null)
-            reporter.setStatus("GATE : " + inputDoc.getUrl().toString());
+            reporter.setStatus("GATE : " + inputDoc.getUrl());
 
         boolean clearBehemothAnnotations = config.getBoolean(
                 "gate.deleteBehemothAnnotations", false);
@@ -143,7 +143,7 @@ public class GATEProcessor implements DocumentProcessor {
             // process it with GATE
             this.GATEapplication.execute();
 
-            AnnotationSet annots = null;
+            AnnotationSet annots;
             if ("".equals(filters.getAnnotationSetName()))
                 annots = gatedocument.getAnnotations();
             else
@@ -191,7 +191,7 @@ public class GATEProcessor implements DocumentProcessor {
                 reporter.incrCounter("GATE", "Document", 1);
 
         } catch (Exception e) {
-            LOG.error(inputDoc.getUrl().toString(), e);
+            LOG.error(inputDoc.getUrl(), e);
             if (reporter != null)
                 reporter.incrCounter("GATE", "Exceptions", 1);
         } finally {
@@ -220,7 +220,7 @@ public class GATEProcessor implements DocumentProcessor {
         // need to avoid concurrent access to the application
         try {
 
-            if (inited == false) {
+            if (!inited) {
                 File gateHome = new File(applicationDescriptorPath.getFile())
                         .getParentFile();
                 LOG.info("Setting GATE_HOME as " + gateHome);
@@ -280,10 +280,8 @@ public class GATEProcessor implements DocumentProcessor {
 
         params.put(Document.DOCUMENT_MARKUP_AWARE_PARAMETER_NAME, Boolean.TRUE);
 
-        gate.Document gatedocument = (Document) Factory.createResource(
+        return (Document) Factory.createResource(
                 "gate.corpora.DocumentImpl", params);
-
-        return gatedocument;
     }
 
     /**
@@ -339,10 +337,8 @@ public class GATEProcessor implements DocumentProcessor {
         if (docUrl != null)
             docFeatures.put("gate.SourceURL", docUrl);
         if (inputDoc.getMetadata() != null) {
-            Iterator<Entry<Writable, Writable>> iter = inputDoc.getMetadata()
-                    .entrySet().iterator();
-            while (iter.hasNext()) {
-                Entry<Writable, Writable> entry = iter.next();
+            for (Entry<Writable, Writable> entry : inputDoc.getMetadata()
+              .entrySet()) {
                 String skey = entry.getKey().toString().trim();
                 String svalue = null;
                 if (entry.getValue() != null)
@@ -375,12 +371,12 @@ public class GATEProcessor implements DocumentProcessor {
             AnnotationSet GATEAnnotionSet,
             com.digitalpebble.behemoth.BehemothDocument behemoth) {
 
-        List<com.digitalpebble.behemoth.Annotation> beheannotations = new ArrayList<com.digitalpebble.behemoth.Annotation>();
+        List<com.digitalpebble.behemoth.Annotation> beheannotations = new ArrayList<>();
 
         AnnotationSet resultAS = GATEAnnotionSet.get(filters.getTypes());
 
         // sort the GATE annotations
-        List<gate.Annotation> annotationList = new ArrayList<gate.Annotation>(
+        List<gate.Annotation> annotationList = new ArrayList<>(
                 resultAS);
         Collections.sort(annotationList, new OffsetComparator());
         Iterator<gate.Annotation> inputASIter = annotationList.iterator();
@@ -390,8 +386,8 @@ public class GATEProcessor implements DocumentProcessor {
 
             com.digitalpebble.behemoth.Annotation target = new com.digitalpebble.behemoth.Annotation();
             target.setType(source.getType());
-            target.setStart(source.getStartNode().getOffset().longValue());
-            target.setEnd(source.getEndNode().getOffset().longValue());
+            target.setStart(source.getStartNode().getOffset());
+            target.setEnd(source.getEndNode().getOffset());
 
             // now do the features
             // is the type listed?
@@ -405,7 +401,7 @@ public class GATEProcessor implements DocumentProcessor {
                     // 99% of cases
                     String featurename = featurenames.next().toString();
                     // if this feature name is not wanted just ignore it
-                    if (expectedfeatnames.contains(featurename) == false)
+                    if (!expectedfeatnames.contains(featurename))
                         continue;
                     // we know that we want to keep this feature
                     // let's see what the best way of representing the value
