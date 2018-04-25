@@ -139,9 +139,6 @@ public class TikaProcessor implements DocumentProcessor, TikaConstants {
             }
         }
 
-        // determine which parser to use
-        Parser parser = TikaConfig.getDefaultConfig().getParser();
-
         // skip the processing if the input document already has some text
         if (inputDoc.getText() != null && !forceReparse) {
             if (reporter != null)
@@ -209,6 +206,8 @@ public class TikaProcessor implements DocumentProcessor, TikaConstants {
         }
 
         try {
+            // determine which parser to use
+            Parser parser = TikaConfig.getDefaultConfig().getParser();
             parser.parse(is, handler, metadata, context);
             processMetadata(inputDoc, metadata);
             processText(inputDoc, handler.getText());

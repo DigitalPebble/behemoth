@@ -61,7 +61,7 @@
 		<dependency>
 			<groupId>org.apache.tika</groupId>
 			<artifactId>tika-parsers</artifactId>
-			<version>1.10</version>
+			<version>1.17</version>
 		</dependency>
 
 		<dependency>
@@ -71,4 +71,13 @@
 		</dependency>
 	</dependencies>
 
+	<dependencyManagement>
+		<dependencies>
+			<dependency>
+				<groupId>org.apache.commons</groupId>
+				<artifactId>commons-compress</artifactId>
+				<version>1.14</version>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
 </project>
