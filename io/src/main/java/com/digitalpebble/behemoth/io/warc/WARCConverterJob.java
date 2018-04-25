@@ -19,15 +19,21 @@ package com.digitalpebble.behemoth.io.warc;
 
 import java.io.IOException;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.GnuParser;
+import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.ParseException;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.MapWritable;
+import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
+import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapred.FileInputFormat;
 import org.apache.hadoop.mapred.FileOutputFormat;
 import org.apache.hadoop.mapred.JobClient;
@@ -40,6 +46,8 @@ import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 import org.apache.nutch.metadata.HttpHeaders;
 import org.apache.nutch.protocol.ProtocolException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.digitalpebble.behemoth.BehemothConfiguration;
 import com.digitalpebble.behemoth.BehemothDocument;
@@ -52,11 +60,10 @@ import edu.cmu.lemurproject.WritableWarcRecord;
 /**
  * Converts a WARC archive into a Behemoth datastructure for further processing
  */
-public class WARCConverterJob extends Configured implements Tool,
-		Mapper<LongWritable, WritableWarcRecord, Text, BehemothDocument> {
+public class WARCConverterJob extends Configured
+		implements Tool, Mapper<LongWritable, WritableWarcRecord, Text, BehemothDocument> {
 
-	public static final Logger LOG = LoggerFactory
-			.getLogger(WARCConverterJob.class);
+	public static final Logger LOG = LoggerFactory.getLogger(WARCConverterJob.class);
 
 	private Text newKey = new Text();
 
@@ -78,9 +85,8 @@ public class WARCConverterJob extends Configured implements Tool,
 	public void close() {
 	}
 
-	public void map(LongWritable key, WritableWarcRecord record,
-			OutputCollector<Text, BehemothDocument> output, Reporter reporter)
-			throws IOException {
+	public void map(LongWritable key, WritableWarcRecord record, OutputCollector<Text, BehemothDocument> output,
+			Reporter reporter) throws IOException {
 
 		WarcRecord wr = record.getRecord();
 
@@ -121,6 +127,25 @@ public class WARCConverterJob extends Configured implements Tool,
 			md.put(new Text(mdkey), new Text(value));
 		}
 
+		// add the metadata
+		String customMetadata = getConf().get("md", "").trim();
+
+		if (customMetadata.isEmpty() == false) {
+			String[] mds = customMetadata.split(";");
+			for (String metadata : mds) {
+				String[] keyval = metadata.split("=");
+				LOG.trace("key: {}\tval: {}", keyval[0], keyval[1]);
+				Writable mdvalue;
+				Writable mdkey = new Text(keyval[0]);
+				if (keyval.length == 1) {
+					mdvalue = NullWritable.get();
+				} else {
+					mdvalue = new Text(keyval[1]);
+				}
+				md.put(mdkey, mdvalue);
+			}
+		}
+
 		// store the IP address as metadata
 		if (StringUtils.isNotBlank(ip))
 			md.put(new Text("IP"), new Text(ip));
@@ -133,7 +158,7 @@ public class WARCConverterJob extends Configured implements Tool,
 
 	}
 
-	public void convert(Path warcpath, Path output) throws IOException {
+	public int convert(Path warcpath, Path output) throws IOException {
 
 		JobConf job = new JobConf(getConf());
 		job.setJobName("Convert WARC " + warcpath);
@@ -154,31 +179,61 @@ public class WARCConverterJob extends Configured implements Tool,
 		job.setOutputValueClass(BehemothDocument.class);
 
 		long start = System.currentTimeMillis();
-		JobClient.runJob(job);
+		boolean success = JobClient.runJob(job).isSuccessful();
 		long finish = System.currentTimeMillis();
 		if (LOG.isInfoEnabled()) {
-			LOG.info("WARCConverterJob completed. Timing: " + (finish - start)
-					+ " ms");
+			LOG.info("WARCConverterJob completed. Timing: " + (finish - start) + " ms");
 		}
+		return success ? 0 : 1;
 	}
 
 	public static void main(String[] args) throws Exception {
-		int res = ToolRunner.run(BehemothConfiguration.create(),
-				new WARCConverterJob(), args);
+		int res = ToolRunner.run(BehemothConfiguration.create(), new WARCConverterJob(), args);
 		System.exit(res);
 	}
 
 	public int run(String[] args) throws Exception {
-		String usage = "Usage: WARCConverterJob archive output";
+		Options options = new Options();
+		// automatically generate the help statement
+		HelpFormatter formatter = new HelpFormatter();
+		// create the parser
+		CommandLineParser parser = new GnuParser();
 
-		if (args.length == 0) {
-			System.err.println(usage);
-			System.exit(-1);
+		options.addOption("h", "help", false, "print this message");
+		options.addOption("i", "input", true, "input WARC file");
+		options.addOption("o", "output", true, "output Behemoth corpus");
+		options.addOption("md", "metadata", true,
+				"add document metadata separated by semicolon e.g. -md source=internet;label=public");
+
+		// parse the command line arguments
+		CommandLine line = null;
+		try {
+			line = parser.parse(options, args);
+			if (line.hasOption("help")) {
+				formatter.printHelp("WARCConverterJob", options);
+				return 0;
+			}
+			if (!line.hasOption("i")) {
+				formatter.printHelp("WARCConverterJob", options);
+				return -1;
+			}
+			if (!line.hasOption("o")) {
+				formatter.printHelp("WARCConverterJob", options);
+				return -1;
+			}
+		} catch (ParseException e) {
+			formatter.printHelp("WARCConverterJob", options);
 		}
-		Path segment = new Path(args[0]);
-		Path output = new Path(args[1]);
-		convert(segment, output);
-		return 0;
+
+		Path input = new Path(line.getOptionValue("i"));
+		Path output = new Path(line.getOptionValue("o"));
+
+		if (line.hasOption("md")) {
+			String md = line.getOptionValue("md");
+			getConf().set("md", md);
+		}
+
+		return convert(input, output);
 	}
 
 }
