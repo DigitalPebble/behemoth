@@ -17,8 +17,15 @@
 
 package com.digitalpebble.behemoth.util;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.ObjectOutputStream;
 import java.net.URLEncoder;
+import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.List;
 import java.util.UUID;
 
 import org.apache.commons.cli.CommandLine;
@@ -31,6 +38,7 @@ import org.apache.commons.compress.archivers.ArchiveException;
 import org.apache.commons.compress.archivers.ArchiveOutputStream;
 import org.apache.commons.compress.archivers.ArchiveStreamFactory;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
+import org.apache.commons.lang.ArrayUtils;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileStatus;
@@ -44,6 +52,7 @@ import org.apache.hadoop.util.ToolRunner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.digitalpebble.behemoth.Annotation;
 import com.digitalpebble.behemoth.BehemothConfiguration;
 import com.digitalpebble.behemoth.BehemothDocument;
 import com.digitalpebble.behemoth.DocumentFilter;
@@ -75,6 +84,8 @@ public class ContentExtractor extends Configured implements Tool {
 
     // dump the text otherwise
     private boolean dumpBinary = false;
+    // don't dump annotations by default
+    private boolean dumpAnnotations = false;
 
     private ArchiveOutputStream currentArchive = null;
 
@@ -108,6 +119,7 @@ public class ContentExtractor extends Configured implements Tool {
                 "dumps binary content, text otherwise");
         options.addOption("n", "filenaming", true,
                 "whether to name files based on URL, UUID (default) or NUM");
+        options.addOption("a", "annotation", false, "whether to include annotation in output (off by default)");
 
         // parse the command line arguments
         try {
@@ -123,6 +135,7 @@ public class ContentExtractor extends Configured implements Tool {
                 return -1;
             }
             dumpBinary = line.hasOption("binary");
+            dumpAnnotations = line.hasOption("annotation");
 
             if (line.hasOption("filenaming")) {
                 String naming = line.getOptionValue("n");
@@ -204,6 +217,7 @@ public class ContentExtractor extends Configured implements Tool {
         numEntriesInCurrentArchive++;
         currentArchive.putArchiveEntry(new ZipArchiveEntry(fileName));
         currentArchive.write(content);
+        LOG.debug("Successfully wrote BehemothDocument 'content' to output.");
         currentArchive.closeArchiveEntry();
         index.flush();
         if (numEntriesInCurrentArchive == maxNumEntriesInArchive) {
@@ -251,11 +265,32 @@ public class ContentExtractor extends Configured implements Tool {
                     fileName += ".txt";
 
                 byte[] contentBytes;
-                if (dumpBinary)
+                List<Annotation> annots = null;
+                if (dumpBinary) {
                     contentBytes = inputDoc.getContent();
-                else
+                    if(dumpAnnotations) {
+                        annots = inputDoc.getAnnotations();
+                        //write annotations with content?
+                        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+                        ObjectOutputStream oos = new ObjectOutputStream(bos);
+                        oos.writeObject(annots);
+                        byte[] annotsBytes = bos.toByteArray();
+                        contentBytes = concatAndDeepClone(contentBytes, annotsBytes);
+                    }
+                } else {
                     contentBytes = inputDoc.getText().getBytes("UTF-8");
-                // out.write(contentBytes, 0, contentBytes.length);
+                    if(dumpAnnotations) {
+                        annots = inputDoc.getAnnotations();
+                        ArrayList<String> annotsArrayList = new ArrayList<String>();
+                        for (int i = 0; i < annots.size(); i++) {
+                          annotsArrayList.add(annots.get(i).toString());
+                        }
+                        
+                        byte[] annotsBytes = annotsArrayList.toString().getBytes(Charset.forName("UTF-8"));
+                        contentBytes = concatAndDeepClone(contentBytes, annotsBytes);
+                    }
+                }
+                
                 addToArchive(fileName, contentBytes, dir);
 
                 // add the mapping URL->filename in the index -> archive num
@@ -264,5 +299,11 @@ public class ContentExtractor extends Configured implements Tool {
             }
             current.close();
         }
+    }
+    
+    private byte[] concatAndDeepClone(byte[] contentBytes, byte[] annotsBytes) {
+      byte[] concatBytes = ArrayUtils.addAll(contentBytes, annotsBytes);
+      contentBytes = concatBytes.clone();
+      return contentBytes;
     }
 }

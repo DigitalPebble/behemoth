@@ -17,6 +17,7 @@
 
 package com.digitalpebble.behemoth;
 
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -25,7 +26,12 @@ import java.util.Map;
  * Implementation of an Annotation. Has a type , metadata and start and end
  * offsets referring to the position in the text of a @class BehemothDocument.
  **/
-public class Annotation implements Comparable<Annotation> {
+public class Annotation implements Comparable<Annotation>, Serializable {
+
+  /**
+   * 
+   */
+  private static final long serialVersionUID = 1L;
 
     private String type;
 
